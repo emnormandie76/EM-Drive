@@ -36,6 +36,10 @@ connexion, le jeton reçoit `entraId`, `email`, `name` et `isAdmin`.
 L'identité d'un utilisateur dans toute la base est son `entraId` (chaîne). L'administrateur de développement
 a l'`entraId` `TO_BE_CONFIGURED`, le même que l'administrateur créé par [prisma/seed.ts](../../prisma/seed.ts).
 
+**Connexion par le portail : décidée, pas encore codée.** Contrat appliqué : **contrat portail v1** (2026-10-28,
+`../portail/docs/architecture/contrat-apps.md`), pour le branchement de l'étape 2a du plan (G9, D8 à D14). Le
+code décrit ici est celui d'avant ce branchement.
+
 ### 2.2. Rôles
 
 | Rôle | Peut | Ne peut pas |
@@ -124,7 +128,7 @@ en **403**, `VALIDATION_ERROR` en **400** ; toute autre erreur donne **500** `IN
 | `/api/admin/admins` | GET, POST | admin | audit `ADMIN_PROMOTED` |
 | `/api/admin/admins/[id]` | DELETE | admin | refuse l'auto-révocation ; audit `ADMIN_REVOKED` |
 | `/api/admin/services` | GET, POST | admin | audit `SERVICE_ADDED` |
-| `/api/admin/services/[id]` | DELETE | admin | |
+| `/api/admin/services/[id]` | DELETE | admin | audit `SERVICE_REMOVED` |
 | `/api/admin/settings` | GET, PATCH | admin | audit `SETTINGS_UPDATED` ; clé et valeur libres |
 | `/api/admin/trips` | GET | admin | liste paginée (max 100) |
 | `/api/admin/audit` | GET | admin | journal paginé |

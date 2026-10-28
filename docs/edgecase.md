@@ -25,14 +25,14 @@
 ### Edge Case 4 : Liste blanche de services jamais appliquée
 - **Contexte :** connexion d'un utilisateur.
 - **Problème :** la table `authorized_services` est éditable dans l'admin mais aucun code ne la lit pour accepter ou refuser une connexion, contrairement à ce que dit le README.
-- **Solution actuelle :** aucune. Dépend de la méthode d'authentification (D1).
+- **Solution actuelle :** aucune. Parade décidée (G9, G14) : la table disparaît à l'étape 2a ; le mode restreint et la grille d'accès du portail la remplacent.
 - **Risque accepté :** non.
 
 ### Edge Case 5 : Fournisseur de connexion de développement
 - **Contexte :** `src/lib/auth.ts`.
 - **Problème :** trois comptes et un mot de passe commun sont codés en dur ; l'administrateur a l'identifiant `TO_BE_CONFIGURED`. Déployé tel quel, n'importe qui connaissant le dépôt peut se connecter en administrateur.
-- **Solution actuelle :** aucune ; marqué « à supprimer avant la production » dans le code.
-- **Risque accepté :** non. Bloquant pour toute mise en ligne (D1).
+- **Solution actuelle :** aucune ; marqué « à supprimer avant la production » dans le code. Parade décidée (G9) : fournisseur OIDC du portail et retrait du fournisseur de développement à l'étape 2a.
+- **Risque accepté :** non. Bloquant pour toute mise en ligne.
 
 ### Edge Case 6 : Corps de requêtes non validés, aucune limitation de débit
 - **Contexte :** toutes les routes `POST`/`PATCH`.

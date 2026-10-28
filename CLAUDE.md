@@ -2,12 +2,14 @@
 
 **ResaVroom** est une application web interne de réservation de véhicules et de covoiturage entre trois
 campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. Elle fonctionne en développement, derrière
-un fournisseur de connexion de développement ; elle n'est pas déployée.
+un fournisseur de connexion de développement ; elle n'est pas déployée. Elle se connectera par le **portail
+admission** (G9, contrat portail v1), à l'étape 2a du plan.
 
 - **Next.js 16.2** (App Router) et **React 19**, TypeScript strict : pages, routes API et actions serveur.
 - **Prisma 7.7** avec l'adaptateur Neon (WebSocket) ; **NextAuth v4** (JWT) ; SWR, Sonner, Lucide.
-- **PostgreSQL chez Neon** : une base configurée par `DATABASE_URL`. Le projet Neon de ResaVroom n'est pas
-  encore identifié (D7) ; l'agent n'en touche aucun.
+- **PostgreSQL chez Neon** : une base configurée par `DATABASE_URL`. Base actuelle : projet `neon-cyclamen-river`
+  du compte Anton1P ; projet neuf `resavroom` (`wispy-shadow-66847588`), créé par l'intégration Neon de Vercel,
+  encore vide (D7). Lectures sur ce seul projet ; migration et seed sur accord.
 - **Hébergement** : aucun à ce jour (Vercel visé). Dépôt : `github.com/emnormandie76/EMN-resaVroom`.
 
 ## Documents de référence
@@ -29,8 +31,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
 
 - **étape 0 faite** (2026-10-26) et validée (2026-10-28) : architecture de contexte installée, anciens documents
   retirés, aucun code modifié ;
-- **ensuite** : étapes 1 à 4 en ébauche. Microsoft Entra ID est abandonné (G8) ; le propriétaire fournira la
-  spécification de l'authentification (D1), qui bloque l'étape 2 et toute mise en ligne.
+- **D1 tranchée** (2026-10-28) : connexion par le portail (G9 ; prompt guidé P-01 du portail, contrat portail
+  v1). L'étape 0 de ce branchement (préparation, sans code) est faite, validée et commitée (2026-10-28) ;
+- **ensuite**, dans l'ordre : étape 1 (gardes serveur, tests, projet Neon neuf), 2a (connexion par le portail),
+  2b (annuaire), 3 (polish), 4 (mise en ligne).
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -42,8 +46,9 @@ L'étape en cours se lit dans le journal du plan (§9).
 2. **Une étape à la fois.** Ne pas commencer la suivante tant que les cases ne sont pas cochées, que les
    vérifications ne sont pas vertes **et** que le propriétaire n'a pas validé.
 3. **Ce qui revient au propriétaire** : valeurs des variables d'environnement, identité du projet Neon, accès,
-   déploiement, spécification de l'authentification. S'arrêter, le guider pas à pas sans jamais lui demander de
-   secret dans le chat, vérifier, puis consigner au journal.
+   déploiement, déclaration de ResaVroom au portail et ouverture de l'annuaire (avec le super-admin du
+   portail). S'arrêter, le guider pas à pas sans jamais lui demander de secret dans le chat, vérifier, puis
+   consigner au journal.
 4. **Ne pas s'écarter** du plan ni de l'architecture de sa propre initiative. En cas de doute, exposer le
    problème avec deux options et une recommandation (questions à cocher), puis consigner au journal.
 5. **Un test qui échoue** ne se désactive pas et ne s'affaiblit pas. Quand le propriétaire change une règle,
@@ -89,8 +94,11 @@ Opus. Si la session tourne sur un autre modèle, le signaler à l'utilisateur en
 Configurés dans [.mcp.json](.mcp.json). Périmètre commun : lectures permises, toute écriture sur accord, aucun
 secret. Aucun de ces services n'héberge encore ResaVroom.
 
-**Neon** — projet de ResaVroom non confirmé (D7). Projets existants à ne pas toucher tant que D7 n'est pas
-tranché : `vc-bdd` (`noisy-credit-34683167`) et `neon-bisque-pillar` (`gentle-thunder-89807010`).
+**Neon** — D7 tranchée le 2026-10-28. **Projet confirmé : `resavroom` (`wispy-shadow-66847588`)**, branche
+`main` (`br-sparkling-snow-bal3lt7i`), dans l'organisation « Vercel: EM-Normandie » (gérée par Vercel). Le MCP
+voit toute l'organisation : passer toujours `project_id` explicitement. Jamais touchés : `portail-admission`
+(`shy-art-03916923`, le portail), `vc-bdd` (`noisy-credit-34683167`), `neon-bisque-pillar`
+(`gentle-thunder-89807010`), et l'ancienne base `neon-cyclamen-river` (compte Anton1P).
 
 | | Outils |
 |---|---|
@@ -114,6 +122,12 @@ tranché : `vc-bdd` (`noisy-credit-34683167`) et `neon-bisque-pillar` (`gentle-t
 | **Avec l'accord du propriétaire, à chaque fois** | `create_branch`, `create_or_update_file`, `push_files`, `delete_file`, `actions_run_trigger`, `create_repository`, `fork_repository` |
 | **Jamais** | `delete_repository`, tout ce qui touche à `main` |
 
+**Portail admission** (<https://portail-admission.vercel.app>) — fournisseur d'identité de ResaVroom (G9),
+qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP sur ses ressources (dépôt
+`emnormandie76/portail-admission`, projets Vercel et Neon `portail-admission`), demander ou lire
+`PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
+(`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
+
 ## Commandes
 
 | Commande | Rôle |
@@ -123,7 +137,7 @@ tranché : `vc-bdd` (`noisy-credit-34683167`) et `neon-bisque-pillar` (`gentle-t
 | `npm run lint` | ESLint (18 problèmes au départ, voir plan §3) |
 | `npm run build` | build de production |
 | `npx prisma generate` | régénère le client dans `src/generated/prisma/` |
-| `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** |
+| `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** ; lit `.env` seul (piège 12, D15) |
 | `npx prisma db seed` | écrit les données de départ — **accord du propriétaire requis** |
 | `npx prisma studio` | interface sur la base partagée — **accord du propriétaire requis** |
 
