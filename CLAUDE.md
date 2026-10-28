@@ -33,8 +33,9 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   retirés, aucun code modifié ;
 - **D1 tranchée** (2026-10-28) : connexion par le portail (G9 ; prompt guidé P-01 du portail, contrat portail
   v1). L'étape 0 de ce branchement (préparation, sans code) est faite, validée et commitée (2026-10-28) ;
-- **ensuite**, dans l'ordre : étape 1 (gardes serveur, tests, projet Neon neuf), 2a (connexion par le portail),
-  2b (annuaire), 3 (polish), 4 (mise en ligne).
+- **étape 1 faite et validée** (2026-10-28) : Vitest, cas limites 1, 2, 3, 9 et 6 (zod), `src/proxy.ts`,
+  projet Neon neuf migré et seedé, `README.md` réécrit ;
+- **ensuite**, dans l'ordre : 2a (connexion par le portail), 2b (annuaire), 3 (polish), 4 (mise en ligne).
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -53,14 +54,15 @@ L'étape en cours se lit dans le journal du plan (§9).
    problème avec deux options et une recommandation (questions à cocher), puis consigner au journal.
 5. **Un test qui échoue** ne se désactive pas et ne s'affaiblit pas. Quand le propriétaire change une règle,
    l'attendu du test change avec elle, et le journal le dit.
-6. **En fin d'étape** : `npx tsc --noEmit` et `npm run lint` (et les tests dès que l'étape 1 les installe) ;
+6. **En fin d'étape** : `npm test`, `npx tsc --noEmit` et `npm run lint` ;
    mettre à jour les docs de contexte pour qu'elles décrivent ce que le code fait réellement ; faire un compte
    rendu, puis s'arrêter.
 7. **Dépenses et réseau.** Aucun appel payant ou à quota (OpenRouteService, API Neon) sans accord explicite ;
    les tests ne touchent jamais le réseau externe.
 8. **Base de données.** Lectures libres ; toute écriture, migration ou suppression exige l'accord du
    propriétaire, à chaque fois. Interdits : `migrate reset`, `db push --force-reset`, `DROP`, `TRUNCATE`,
-   `deleteMany` sans filtre, et le script `tests/admin_delegation.ts` (il vide les trajets de la base réelle).
+   `deleteMany` sans filtre, et tout script qui écrit dans la base réelle (l'ancien `tests/admin_delegation.ts`,
+   qui vidait les trajets, est retiré : ne pas le restaurer).
    Une migration se rédige à la main et ne se modifie plus une fois appliquée.
 9. **Sécurité.** Tout accès passe par `requireAuthSession()` / `requireAdminSession()`
    ([src/lib/api-helpers.ts](src/lib/api-helpers.ts)) ; le rôle est relu en base, jamais déduit du jeton. La
@@ -87,7 +89,8 @@ Opus. Si la session tourne sur un autre modèle, le signaler à l'utilisateur en
   modifier ni les committer. La liste des variables est dans `.env.example` et dans le mémo d'exploitation.
 - **Branches.** Branche de travail : `dev-claude` (depuis `jules`). Existantes : `main`, `jules` (distante
   `origin`). Pas de commit ni de push sans demande explicite. Push : `git push -u origin dev-claude`.
-- `README.md` est en Windows-1252 : ne pas l'éditer avec l'outil d'édition (piège 5 du plan).
+- Ne jamais écrire un fichier par une chaîne PowerShell entre guillemets doubles : les accents graves
+  (`` `b ``, `` `n ``) y sont des échappements (piège 5 du plan, qui a abîmé l'ancien `README.md`).
 
 ## Services externes (MCP)
 
@@ -127,17 +130,20 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 `emnormandie76/portail-admission`, projets Vercel et Neon `portail-admission`), demander ou lire
 `PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
+ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
+`http://localhost:3002`, annuaire fermé, grille vide (détails dans le mémo §3).
 
 ## Commandes
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | serveur de développement (utilise la base de `DATABASE_URL`) |
-| `npx tsc --noEmit` | contrôle des types (0 erreur au départ) |
-| `npm run lint` | ESLint (18 problèmes au départ, voir plan §3) |
+| `npm run dev` | serveur de développement (base de `DATABASE_URL`) ; d'ici l'étape 2a, `npm run dev -- -p 3002` (`NEXTAUTH_URL` est sur 3002) |
+| `npm test` | Vitest : aucun réseau, aucune base (146 tests à la fin de l'étape 1) |
+| `npx tsc --noEmit` | contrôle des types (0 erreur) |
+| `npm run lint` | ESLint (17 problèmes depuis l'étape 1, tous antérieurs ; corrigés à l'étape 3) |
 | `npm run build` | build de production |
 | `npx prisma generate` | régénère le client dans `src/generated/prisma/` |
-| `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** ; lit `.env` seul (piège 12, D15) |
+| `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** ; lit `DATABASE_URL_UNPOOLED` de `.env.local` (D15) ; port 5432, fermé sur le réseau de l'entreprise (mémo §2) |
 | `npx prisma db seed` | écrit les données de départ — **accord du propriétaire requis** |
 | `npx prisma studio` | interface sur la base partagée — **accord du propriétaire requis** |
 

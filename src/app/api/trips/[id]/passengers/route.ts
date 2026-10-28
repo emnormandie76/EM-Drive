@@ -3,7 +3,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
+import { isAdmin } from "@/lib/auth";
 import { addPassenger } from "@/lib/services/trip-service";
+import { addPassengerSchema, parseJsonBody } from "@/lib/validators/request-schemas";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -14,42 +16,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const { id: tripId } = await params;
 
   try {
-    const body = await request.json();
-    const addedBy = body.addedBy ?? "SELF";
+    const body = await parseJsonBody(request, addPassengerSchema);
+    const { entraId, email, name } = auth.session.user;
+    const userIsAdmin = await isAdmin(entraId);
 
-    if (addedBy === "SELF") {
+    if (body.addedBy === "SELF") {
       // L'utilisateur s'inscrit lui-même
-      await addPassenger(
-        tripId,
-        auth.session.user.entraId,
-        auth.session.user.email,
-        auth.session.user.name,
-        "SELF",
-        auth.session.user.entraId,
-        auth.session.user.email
-      );
-    } else if (addedBy === "DRIVER") {
-      // Le conducteur ajoute un passager
-      if (!body.userEntraId || !body.userEmail || !body.userDisplayName) {
-        return NextResponse.json(
-          { error: "VALIDATION_ERROR", message: "userEntraId, userEmail et userDisplayName sont requis pour addedBy=DRIVER." },
-          { status: 400 }
-        );
-      }
-
-      await addPassenger(
-        tripId,
-        body.userEntraId,
-        body.userEmail,
-        body.userDisplayName,
-        "DRIVER",
-        auth.session.user.entraId,
-        auth.session.user.email
-      );
+      await addPassenger(tripId, entraId, email, name, "SELF", entraId, email, userIsAdmin);
     } else {
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "addedBy doit être 'SELF' ou 'DRIVER'." },
-        { status: 400 }
+      // Ajout par le conducteur (ou un admin) : le service vérifie le droit d'ajouter
+      await addPassenger(
+        tripId,
+        body.userEntraId!,
+        body.userEmail!,
+        body.userDisplayName!,
+        "DRIVER",
+        entraId,
+        email,
+        userIsAdmin
       );
     }
 

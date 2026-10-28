@@ -1,99 +1,125 @@
-# Resavroom - Application de Réservation de Véhicules Inter-Campus ??
+# ResaVroom
 
-Resavroom est une application web complète développée avec Next.js permettant la gestion, la réservation et le covoiturage d'une flotte interne de véhicules circulant entre différents campus d'entreprise.
+Application web interne de rÃ©servation des vÃ©hicules de service et de covoiturage entre les campus du Havre,
+de Caen et de Paris.
 
-## ? Fonctionnalités Principales
+> **Ã‰tat au 2026-10-28** : en dÃ©veloppement, non dÃ©ployÃ©e. La connexion passe encore par un fournisseur de
+> dÃ©veloppement (comptes simulÃ©s) ; elle passera par le **portail admission** de l'Ã©quipe (OIDC) Ã  l'Ã©tape 2a du
+> chantier de mise en production. Suivi du chantier :
+> [docs/features/mise-en-production.md](docs/features/mise-en-production.md).
 
-### ?? Authentification & Sécurité
-- **Connexion SSO** via Microsoft Entra ID (ex-Azure AD).
-- **Contrôle d'accès par liste blanche** (Seuls les services autorisés peuvent se connecter).
-- **Gestion des rôles** (Utilisateurs standards et Administrateurs).
+## FonctionnalitÃ©s
 
-### ?? Tableau de Bord (Dashboard)
-- Vue synthétique de l'état de la flotte en temps réel (Disponible, En Trajet, Maintenance).
-- Suivi de la position actuelle de chaque véhicule sur les différents campus.
-- Affichage de vos prochains trajets et des covoiturages suggérés.
+### Tableau de bord
 
-### ?? Réservation & Covoiturage
-- **Recherche intelligente** : Trouvez un véhicule disponible ou rejoignez un trajet existant en tant que passager.
-- **Types de trajets supportés** :
-  - *Aller simple* (Inter-campus).
-  - *Aller-retour* (Inter-campus ou prolongé).
-  - *Destination Externe ("Autre")* : Obligatoirement en aller-retour avec retour sur un des campus.
-- **Calculs automatiques** : Saisie d'adresses via l'API BAN (api-adresse.data.gouv.fr) et estimation automatique des temps de trajet via OpenRouteService.
-- **Vérification des conflits** : Le système empêche la sur-réservation des véhicules et prévient les chevauchements pour les conducteurs.
+- Ã‰tat de la flotte (disponible, en trajet, en maintenance) et position de chaque vÃ©hicule par campus.
+- Prochains trajets, rafraÃ®chis toutes les 30 secondes.
 
-### ?? Panneau d'Administration
-- **Gestion de la flotte** : Ajout, modification, et mise en maintenance des véhicules.
-- **Gestion des trajets** : Modification complète des trajets (dates, véhicules, destinations) et annulations forcées.
-- **Gestion des utilisateurs & rôles** : Promotion d'utilisateurs au rang d'administrateur et gestion de la liste blanche d'accès.
-- **Journal d'Audit** : Traçabilité complète des actions sensibles (connexions, annulations, promotions admin, etc.).
-- **Paramètres globaux** : Configuration du temps de battement entre chaque réservation (pour le nettoyage/vérification du véhicule).
+### RÃ©servation et covoiturage
 
----
+- Recherche d'un vÃ©hicule libre, ou d'un trajet existant Ã  rejoindre comme passager.
+- Trois types de trajet : aller simple entre campus, aller-retour entre campus, aller-retour vers une adresse
+  libre.
+- Adresses par l'API BAN (api-adresse.data.gouv.fr), durÃ©es par OpenRouteService (estimation Ã  vol d'oiseau
+  sans clÃ©).
+- ContrÃ´les cÃ´tÃ© serveur : pas de double rÃ©servation d'un vÃ©hicule, pas de chevauchement pour le conducteur ni
+  pour les passagers (avec un temps de battement rÃ©glable), places du vÃ©hicule, rÃ¨gles d'inscription et de
+  retrait des passagers.
 
-## ??? Stack Technique
+### Administration
 
-- **Framework** : [Next.js 16.2](https://nextjs.org/) (App Router)
-- **Langage** : [TypeScript](https://www.typescriptlang.org/)
-- **Base de données** : PostgreSQL (hébergée via [Neon](https://neon.tech/))
-- **ORM** : [Prisma 7.7](https://www.prisma.io/)
-- **Authentification** : [NextAuth.js](https://next-auth.js.org/) avec @azure/msal-node
-- **UI / Composants** : CSS Modules / Variables, Lucide React (Icônes), Sonner (Toasts)
+- Flotte : ajout, modification, mise en maintenance des vÃ©hicules.
+- Trajets : modification complÃ¨te et annulation.
+- ParamÃ¨tres : temps de battement entre deux rÃ©servations.
+- Journal d'audit des actions sensibles ; mÃ©triques et nettoyage de la base.
+- Administrateurs et liste des services (`/admin/users`) : ces Ã©crans disparaÃ®tront avec le portail, qui
+  gÃ©rera seul les accÃ¨s et les rÃ´les.
 
----
+## Pile technique
 
-## ?? Installation & Lancement en local
+- [Next.js 16.2](https://nextjs.org/) (App Router, Turbopack), React 19, TypeScript strict
+- PostgreSQL chez [Neon](https://neon.tech/), [Prisma 7.7](https://www.prisma.io/) (adaptateur Neon, WebSocket)
+- [NextAuth.js](https://next-auth.js.org/) v4 (sessions JWT)
+- [zod](https://zod.dev/) pour la validation des requÃªtes, [Vitest](https://vitest.dev/) pour les tests
+- SWR, date-fns, Sonner, Lucide
 
-### 1. Prérequis
-- [Node.js](https://nodejs.org/en/) (v20+ recommandé)
-- Un compte [Neon](https://neon.tech/) pour la base de données PostgreSQL (ou toute autre base de données PostgreSQL).
-- Un compte Azure / Entra ID configuré pour le SSO.
-- Une clé API [OpenRouteService](https://openrouteservice.org/).
+## DÃ©marrer en local
 
-### 2. Cloner le dépôt et installer les dépendances
-`ash
-git clone <votre-url-de-repo> resavroom
-cd resavroom
+### PrÃ©requis
+
+- Node.js 20 ou plus.
+- Les adresses de connexion Ã  la base Neon de ResaVroom (projet `resavroom`) : Ã  demander au propriÃ©taire du
+  projet.
+- Facultatif : une clÃ© [OpenRouteService](https://openrouteservice.org/).
+
+### Installation
+
+```bash
 npm install
-`
-
-### 3. Configuration des variables d'environnement
-Copiez le fichier d'exemple et remplissez vos informations :
-`ash
 cp .env.example .env.local
-`
-Ouvrez .env.local et renseignez :
-- DATABASE_URL (Votre chaîne de connexion Neon / PostgreSQL).
-- Les identifiants Azure AD (AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID).
-- NEXTAUTH_SECRET (Une chaîne longue et aléatoire).
-- ORS_API_KEY (Votre clé OpenRouteService).
+```
 
-### 4. Initialiser la Base de données
-Générez les clients Prisma, appliquez les migrations et uploadez les données de départ (les campus et données initiales) :
-`ash
+Renseignez `.env.local`. Le rÃ´le de chaque variable est dÃ©crit dans
+[docs/memory/memory-exploitation.md](docs/memory/memory-exploitation.md) (Â§1) :
+
+- `DATABASE_URL` (connexion pooled) et `DATABASE_URL_UNPOOLED` (connexion directe, pour les migrations) ;
+- `NEXTAUTH_URL` (`http://localhost:3002`) et `NEXTAUTH_SECRET` (une chaÃ®ne longue et alÃ©atoire) ;
+- `ORS_API_KEY` (facultative) ;
+- `PORTAIL_ISSUER`, `PORTAIL_CLIENT_ID` et `PORTAIL_CLIENT_SECRET` : le client `dev` du portail, pour la
+  connexion par le portail (Ã©tape 2a ; ces noms entreront dans `.env.example` Ã  cette Ã©tape).
+
+Ne committez jamais `.env` ni `.env.local`.
+
+### Base de donnÃ©es
+
+La base de dÃ©veloppement est dÃ©jÃ  migrÃ©e et remplie (3 campus, 3 vÃ©hicules). Sur une base neuve :
+
+```bash
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 npx prisma db seed
-`
+```
 
-### 5. Lancer le serveur de développement
-`ash
-npm run dev
-`
-Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
+- Le CLI Prisma lit `.env.local` puis `.env` (`prisma.config.ts`) et migre par `DATABASE_URL_UNPOOLED`.
+- La migration ouvre une connexion directe sur le port 5432, fermÃ© sur le rÃ©seau de l'entreprise : passer par un
+  autre rÃ©seau (partage de connexion). Le seed et l'application passent par le port 443.
+- Sur la base partagÃ©e, migration, seed et Prisma Studio se font avec l'accord du propriÃ©taire du projet.
 
----
+### Lancer
 
-## ??? Scripts Utiles
+```bash
+npm run dev -- -p 3002
+```
 
-- 
-pm run dev : Lance le serveur en mode développement avec Hot Reload.
-- 
-pm run build : Compile l'application pour la production.
-- 
-pm run start : Lance le serveur de production (après le build).
-- 
-px tsc --noEmit : Vérifie les erreurs TypeScript.
-- 
-px prisma studio : Ouvre une interface web pour gérer le contenu de votre base de données locale.
+Ouvrez <http://localhost:3002>. Le port 3002 est celui que le portail connaÃ®t pour ResaVroom ; il deviendra le
+port par dÃ©faut du script `dev` Ã  l'Ã©tape 2a. La page de connexion propose les comptes de dÃ©veloppement.
+
+## Commandes
+
+| Commande | RÃ´le |
+|---|---|
+| `npm run dev` | serveur de dÃ©veloppement (ajouter `-- -p 3002`, voir plus haut) |
+| `npm test` | tests Vitest, sans rÃ©seau ni base de donnÃ©es |
+| `npx tsc --noEmit` | contrÃ´le des types |
+| `npm run lint` | ESLint |
+| `npm run build` | build de production |
+| `npm run start` | serveur de production, aprÃ¨s le build |
+| `npx prisma studio` | interface sur la base (accord du propriÃ©taire) |
+
+## Limites connues
+
+- CrÃ©er un trajet avec passagers depuis l'assistant ne fonctionne pas encore (cas limite 11, prÃ©vu Ã 
+  l'Ã©tape 2b) ; les passagers peuvent rejoindre le trajet une fois crÃ©Ã©.
+- La recherche de collÃ¨gues est simulÃ©e (comptes de dÃ©veloppement) jusqu'Ã  l'Ã©tape 2b.
+- Les autres cas limites et leur Ã©tat : [docs/edgecase.md](docs/edgecase.md).
+
+## Documentation
+
+- [docs/README.md](docs/README.md) : l'index.
+- [docs/features/mise-en-production.md](docs/features/mise-en-production.md) : le plan, les dÃ©cisions et le
+  journal.
+- [docs/architecture/mise-en-production.md](docs/architecture/mise-en-production.md) : ce que fait le code.
+- [CLAUDE.md](CLAUDE.md) : les rÃ¨gles de travail des agents sur ce dÃ©pÃ´t.
+
+DÃ©pÃ´t : `github.com/emnormandie76/EMN-resaVroom`. Branche de travail : `dev-claude` ; `main` n'est pas modifiÃ©e
+directement.

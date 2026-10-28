@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@azure/msal-node": "^5.1.2",
@@ -25,7 +26,8 @@
     "react-dom": "19.2.4",
     "sonner": "^2.0.7",
     "swr": "^2.4.1",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",
@@ -35,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12"
   }
 }

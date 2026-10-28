@@ -3,9 +3,9 @@
 > **Statut au 2026-10-28 :** étape 0 faite et validée (commit `1436416`). **D1 tranchée** : la connexion se fait
 > par le **portail admission** (G9 ; prompt guidé P-01 du portail, contrat portail v1). L'étape 0 de ce
 > branchement (préparation, sans code) est faite, validée et commitée (2026-10-28). **D7 tranchée** :
-> projet Neon neuf sur le compte emnormandie76, créé par le propriétaire. Ordre des étapes : 1, 2a, 2b, 3, 4
-> (D13). Les étapes 1, 3 et 4 restent des ébauches. Le détail de chaque étape est au §5, son histoire au
-> journal (§9).
+> projet Neon neuf `resavroom`, migré et seedé. **Étape 1 faite et validée le 2026-10-28.** Prochaine : 2a.
+> Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Les étapes 3 et 4 restent des ébauches. Le détail de chaque étape
+> est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
 > **Source :** [`SAD.md`](../SAD.md) et [`Cahier des charge.md`](../Cahier%20des%20charge.md) (spécifications
 > d'origine, phases 0 à 11 du SAD) ; échange avec le propriétaire du 2026-10-26 ; prompt guidé P-01 du portail
@@ -41,6 +41,8 @@
   ici : un point qui ne convient pas se signale au propriétaire, et le portail émet un prompt correctif ou une
   nouvelle version. Déclarer ResaVroom, ses rôles, ses clients et ouvrir l'annuaire revient au super-admin du
   portail (G12), avec l'agent du portail ; ResaVroom fournit les informations dans ses comptes rendus.
+  **Rendez-vous avec le portail** : à la fin de l'étape 2a (essai), au début de l'étape 2b (ouverture de
+  l'annuaire) et avant l'étape 4 (client de production). Le propriétaire fait le lien.
 - **Interdits, sans exception** (repris de `CLAUDE.md`) : lire, afficher, modifier ou committer `.env` et
   `.env.local` ; écrire dans la base Neon, appliquer une migration ou déployer sans accord explicite ; lancer
   `tests/admin_delegation.ts` ; toute commande destructrice (`migrate reset`, `DROP`, `TRUNCATE`, `deleteMany`
@@ -95,6 +97,19 @@ la première application branchée.
 | D15 | 1 | La CLI Prisma ne lit que `.env` (piège 12) alors que la nouvelle `DATABASE_URL` va dans `.env.local` : comment éviter qu'une migration vise l'ancienne base ? | `.env.local` porte, comme Vercel le fera en production, `DATABASE_URL` (pooled : application et seed, par WebSocket) et `DATABASE_URL_UNPOOLED` (directe). Recommandation : `prisma.config.ts` charge `.env.local` puis `.env`, comme `prisma/seed.ts`, et donne `DATABASE_URL_UNPOOLED` à la CLI (les migrations veulent une connexion directe) ; ajouter ce nom à `.env.example`. D'ici là, aucune commande `prisma migrate`. Autre option : le propriétaire recopie l'adresse directe dans `.env`. |
 | D16 | 4 | Mode d'accès au portail à la mise en ligne : restreinte, ou ouverte avec `USER` par défaut (G19) ? | À poser au début de l'étape 4 (D9). |
 
+### 2.2 bis. Tranchées au début de l'étape 1 (2026-10-28)
+
+Toutes par le propriétaire, recommandation retenue.
+
+| # | Réponse |
+|---|---|
+| D2 | **Vitest, Prisma simulé.** `npm test` ne touche ni le réseau ni une base (règle 7) : règles pures testées directement ; services testés avec un client Prisma simulé. Limite assumée : la requête SQL de chevauchement n'est pas exécutée, seule sa forme est vérifiée. |
+| D3 | **Corriger les cas limites 1, 2 et 3**, tests d'abord vus en échec. Le 2 suit le SAD (« le conducteur peut retirer un passager qu'il a ajouté (`addedBy = DRIVER`) ») et le cahier des charges (« un passager peut se retirer à tout moment avant le départ »). |
+| D4 | **Renommer `middleware.ts` en `proxy.ts` à la main** (`git mv`, contenu inchangé) : la doc de Next 16 (`01-app/03-api-reference/03-file-conventions/proxy.md`) accepte l'export par défaut et fait tourner le proxy en Node.js ; le codemod n'aurait rien fait de plus ici. *Complété en cours d'étape* : le fichier va dans `src/` et sa fonction est écrite (`withAuth`), voir piège 3 et la ligne suivante. |
+| — | **Proxy : pages seulement** (question posée en cours d'étape, après la découverte du piège 3) : il redirige vers `/login` les pages sans session et exclut tout `/api`, dont les routes répondent 401 en JSON. |
+| D15 | **`prisma.config.ts` charge `.env.local` puis `.env` et donne `DATABASE_URL_UNPOOLED` à la CLI** ; `.env.example` gagne ce nom. |
+| — | **Contenu de l'étape 1 confirmé** tel qu'écrit. La validation des corps (EC 6) utilise **zod** et porte sur les routes qui survivent à l'étape 2a (trajets, passagers, véhicules, paramètres), pas sur `admins` ni `services`. |
+
 ### 2.3. Connexion par le portail (2026-10-28)
 
 Source : **prompt guidé P-01 du portail, contrat portail v1.**
@@ -130,7 +145,7 @@ Toutes par le propriétaire, recommandation retenue.
 
 | # | Question | Réponse |
 |---|---|---|
-| D8 | Rôles et déclaration au portail | Deux rôles, `USER` (« Utilisateur ») et `ADMIN` (« Administrateur »), écrits ainsi dans le code. Identifiant `resavroom`, nom « ResaVroom », adresse d'accueil `http://localhost:3002/` jusqu'à la mise en ligne, description d'une ligne (proposée au compte rendu). |
+| D8 | Rôles et déclaration au portail | Deux rôles, `USER` (« Utilisateur ») et `ADMIN` (« Administrateur »), écrits ainsi dans le code. Identifiant `resavroom`, nom « ResaVroom », adresse d'accueil `http://localhost:3002/` jusqu'à la mise en ligne. Description retenue par le portail : « Réservation des véhicules de service et covoiturage entre les campus. » |
 | D9 | Mode au branchement, puis à la mise en ligne | **Restreinte** tant que l'application n'est pas en ligne (G24). Le choix entre restreinte et ouverte avec `USER` par défaut se pose au début de l'étape 4 (D16). |
 | D10 | Identité : où le `sub` et l'adresse se rencontrent, et ce que devient `entraId` | Une **table locale des personnes** (`sub` unique, adresse unique, nom, rôle, heure de dernière connexion) : elle porte le rapprochement du contrat (§3.2 : par `sub`, puis par l'adresse, puis création ; refus d'une adresse liée à un autre `sub`) et le rôle relu en base (règle 9 de `CLAUDE.md`). Les colonnes `*_entra_id` portent désormais le `sub` et sont **renommées `*_sub`** dans la même migration ; `admins` et `authorized_services` sont supprimées. |
 | D11 | Bibliothèque | **Garder NextAuth v4.** Ses écarts au contrat (piège 11) se règlent par sa configuration et ses rappels, et les tests d'abord les prouvent. |
@@ -153,19 +168,25 @@ Toutes par le propriétaire, recommandation retenue.
 
 ## 4. Pièges connus
 
-1. **`tests/admin_delegation.ts` détruit des données.** Il commence par `prisma.trip.deleteMany()` et utilise la
-   base réelle de `DATABASE_URL`. Ne jamais le lancer ; D2 le remplacera.
+1. **`tests/admin_delegation.ts` détruisait des données** (`prisma.trip.deleteMany()` sur la base réelle). Retiré
+   à l'étape 1 ; ne jamais le restaurer. Les tests (`npm test`) ne touchent aucune base (D2).
 2. **Prisma 7 change les conventions.** Le schéma n'a plus `url` : l'URL est dans `prisma.config.ts` ; le
    générateur est `prisma-client` avec `output` obligatoire (`src/generated/prisma/`) ; `PrismaNeon` reçoit un
    objet `{ connectionString }`, pas un `Pool` ; `"type": "module"` dans `package.json`. (Ancien
    `docs/errors/errors.md`.)
-3. **`middleware.ts` est une convention dépréciée en Next 16** (renommée `proxy.ts`). Elle fonctionne encore ;
-   voir D4. Lire `node_modules/next/dist/docs/` avant de toucher à Next (AGENTS.md).
+3. **Le proxy doit vivre dans `src/`, au niveau de `app/`.** `middleware.ts` était à la racine : Next l'ignorait,
+   et aucune page n'a jamais été redirigée vers `/login` avant l'étape 1 (seules les gardes serveur
+   protégeaient). Depuis l'étape 1 : `src/proxy.ts` (D4). Next n'accepte pas un réexport
+   (`export { default } from …`) : la fonction doit être écrite dans le fichier (`export default withAuth(…)`),
+   sinon erreur E903 au build. `tests/proxy.test.ts` garde ces trois points. Lire `node_modules/next/dist/docs/`
+   avant de toucher à Next (AGENTS.md).
 4. **Port 5432 bloqué sur le réseau de l'entreprise.** Le runtime passe par WebSocket (443) ; les commandes
    `prisma migrate` ouvrent du TCP direct et échouent sur ce réseau (migration initiale jouée via un partage de
    connexion mobile).
-5. **`README.md` est en Windows-1252** (accents illisibles en UTF-8) : l'outil d'édition refuse de le modifier.
-   Le convertir en UTF-8 avec un outil shell qui garde le contenu, sur accord du propriétaire.
+5. **`README.md` était en Windows-1252**, et son contenu abîmé par des échappements de PowerShell (`` `b ``,
+   `` `n `` : émojis en `??`, blocs de code en `` `ash ``). Converti en UTF-8 par le propriétaire puis réécrit à la
+   fin de l'étape 1 (2026-10-28). Leçon : ne jamais écrire un fichier par une chaîne PowerShell entre guillemets
+   doubles ; utiliser l'outil d'écriture.
 6. **Les identités sont des copies, pas des liens.** `driverEntraId`, `userEntraId`, e-mails et noms sont
    recopiés dans les trajets, passagers et journaux : changer de méthode d'authentification (G8) change le sens
    de ces identifiants et impose de migrer ou d'aligner les `entraId` existants (D10).
@@ -184,7 +205,9 @@ Toutes par le propriétaire, recommandation retenue.
     - `checks` vaut `["state"]` par défaut (`core/lib/providers.js`, l. 62) : il faut `["pkce", "state", "nonce"]`
       (PKCE en S256). `idToken` est déduit vrai dès que `wellKnown` vise `openid-configuration` (l. 61) ;
     - le client s'authentifie en `client_secret_basic` par défaut, mais `openid-client` passe en
-      `client_secret_post` si la découverte n'annonce pas `client_secret_basic` : le fixer dans `client` ;
+      `client_secret_post` si la découverte n'annonce pas `client_secret_basic`. La découverte du portail
+      l'annonce en premier (constaté par l'agent du portail le 2026-10-28) : pas de bascule attendue, mais le
+      fixer dans `client` reste une précaution ;
     - en stratégie `jwt`, chaque lecture de la session repousse l'expiration (`core/routes/session.js`,
       `newExpires`) : `maxAge` seul donne une session glissante. Garder l'heure de connexion dans le jeton et
       refuser la session 8 h après ;
@@ -194,10 +217,10 @@ Toutes par le propriétaire, recommandation retenue.
       sur `/login?error=…` : la page ne relance jamais le flux d'elle-même (boucle) ;
     - les cookies `next-auth.*` valent pour tous les ports de `localhost`, et appVC utilise les mêmes noms : les
       renommer (D12).
-12. **La CLI Prisma ne lit pas `.env.local`.** `prisma.config.ts` importe `dotenv/config`, qui charge `.env`
-    seul ; Next et `prisma/seed.ts` lisent `.env.local` en premier. Avec la nouvelle `DATABASE_URL` posée dans
-    `.env.local` (D7), `npx prisma migrate …` viserait l'adresse restée dans `.env` (l'ancienne base) ou
-    échouerait. Aucune migration avant D15.
+12. **La CLI Prisma ne lisait pas `.env.local`** (`import "dotenv/config"` charge `.env` seul) : une migration
+    aurait visé l'ancienne base restée dans `.env`. Réglé à l'étape 1 (D15) : `prisma.config.ts` charge
+    `.env.local` puis `.env` et lit `DATABASE_URL_UNPOOLED`. Avant toute migration, vérifier quand même la cible
+    par son nom d'hôte (mémo §2).
 13. **Vercel Hobby et dépôt privé** : seuls les commits dont l'auteur est le propriétaire de l'équipe Vercel se
     déploient (piège 5 du portail). Les commits de ce dépôt sont signés « PAREDE Antonin » (`user.name` n'est
     pas défini dans Git : le nom vient du compte Windows) ; ceux du portail et d'appVC, « emnormandie76 ». À
@@ -226,25 +249,39 @@ Toutes par le propriétaire, recommandation retenue.
 Aucun code modifié : pas de suite de tests à rejouer (tsc et lint donnent les mêmes chiffres qu'au départ).
 Commit `1436416`.
 
-### Étape 1 — Gardes serveur et tests (ébauche)
+### Étape 1 — Gardes serveur et tests ✅ (2026-10-28)
 
-**À trancher en début d'étape :** D2, D3, D4, D15. **Tranchée :** D7.
+**Tranchées en début d'étape :** D2, D3, D4, D15 (§2.2 bis), et le contenu de l'étape. **Tranchée avant :** D7.
 
 - [x] Projet Neon neuf (D7) : créé par le propriétaire, qui a posé `DATABASE_URL` dans `.env.local` ; nom et
       identifiant consignés (D7, mémo, `CLAUDE.md`) le 2026-10-28.
-- [ ] Après D15, avec l'accord du propriétaire et depuis un réseau qui ouvre le port 5432 (piège 4) :
-      `npx prisma migrate deploy`, puis `npx prisma db seed`, sur `wispy-shadow-66847588`.
-- [ ] Installer le cadre de tests et ajouter le script `npm test` ; remplacer `tests/admin_delegation.ts`. Le
-      cadre sert aussi aux tests d'abord de l'étape 2a (garde de connexion).
-- [ ] Tests d'abord, vus en échec, puis correctifs : cas limites 1, 2, 3 (passagers, retrait, décalage).
-- [ ] Tests des règles de `permission-checker.ts` et de `findPersonConflict` / `findVehicleConflict`.
-- [ ] Table de référence des droits par route (`test/helpers/access-policy.ts`) lue par un test contre le code,
+- [x] D15 : `prisma.config.ts` charge `.env.local` puis `.env` et lit `DATABASE_URL_UNPOOLED` ; cible vérifiée
+      (nom d'hôte seulement). Puis, avec l'accord du propriétaire, en partage de connexion :
+      `npx prisma migrate deploy` et `npx prisma db seed` sur `wispy-shadow-66847588` ; tables et comptes
+      vérifiés par le MCP Neon (lecture).
+- [x] Cadre de tests : Vitest 4.1 (`vitest.config.ts`, `npm test`), client Prisma simulé (D2) ;
+      `tests/admin_delegation.ts` retiré.
+- [x] Tests d'abord, vus en échec (26 en échec, 79 au vert), puis correctifs : cas limites 1, 2, 3 ; capacité à
+      la création.
+- [x] Tests des règles de `permission-checker.ts` et de la forme de `findPersonConflict` / `findVehicleConflict`.
+- [x] Table de référence des droits par route (`tests/helpers/access-policy.ts`) lue par un test contre le code,
       reprise dans l'architecture §4.
-- [ ] Retirer les `console.log/error` de débogage (cas limite 9) ; valider les corps JSON (cas limite 6).
-- [ ] Convertir `middleware.ts` en `proxy.ts` (D4).
+- [x] Traces de débogage retirées (cas limite 9) ; corps JSON validés par zod (cas limite 6, sauf limitation de
+      débit).
+- [x] `middleware.ts` converti en `src/proxy.ts` (D4), avec redirection des pages seulement (choix du
+      propriétaire) ; essai réel : pages → 307 vers `/login`, API → 401.
+- [x] Validation du propriétaire (2026-10-28), après la réécriture du `README.md`.
 
-**Docs :** architecture §2, §4, §7, §8 ; `edgecase.md` ; mémo §0, §2 ; CLAUDE.md (commandes, Neon) ; README
-(scripts).
+Vérifications de fin d'étape : `npm test` 146 tests verts (7 fichiers) ; `npx tsc --noEmit` 0 erreur ;
+`npm run lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs à l'étape.
+
+Écarts au plan : tests rangés dans `tests/` (dossier existant) et non `test/` ; Vitest 4.1 et non 5 (Vitest 5
+exige `@types/node` 22 ou plus) ; le proxy vit dans `src/` et exclut `/api` (découverte, voir journal) ; la
+capacité est aussi contrôlée à la création d'un trajet (même défaut que le cas limite 1) ; `README.md` converti en
+UTF-8 par le propriétaire puis réécrit en fin d'étape (prévu à l'étape 3, avancé à sa demande).
+
+**Docs :** architecture §1, §2, §4, §5, §7, §8, §9 ; `edgecase.md` (1, 2, 3, 6, 9, 10, 11) ; mémo §0, §1, §2,
+§5 ; CLAUDE.md (commandes, Neon).
 
 ### Étape 2a — Connexion par le portail, sur le poste (G9, G24)
 
@@ -275,7 +312,8 @@ Commit `1436416`.
 5. `POST /api/trips` : un admin fixe `driverEntraId`, mais aussi `driverEmail` et `driverDisplayName`, recopiés
    du corps de la requête sans contrôle.
 6. NextAuth : `idToken` est déjà déduit vrai avec `wellKnown` ; `openid-client` peut basculer en
-   `client_secret_post` (piège 11). Les autres points du §4.4 sont confirmés.
+   `client_secret_post` (piège 11). Les autres points du §4.4 sont confirmés. *Levé par le portail le
+   2026-10-28 : sa découverte annonce `client_secret_basic` en premier.*
 7. `.env.example` : `NEXTAUTH_URL` vaut `http://localhost:3000` (3002 selon D12). `package.json` :
    `@prisma/adapter-pg` n'est utilisée nulle part non plus. `Passenger` a aussi un index sur `userEntraId`.
 8. `entraId` : 31 fichiers hors client généré (« une trentaine » : conforme).
@@ -285,10 +323,11 @@ Commit `1436416`.
 
 **Branchement**
 
-- [ ] Le propriétaire déclare ResaVroom dans le portail, avec l'agent du portail (D8, D9, D12) : restreinte,
+- [x] Le propriétaire déclare ResaVroom dans le portail, avec l'agent du portail (D8, D9, D12) : restreinte,
       rôles `USER` et `ADMIN`, client `dev`. Il pose ensuite `PORTAIL_ISSUER`, `PORTAIL_CLIENT_ID`,
       `PORTAIL_CLIENT_SECRET` et `NEXTAUTH_URL` (`http://localhost:3002`) dans `.env.local`. L'agent ne les
-      demande pas et ne les lit pas.
+      demande pas et ne les lit pas. *Fait le 2026-10-28 (action du propriétaire, sans code), selon le suivi
+      de l'agent du portail : annuaire fermé, grille vide.*
 - [ ] Tests d'abord, vus en échec : rapprochement par `sub`, puis par l'adresse, puis création ; refus d'une
       adresse liée à un autre `sub`, consigné ; rôle recopié à chaque connexion ; garde administrateur qui suit
       le rôle relu en base ; session refusée 8 h après la connexion, même relue entre-temps.
@@ -307,9 +346,10 @@ Commit `1436416`.
       d'administrateurs de `/admin` ; l'admin `TO_BE_CONFIGURED` du seed ; `/api/auth/check-admin` et
       `@azure/msal-node` (D14) ; les variables `AZURE_AD_*` de `.env.example`, remplacées par les trois
       `PORTAIL_*` (noms seulement). La simulation de `/api/users/search` reste jusqu'à l'étape 2b.
-- [ ] Essai sur le poste contre le portail de production, **le propriétaire se connectant lui-même** (aucun
-      compte de test) : connexion, refus sans accès, retrait d'accès (refus à la connexion suivante),
-      déconnexion.
+- [ ] Essai sur le poste contre le portail de production, avec l'agent du portail, **le propriétaire se
+      connectant lui-même** (aucun compte de test). Dans l'ordre : refus (personne n'est dans la grille,
+      c'est attendu) ; l'agent du portail lui donne un rôle, puis connexion ; retrait d'accès (refus à la
+      connexion suivante) ; déconnexion.
 
 **Docs :** architecture §1, §2, §3, §4, §5, §8 ; mémo §0, §1 ; `edgecase.md` (EC 4, EC 5) ; `.env.example` ;
 CLAUDE.md.
@@ -324,6 +364,8 @@ CLAUDE.md.
       `name`, `email` ; `UserSearchAutocomplete`, `StepConfirm` et `AdminEditTripModal` passent sur `sub`.
 - [ ] L'identité d'une autre personne (conducteur choisi par un admin, passager ajouté) ne se recopie plus du
       corps de la requête sans contrôle (écart 5 ci-dessus) : à trancher en début d'étape.
+- [ ] Passagers à la création d'un trajet choisis dans l'annuaire, avec leur `sub` (cas limite 11 : aujourd'hui
+      saisis en texte libre, sans identifiant, donc refusés).
 - [ ] Essai sur le poste, annuaire ouvert sur le client `dev`, puis refermé par le super-admin.
 
 **Docs :** architecture §4 ; mémo §1, §3.
@@ -334,7 +376,7 @@ CLAUDE.md.
 
 - [ ] Corriger les erreurs ESLint ; `npm run lint` sans erreur.
 - [ ] États de chargement, états vides, pages d'erreur ; responsive (375, 768, 1280 px).
-- [ ] `npm run build` sans erreur ; convertir `README.md` en UTF-8 sur accord.
+- [ ] `npm run build` sans erreur. (`README.md` : converti et réécrit à l'étape 1.)
 
 **Docs :** architecture §3, §6, §9 ; README.
 
@@ -401,3 +443,10 @@ décrit change.
 | 2026-10-28 | 1 (D7) | **Projet neuf vérifié par le MCP Neon**, en lecture seule (`list_projects`, `list_organizations`, `list_branches`, `get_database_tables`) : `resavroom` (`wispy-shadow-66847588`), `aws-eu-central-1`, Postgres 18, branche `main`, aucune table (Neon Auth non activée, comme conseillé). Consigné en D7, dans le mémo et `CLAUDE.md`. | **Écart à D7** : créé par l'intégration Neon de Vercel, pas dans la console Neon ; l'organisation Neon est « Vercel: EM-Normandie », gérée par Vercel, et contient aussi `portail-admission`, `vc-bdd` et `neon-bisque-pillar` (jamais touchés). `.env.local` non lu (règle) : contenu de `DATABASE_URL` déclaré par le propriétaire. |
 | 2026-10-28 | 1 (D7, D15) | Le propriétaire déclare `.env.local` : `DATABASE_URL` = adresse pooled, `DATABASE_URL_UNPOOLED` = adresse directe, comme les pose l'intégration Vercel. Lecture de `.env.local` autorisée par le propriétaire mais pas faite : inutile. Gardé tel quel ; recommandation de D15 ajustée (la CLI lira `DATABASE_URL_UNPOOLED`). | Le conseil précédent de l'agent (directe dans `DATABASE_URL`) est abandonné. |
 | 2026-10-28 | 2a (étape 0 du P-01) | **Commit** de l'étape 0 du P-01, avec D7 et l'ajustement de D15, à la demande du propriétaire, pour que l'agent du portail le vérifie (G16). Aucun code. | Commit local sur `dev-claude`, non poussé. Le propriétaire annonce « P-01 fait ». Prochaine étape : 1, sur son feu vert. |
+| 2026-10-28 | 2a (suivi du P-01) | **Suivi de l'agent du portail** (information, pas un nouveau prompt ; contrat portail v1 inchangé) : étape 0 du P-01 (`b31bd91`) vérifiée conforme, sans écart bloquant ; écart 6 levé (la découverte annonce `client_secret_basic` en premier) ; portail en production au commit `45b3763` (annuaire ouvrable client par client). **ResaVroom déclarée** : `resavroom`, « ResaVroom », accueil `http://localhost:3002/`, restreinte, rôles `USER` et `ADMIN`, client `dev` seul (retour `…/api/auth/callback/portail`, déconnexion `…/login`), annuaire fermé, grille vide. Le propriétaire a posé `PORTAIL_ISSUER`, `PORTAIL_CLIENT_ID`, `PORTAIL_CLIENT_SECRET` et `NEXTAUTH_URL` (`http://localhost:3002`) dans `.env.local` (non lu). Première case du branchement cochée ; déroulé de l'essai de fin de 2a précisé ; rendez-vous avec le portail ajoutés au §0. | Description retenue par le portail, différente de la proposition : consignée en D8. `NEXTAUTH_URL` vaut déjà `http://localhost:3002` alors que `npm run dev` écoute 3000 : lancer `npm run dev -- -p 3002` jusqu'à l'étape 2a. |
+| 2026-10-28 | 1 | **Début d'étape.** Décisions du propriétaire (toutes recommandations retenues) : D2 Vitest et Prisma simulé, D3 corriger EC 1 à 3 (le 2 selon le SAD, sans question : la règle y est écrite), D4 renommage à la main, D15 `.env.local` + `DATABASE_URL_UNPOOLED`, contenu de l'étape confirmé avec zod pour EC 6. | — |
+| 2026-10-28 | 1 | **D15 et base.** `prisma.config.ts` modifié ; cible vérifiée par son seul nom d'hôte (`ep-young-silence-ba28ysji`, proxy `c-8`, propre à `resavroom` parmi les quatre projets de l'organisation). Accord du propriétaire, partage de connexion : `migrate deploy` (1 migration) puis `db seed` ; MCP (lecture) : 9 tables, 3 campus, 3 véhicules, 1 paramètre, 1 admin, 0 trajet. | Prisma propose la 8.0 (rc) : ignoré. |
+| 2026-10-28 | 1 | **Tests d'abord.** Vitest 4.1.12 (Vitest 5 refusé par npm : il exige `@types/node` 22+, le projet est en 20 ; monter `@types/node` dépassait l'étape), zod 4.6.7. Sept fichiers de tests ; avant correctifs : 26 en échec, 79 au vert (les règles pures et la table des droits décrivaient déjà le code). Correctifs : `addPassenger` (droits, `canJoinAsPassenger`, transaction `Serializable`), `removePassenger` (SAD), `updateDepartureTime` (conflits, `Serializable`), `createTrip` (places), `findVehicleConflict` (exclusion d'un trajet), schémas zod et `parseJsonBody`, cinq routes d'écriture, deux traces de débogage. Trois tests corrigés après coup parce qu'ils étaient faux (heures calculées à des instants différents ; condition de conflit trop large), pas affaiblis. | **Surprise** : `StepConfirm` envoie les passagers sans identifiant ; la création avec passagers échouait déjà en 500 (nouveau cas limite 11, case en 2b). Doublon de plaque de véhicule → 500 (cas limite 10 étendu). |
+| 2026-10-28 | 1 | **Proxy (D4).** Après le renommage, l'essai réel montre `/dashboard` en 200 sans session ; même résultat avec l'ancien `middleware.ts` : **la redirection n'a jamais fonctionné**, le fichier était à la racine alors que `app/` est dans `src/`. Déplacé dans `src/proxy.ts` ; Next signale alors que le réexport n'est pas reconnu (E903 au build) : fonction écrite avec `withAuth`. Question au propriétaire : pages seulement, `/api` exclue. Test `tests/proxy.test.ts` vu en échec puis vert ; essai réel : pages → 307 vers `/login`, `/api/trips` → 401. | Le serveur de développement survivait à l'arrêt de sa tâche : processus arrêté à la main, après vérification de sa ligne de commande. |
+| 2026-10-28 | 1 | **Fin d'étape.** `npm test` 146 verts ; `tsc` 0 erreur ; `lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs (l'erreur en moins venait du script retiré). Docs : architecture, cas limites, mémo, CLAUDE.md, ce plan. | `README.md` non mis à jour (piège 5). Rien n'est commité. En attente de validation. |
+| 2026-10-28 | 1 | **README et validation.** Le propriétaire convertit `README.md` en UTF-8 ; son contenu était abîmé par des échappements de PowerShell et décrivait Entra ID, une liste blanche et le port 3000 : réécrit sur l'état réel (connexion de développement puis portail, port 3002, tests, limites connues). Piège 5 clos. **Étape 1 validée** par le propriétaire et commitée à sa demande. | Prochaine étape : 2a, sur son feu vert. |

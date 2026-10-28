@@ -10,6 +10,11 @@ import { isAdmin } from "@/lib/auth";
 import { getTripById, cancelTrip, updateDepartureTime, updateTripInfo } from "@/lib/services/trip-service";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
 import { canDeleteTrip, canModifyDepartureTime, canJoinAsPassenger } from "@/lib/validators/permission-checker";
+import { parseJsonBody, updateTripSchema } from "@/lib/validators/request-schemas";
+import { ValidationError } from "@/lib/utils/errors";
+
+/** Champs qu'un PATCH « horaire » peut porter ; tout autre champ envoyé par un admin passe par updateTripInfo. */
+const TIME_ONLY_FIELDS = ["departureTime", "estimatedArrivalTime", "returnDepartureTime", "estimatedReturnArrivalTime", "status"];
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -68,11 +73,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    const body = await request.json();
+    const body = await parseJsonBody(request, updateTripSchema);
     const userIsAdmin = await isAdmin(auth.session.user.entraId);
 
     // Si c'est un admin et qu'on modifie autre chose que l'heure de départ
-    if (userIsAdmin && Object.keys(body).some(k => k !== "departureTime" && k !== "estimatedArrivalTime" && k !== "returnDepartureTime" && k !== "estimatedReturnArrivalTime" && k !== "status")) {
+    if (userIsAdmin && Object.keys(body).some((key) => !TIME_ONLY_FIELDS.includes(key))) {
       const updated = await updateTripInfo(
         id,
         body,
@@ -83,9 +88,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(updated);
     }
 
+    if (!body.departureTime) {
+      throw new ValidationError("departureTime : l'heure de départ est requise.");
+    }
+
     const updated = await updateDepartureTime(
       id,
-      new Date(body.departureTime),
+      body.departureTime,
       auth.session.user.entraId,
       auth.session.user.email,
       userIsAdmin

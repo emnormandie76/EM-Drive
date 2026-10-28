@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession, handleBusinessError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit-service";
+import { parseJsonBody, updateVehicleSchema } from "@/lib/validators/request-schemas";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -15,21 +16,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    const body = await request.json();
+    const body = await parseJsonBody(request, updateVehicleSchema);
 
     const oldVehicle = await prisma.vehicle.findUnique({ where: { id } });
     if (!oldVehicle) {
       return NextResponse.json({ error: "NOT_FOUND", message: "Véhicule non trouvé." }, { status: 404 });
     }
 
+    // Un champ absent du corps reste undefined : Prisma ne le modifie pas
     const vehicle = await prisma.vehicle.update({
       where: { id },
       data: {
-        name: body.name !== undefined ? body.name : undefined,
-        licensePlate: body.licensePlate !== undefined ? body.licensePlate : undefined,
-        seats: body.seats !== undefined ? parseInt(body.seats, 10) : undefined,
-        status: body.status !== undefined ? body.status : undefined,
-        defaultCampusId: body.defaultCampusId !== undefined ? body.defaultCampusId : undefined,
+        name: body.name,
+        licensePlate: body.licensePlate,
+        seats: body.seats,
+        status: body.status,
+        defaultCampusId: body.defaultCampusId,
       },
     });
 

@@ -5,27 +5,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession, handleBusinessError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit-service";
+import { createVehicleSchema, parseJsonBody } from "@/lib/validators/request-schemas";
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdminSession();
   if ("error" in auth) return auth.error;
 
   try {
-    const body = await request.json();
-
-    if (!body.name || !body.licensePlate || !body.seats || !body.defaultCampusId) {
-      return NextResponse.json(
-        { error: "VALIDATION_ERROR", message: "Tous les champs sont requis." },
-        { status: 400 }
-      );
-    }
+    const body = await parseJsonBody(request, createVehicleSchema);
 
     const vehicle = await prisma.vehicle.create({
       data: {
         name: body.name,
         licensePlate: body.licensePlate,
-        seats: parseInt(body.seats, 10),
-        status: body.status || "AVAILABLE",
+        seats: body.seats,
+        status: body.status ?? "AVAILABLE",
         defaultCampusId: body.defaultCampusId,
       },
     });

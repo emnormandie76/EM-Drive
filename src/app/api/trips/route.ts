@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/auth";
 import { createTrip } from "@/lib/services/trip-service";
 import { prisma } from "@/lib/prisma";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
+import { createTripSchema, parseJsonBody } from "@/lib/validators/request-schemas";
 
 // ══════════════════════════════════════════════
 // GET /api/trips
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
   if ("error" in auth) return auth.error;
 
   try {
-    const body = await request.json();
+    const body = await parseJsonBody(request, createTripSchema);
     const userIsAdmin = await isAdmin(auth.session.user.entraId);
 
     const driverEntraId = (userIsAdmin && body.driverEntraId) ? body.driverEntraId : auth.session.user.entraId;
@@ -116,10 +117,10 @@ export async function POST(request: NextRequest) {
       destinationOtherLat: body.destinationOtherLat,
       destinationOtherLng: body.destinationOtherLng,
       returnCampusId: body.returnCampusId,
-      departureTime: new Date(body.departureTime),
-      estimatedArrivalTime: new Date(body.estimatedArrivalTime),
-      returnDepartureTime: body.returnDepartureTime ? new Date(body.returnDepartureTime) : undefined,
-      estimatedReturnArrivalTime: body.estimatedReturnArrivalTime ? new Date(body.estimatedReturnArrivalTime) : undefined,
+      departureTime: body.departureTime,
+      estimatedArrivalTime: body.estimatedArrivalTime,
+      returnDepartureTime: body.returnDepartureTime,
+      estimatedReturnArrivalTime: body.estimatedReturnArrivalTime,
       comment: body.comment,
       passengers: body.passengers,
     });

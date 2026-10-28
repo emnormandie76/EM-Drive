@@ -129,18 +129,20 @@ export async function getVehicleCurrentCampus(vehicleId: string): Promise<Campus
 
 /**
  * Cherche un trajet qui chevauche le créneau [start, end] pour un véhicule.
- * Retourne le trajet conflictuel ou null.
+ * Retourne le trajet conflictuel ou null. `excludeTripId` écarte le trajet qu'on modifie.
  */
 export async function findVehicleConflict(
   vehicleId: string,
   start: Date,
   end: Date,
-  tx?: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
+  tx?: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  excludeTripId?: string
 ): Promise<{ id: string } | null> {
   const db = tx ?? prisma;
   return await db.trip.findFirst({
     where: {
       vehicleId,
+      ...(excludeTripId && { id: { not: excludeTripId } }),
       status: { not: "CANCELLED" },
       departureTime: { lt: end },
       OR: [
