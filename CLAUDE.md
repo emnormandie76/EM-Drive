@@ -36,10 +36,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   v1). L'étape 0 de ce branchement (préparation, sans code) est faite, validée et commitée (2026-10-28) ;
 - **étape 1 faite et validée** (2026-10-28) : Vitest, cas limites 1, 2, 3, 9 et 6 (zod), `src/proxy.ts`,
   projet Neon neuf migré et seedé, `README.md` réécrit ;
-- **étape 2a faite** (2026-10-28), **en attente de validation** : connexion par le portail (fournisseur OIDC
+- **étape 2a faite et validée** (2026-10-28, commit `25a24c0`) : connexion par le portail (fournisseur OIDC
   `portail`, table `people`, colonnes `*_sub`, 8 h fixes, cookies `resavroom.*`, déconnexion par le portail),
   décisions D17 à D23, migration `20261028160000_portail_identity` appliquée, essai réel conforme ;
-- **ensuite**, dans l'ordre : 2b (annuaire), 3 (polish), 4 (mise en ligne).
+- **ensuite**, dans l'ordre : 2b (annuaire, en cours), 3 (polish), 4 (mise en ligne).
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -137,8 +137,10 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 `PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
 ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
-`http://localhost:3002`, annuaire fermé (détails et état de la grille dans le mémo §3). Pour se connecter à
-ResaVroom sur le poste, il faut un rôle dans la grille : le demander au super-admin du portail.
+`http://localhost:3002`, annuaire **ouvert sur le client `dev`** depuis le 2026-10-28 pour l'étape 2b (à
+refermer après son essai : prévenir alors le propriétaire), propriétaire dans la grille en `ADMIN` (détails dans
+le mémo §3). Pour se connecter à ResaVroom sur le poste, il faut un rôle dans la grille : le demander au
+super-admin du portail.
 
 ## Commandes
 

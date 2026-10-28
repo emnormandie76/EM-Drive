@@ -3,8 +3,8 @@
 > **Statut au 2026-10-28 :** étape 0 faite et validée (commit `1436416`). **D1 tranchée** : la connexion se fait
 > par le **portail admission** (G9 ; prompt guidé P-01 du portail, contrat portail v1). L'étape 0 de ce
 > branchement (préparation, sans code) est faite, validée et commitée (2026-10-28). **D7 tranchée** :
-> projet Neon neuf `resavroom`, migré et seedé. **Étape 1 faite et validée le 2026-10-28.** **Étape 2a faite le
-> 2026-10-28** (connexion par le portail, essai réel conforme), **en attente de validation**. Prochaine : 2b.
+> projet Neon neuf `resavroom`, migré et seedé. **Étape 1 faite et validée le 2026-10-28.** **Étape 2a faite et validée le
+> 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). Prochaine : 2b (annuaire).
 > Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Les étapes 3 et 4 restent des ébauches. Le détail de chaque étape
 > est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
@@ -309,7 +309,7 @@ UTF-8 par le propriétaire puis réécrit en fin d'étape (prévu à l'étape 3,
 **Docs :** architecture §1, §2, §4, §5, §7, §8, §9 ; `edgecase.md` (1, 2, 3, 6, 9, 10, 11) ; mémo §0, §1, §2,
 §5 ; CLAUDE.md (commandes, Neon).
 
-### Étape 2a — Connexion par le portail, sur le poste (G9, G24) — faite le 2026-10-28, en attente de validation
+### Étape 2a — Connexion par le portail, sur le poste (G9, G24) ✅ (2026-10-28)
 
 **Source :** prompt guidé P-01 du portail, contrat portail v1 (copie figée au §3 du prompt ; source vivante
 `../portail/docs/architecture/contrat-apps.md`). **Tranchées :** D8 à D14 ; en début d'étape, D17 à D23 (§2.5).
@@ -381,7 +381,7 @@ UTF-8 par le propriétaire puis réécrit en fin d'étape (prévu à l'étape 3,
       connectant lui-même** (aucun compte de test). Dans l'ordre : refus (personne n'est dans la grille,
       c'est attendu) ; l'agent du portail lui donne un rôle, puis connexion ; retrait d'accès (refus à la
       connexion suivante) ; déconnexion. *Fait le 2026-10-28, les quatre temps conformes (journal).*
-- [ ] Validation du propriétaire.
+- [x] Validation du propriétaire (2026-10-28), après le commit `25a24c0`.
 
 Vérifications de fin d'étape : `npm test` 169 tests verts (9 fichiers) ; `npx tsc --noEmit` 0 erreur ;
 `npm run lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs à l'étape 1 (aucun nouveau).
@@ -397,7 +397,9 @@ cas limites 12 et 13 ajoutés ; `README.md` mis à jour (il décrivait la connex
 
 ### Étape 2b — Recherche par l'annuaire du portail
 
-- [ ] Le propriétaire fait ouvrir l'annuaire sur le client `dev` par le super-admin du portail (G22).
+- [x] Le propriétaire fait ouvrir l'annuaire sur le client `dev` par le super-admin du portail (G22). *Ouvert
+      le 2026-10-28 à 16 h 18, selon l'agent du portail ; à refermer après l'essai de 2b (prévenir le
+      propriétaire).*
 - [ ] Tests d'abord contre une imitation qui suit le §3.7 du contrat (aucun réseau, règle 7) : jeton
       `client_credentials` et `scope=directory` gardé jusqu'à `expires_in` (une heure), `q` d'au moins deux
       caractères, 400 `unauthorized_client`, 401, 429.
@@ -407,7 +409,8 @@ cas limites 12 et 13 ajoutés ; `README.md` mis à jour (il décrivait la connex
       corps de la requête sans contrôle (écart 5 ci-dessus) : à trancher en début d'étape.
 - [ ] Passagers à la création d'un trajet choisis dans l'annuaire, avec leur `sub` (cas limite 11 : aujourd'hui
       saisis en texte libre, sans identifiant, donc refusés).
-- [ ] Essai sur le poste, annuaire ouvert sur le client `dev`, puis refermé par le super-admin.
+- [ ] Essai sur le poste, annuaire ouvert sur le client `dev`, puis refermé par le super-admin : **à la fin de
+      l'essai, prévenir le propriétaire** pour qu'il le fasse refermer.
 
 **Docs :** architecture §4 ; mémo §1, §3.
 
@@ -497,6 +500,8 @@ décrit change.
 | 2026-10-28 | 2a | **Code.** Schéma (`Person`, `Role`, `*Sub`, `AuditAction`), migration écrite à la main, comparée hors ligne au SQL que Prisma propose (`migrate diff --from-schema … --to-schema`) : mêmes noms d'index, mais `RENAME` au lieu de supprimer puis recréer les colonnes. Renommage `entraId` → `sub` dans 29 fichiers (piège 6) ; `person-service.ts`, `auth-session.ts`, `portail.ts`, `auth.ts` réécrit, route `logout`, proxy, `/login`, `/unauthorized`, Navbar, menu et compteurs admin, seed, recherche simulée, `.env.example`, script `dev`, `@azure/msal-node` désinstallée. 169 tests verts. | **Surprise** (piège 14) : `tsc` citait les routes retirées par les types périmés de `.next/` ; `next typegen` et effacement de `.next/dev/types` (cache). |
 | 2026-10-28 | 2a | **Migration appliquée**, accord du propriétaire, en partage de connexion : cible vérifiée par son seul nom d'hôte (`ep-young-silence-ba28ysji`) ; `npx prisma migrate deploy` ; `prisma migrate diff --from-config-datasource --to-schema` → migration vide ; MCP Neon (lecture) : 8 tables dont `people`, sans `admins` ni `authorized_services`, énumérations conformes, 2 migrations terminées. | — |
 | 2026-10-28 | 2a | **Contrôle du serveur** (`npm run dev`, `fetch` de Node avec `redirect: "manual"`, sans connexion) : `/login` 200 avec le bouton, message neutre sur `?error=`, `/dashboard` → 307 `/login`, `/api/trips` → 401, fournisseur `portail` avec retour `…/api/auth/callback/portail`, demande de connexion → autorisation du portail de production avec `response_type=code`, `scope=openid profile email`, PKCE S256, `state`, `nonce` ; cookies `resavroom.*` ; déconnexion sans session → 303 `/login`. | Avertissement `DEP0169` (`url.parse`) d'`openid-client`, sans effet. |
-| 2026-10-28 | 2a | **Essai réel** avec le propriétaire, connecté lui-même, et l'agent du portail par son intermédiaire : (1) grille vide → refus du portail, aucun retour sur ResaVroom, base vide ; (2) rôle `ADMIN` donné → connexion, tableau de bord, `/admin` ouvert ; `people` : une personne, `sub` du portail, adresse en minuscules `@em-normandie.fr`, rôle `ADMIN`, heure de connexion ; aucun audit ; (3) accès retiré → nouvelle connexion refusée par le portail, aucun retour ; (4) déconnexion → portail sans confirmation, retour sur `/login`, `/dashboard` renvoie vers `/login`. Serveur arrêté par son port après vérification de sa ligne de commande. | Après le temps 3, `people.role` reste `ADMIN` jusqu'à une connexion que le portail refusera : voulu par le contrat (cas limite 13). Le propriétaire n'est plus dans la grille. |
+| 2026-10-28 | 2a | **Essai réel** avec le propriétaire, connecté lui-même, et l'agent du portail par son intermédiaire : (1) grille vide → refus du portail, aucun retour sur ResaVroom, base vide ; (2) rôle `ADMIN` donné → connexion, tableau de bord, `/admin` ouvert ; `people` : une personne, `sub` du portail, adresse en minuscules `@em-normandie.fr`, rôle `ADMIN`, heure de connexion ; aucun audit ; (3) accès retiré → nouvelle connexion refusée par le portail, aucun retour ; (4) déconnexion → portail sans confirmation, retour sur `/login`, `/dashboard` renvoie vers `/login`. Serveur arrêté par son port après vérification de sa ligne de commande. | Après le temps 3, `people.role` reste `ADMIN` jusqu'à la connexion suivante : voulu par le contrat (cas limite 13). *Corrigé le 2026-10-28 d'après l'agent du portail : l'agent avait écrit ici « le propriétaire n'est plus dans la grille », ce qui était faux ; son accès lui a été rendu à 15 h 56, avec le rôle `ADMIN`, juste après l'essai.* |
 | 2026-10-28 | 2a | **Fin d'étape.** `npm test` 169 verts (9 fichiers) ; `tsc` 0 erreur ; `lint` 17 problèmes, tous antérieurs. Docs : architecture (§1 à §5, §7 à §9, « contrat portail v1 »), mémo (§0 à §3, §5), cas limites (4, 5, 10, 11, nouveaux 12 et 13), `.env.example`, `CLAUDE.md`, `README.md`, ce plan (D17 à D23, piège 14). Compte rendu pour l'agent du portail préparé (rendez-vous de fin de 2a). | Rien n'est commité. En attente de validation. |
 | 2026-10-28 | 2a | **Commit et push** sur `dev-claude` (`origin`), à la demande du propriétaire. | Case « Validation du propriétaire » laissée ouverte : à cocher sur sa validation explicite. |
+| 2026-10-28 | 2a (suivi du portail) | **Message de l'agent du portail**, transmis par le propriétaire (information, pas un nouveau prompt) : le propriétaire est dans la grille de `resavroom` avec le rôle `ADMIN` depuis 15 h 56 (accès rendu juste après l'essai) ; **l'annuaire est ouvert sur le client `dev`** depuis 16 h 18 et renverra une personne ; il sera refermé après l'essai de 2b. Journal, mémo §3 et `CLAUDE.md` corrigés ; première case de l'étape 2b cochée. | Rien vérifié côté portail (aucun appel, règle du portail). **À la fin de l'essai de 2b : prévenir le propriétaire**, pour qu'il fasse refermer l'annuaire. Annuaire ouvert : risque accepté par le portail (G22), le secret du client `dev` du poste lit les noms et adresses des personnes qui ont accès. |
+| 2026-10-28 | 2a | **Étape 2a validée** par le propriétaire. Prompt de départ de l'étape 2b rédigé pour un agent neuf (remis au propriétaire, hors du dépôt). | Corrections de docs de ce jour (journal, mémo §3, `CLAUDE.md`, validation) non commitées au moment de la validation. Prochaine étape : 2b. |
