@@ -19,10 +19,13 @@ const tripType = z.enum(["ONE_WAY", "ROUND_TRIP", "ROUND_TRIP_OTHER"]);
 /** Date et heure ISO (« 2026-11-02T08:00:00.000Z »), convertie en Date. Refuse null et les dates invalides. */
 const dateTime = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
 
+/**
+ * Une personne choisie dans l'annuaire : son sub et son adresse, qui sert à la retrouver (l'annuaire ne
+ * cherche pas par sub). Son nom n'est pas lu : le serveur le prend dans l'annuaire (D24).
+ */
 const passenger = z.object({
   userSub: id,
   userEmail: z.email(),
-  userDisplayName: displayName,
 });
 
 // ══════════════════════════════════════════════
@@ -45,10 +48,9 @@ export const createTripSchema = z
     returnDepartureTime: dateTime.optional(),
     estimatedReturnArrivalTime: dateTime.optional(),
     comment: z.string().max(1000).optional(),
-    // Pris en compte seulement pour un admin (POST /api/trips)
+    // Pris en compte seulement pour un admin (POST /api/trips) ; nom et adresse retenus : ceux de l'annuaire (D24)
     driverSub: id.optional(),
     driverEmail: z.email().optional(),
-    driverDisplayName: displayName.optional(),
     passengers: z.array(passenger).max(8).optional(),
   })
   .refine((trip) => trip.destinationCampusId || trip.destinationOtherLabel, {
@@ -83,23 +85,25 @@ export const updateTripSchema = z.object({
   returnDepartureTime: dateTime.nullable().optional(),
   estimatedReturnArrivalTime: dateTime.nullable().optional(),
   comment: z.string().max(1000).nullable().optional(),
+  // Un nouveau conducteur est vérifié dans l'annuaire ; un conducteur inchangé garde ses valeurs (D24)
   driverSub: id.optional(),
   driverEmail: z.email().optional(),
-  driverDisplayName: displayName.optional(),
 });
 
 export type UpdateTripInput = z.output<typeof updateTripSchema>;
 
-/** POST /api/trips/[id]/passengers : sans addedBy, l'utilisateur s'inscrit lui-même. */
+/**
+ * POST /api/trips/[id]/passengers : sans addedBy, l'utilisateur s'inscrit lui-même. Pour addedBy=DRIVER, le
+ * passager est choisi dans l'annuaire : son sub et son adresse ; son nom vient de l'annuaire (D24).
+ */
 export const addPassengerSchema = z
   .object({
     addedBy: z.enum(["SELF", "DRIVER"]).default("SELF"),
     userSub: id.optional(),
     userEmail: z.email().optional(),
-    userDisplayName: displayName.optional(),
   })
-  .refine((body) => body.addedBy === "SELF" || (body.userSub && body.userEmail && body.userDisplayName), {
-    message: "userSub, userEmail et userDisplayName sont requis pour addedBy=DRIVER.",
+  .refine((body) => body.addedBy === "SELF" || (body.userSub && body.userEmail), {
+    message: "userSub et userEmail sont requis pour addedBy=DRIVER.",
     path: ["addedBy"],
   });
 

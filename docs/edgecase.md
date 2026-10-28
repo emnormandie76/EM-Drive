@@ -2,7 +2,7 @@
 
 > Un cas par entrée, numéroté à vie (jamais renuméroté). État du code concerné :
 > [`architecture/mise-en-production.md`](architecture/mise-en-production.md) §8. Relevé initial du 2026-10-26,
-> mis à jour aux étapes 1 et 2a (2026-10-28) : chaque cas dit si une parade est écrite.
+> mis à jour aux étapes 1, 2a et 2b (2026-10-28) : chaque cas dit si une parade est écrite.
 
 ### Edge Case 1 : Inscription d'un passager sans aucun contrôle de capacité ni d'identité
 - **Contexte :** `POST /api/trips/[id]/passengers`, par n'importe quel utilisateur connecté.
@@ -31,7 +31,7 @@
 ### Edge Case 5 : Fournisseur de connexion de développement
 - **Contexte :** `src/lib/auth.ts`.
 - **Problème :** trois comptes et un mot de passe commun sont codés en dur ; l'administrateur a l'identifiant `TO_BE_CONFIGURED`. Déployé tel quel, n'importe qui connaissant le dépôt peut se connecter en administrateur.
-- **Solution actuelle :** corrigé à l'étape 2a (G9) : le fournisseur de développement, ses comptes, son mot de passe et l'administrateur `TO_BE_CONFIGURED` (code, seed et base) sont retirés. Le seul fournisseur est `portail` (OIDC, PKCE, `state`, `nonce`, client confidentiel) ; le rôle vient du portail et est relu en base. Tests : `tests/auth.test.ts` (un seul fournisseur, ses réglages). Reste simulée jusqu'à l'étape 2b : la recherche de collègues (`/api/users/search`), qui ne donne aucun droit.
+- **Solution actuelle :** corrigé à l'étape 2a (G9) : le fournisseur de développement, ses comptes, son mot de passe et l'administrateur `TO_BE_CONFIGURED` (code, seed et base) sont retirés. Le seul fournisseur est `portail` (OIDC, PKCE, `state`, `nonce`, client confidentiel) ; le rôle vient du portail et est relu en base. Tests : `tests/auth.test.ts` (un seul fournisseur, ses réglages). La recherche de collègues, simulée jusque-là, passe par l'annuaire du portail depuis l'étape 2b.
 - **Risque accepté :** non.
 
 ### Edge Case 6 : Corps de requêtes non validés, aucune limitation de débit
@@ -42,7 +42,7 @@
 
 ### Edge Case 7 : Tous les trajets, avec e-mails, visibles de tout utilisateur connecté
 - **Contexte :** `GET /api/trips`, `GET /api/trips/[id]`.
-- **Problème :** les e-mails des conducteurs et des passagers sont renvoyés à tout utilisateur authentifié.
+- **Problème :** les e-mails des conducteurs et des passagers sont renvoyés à tout utilisateur authentifié. Depuis l'étape 2b, `/api/users/search` rend aussi à tout utilisateur connecté le nom et l'adresse des personnes qui ont accès à ResaVroom (annuaire du portail, quand il est ouvert) ; c'est l'usage prévu par le contrat portail v1 §7 (chercher un passager), sans le rôle (D26).
 - **Solution actuelle :** aucune. Peut être voulu par le métier (covoiturage) : à confirmer par le propriétaire.
 - **Risque accepté :** à décider.
 
@@ -67,7 +67,7 @@
 ### Edge Case 11 : Création d'un trajet avec passagers impossible depuis l'interface
 - **Contexte :** assistant de création (`StepConfirm`), `POST /api/trips`. Relevé à l'étape 1 (2026-10-28).
 - **Problème :** les passagers se saisissent en texte libre (nom et e-mail) et partent sans identifiant (`userSub` depuis l'étape 2a, `userEntraId` avant), que la base exige. Avant l'étape 1, la création échouait en 500 ; depuis, elle est refusée en 400 avec le message « passengers.0.userSub ». La recherche (`UserSearchAutocomplete`) ne sert qu'au choix du conducteur par un admin.
-- **Solution actuelle :** aucune. Parade prévue à l'étape 2b : choisir les passagers dans l'annuaire du portail (`sub`, nom, adresse), comme le conducteur. (Depuis l'étape 2a, le champ s'appelle `userSub`.)
+- **Solution actuelle :** corrigé à l'étape 2b (D24, D27). Les passagers se choisissent dans l'annuaire du portail, par la même recherche que le conducteur ; le conducteur et les passagers déjà choisis ne sont pas proposés, et un passager choisi ensuite comme conducteur sort de la liste. L'écran n'envoie que `userSub` et `userEmail` ; le serveur retrouve chaque passager dans l'annuaire (par son adresse, puis le même `sub`) et en recopie le nom et l'adresse, refuse en 400 une personne absente de l'annuaire (`PERSON_NOT_IN_DIRECTORY`), un passager égal au conducteur ou en double (le doublon donnait une erreur 500). Tests : `tests/directory-routes.test.ts`, `tests/trip-service.test.ts`, `tests/request-schemas.test.ts`. Limite : sans annuaire (fermé, en panne), la création avec passagers répond 503 ; essayé en réel le 2026-10-28 sans passager de bout en bout (une seule personne dans la grille).
 - **Risque accepté :** non (défaut fonctionnel, pas de faille).
 
 ### Edge Case 12 : Adresse déjà portée par une autre personne

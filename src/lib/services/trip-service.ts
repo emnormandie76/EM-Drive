@@ -138,6 +138,10 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
         if (input.passengers.some((p) => p.userSub === input.driverSub)) {
           throw new ValidationError("Le conducteur ne peut pas être passager de son propre trajet.");
         }
+        // Sans ce contrôle, l'unicité (trajet, passager) de la base répondrait par une erreur 500
+        if (new Set(input.passengers.map((p) => p.userSub)).size < input.passengers.length) {
+          throw new ValidationError("Un passager figure deux fois dans la liste.");
+        }
       }
 
       // ── VÉRIF 1 : Véhicule toujours disponible ──
@@ -407,9 +411,12 @@ export async function updateDepartureTime(
   return updated;
 }
 
+/** Modification libre par un admin : le corps validé, plus le nom d'un nouveau conducteur lu dans l'annuaire (D24). */
+export type TripInfoUpdate = UpdateTripInput & { driverDisplayName?: string };
+
 export async function updateTripInfo(
   tripId: string,
-  data: UpdateTripInput,
+  data: TripInfoUpdate,
   actorSub: string,
   actorEmail: string,
   actorIsAdmin: boolean
@@ -421,6 +428,10 @@ export async function updateTripInfo(
 
   if (!actorIsAdmin) {
     throw new PermissionError("Seul un administrateur peut modifier librement toutes les informations d'un trajet.");
+  }
+
+  if (data.driverSub && data.driverSub !== trip.driverSub && trip.passengers.some((p) => p.userSub === data.driverSub)) {
+    throw new ValidationError("Le nouveau conducteur est passager de ce trajet : retirez-le d'abord des passagers.");
   }
 
   const bufferMinutes = await getBufferMinutes();

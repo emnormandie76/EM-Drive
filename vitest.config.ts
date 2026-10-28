@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Next résout « server-only » lui-même, sans paquet (D28) ; hors de Next, le module vide qu'il prend côté serveur
+      "server-only": fileURLToPath(new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)),
     },
   },
   test: {

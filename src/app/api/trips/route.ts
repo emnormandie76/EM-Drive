@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
 import { isAdmin } from "@/lib/auth";
 import { createTrip } from "@/lib/services/trip-service";
+import { resolveChosenPerson } from "@/lib/portail-directory";
 import { prisma } from "@/lib/prisma";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
 import { createTripSchema, parseJsonBody } from "@/lib/validators/request-schemas";
@@ -99,17 +100,23 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await parseJsonBody(request, createTripSchema);
-    const userIsAdmin = await isAdmin(auth.session.user.sub);
+    const { sub, email, name } = auth.session.user;
+    const caller = { sub, email, name };
+    const userIsAdmin = await isAdmin(sub);
 
-    const driverSub = (userIsAdmin && body.driverSub) ? body.driverSub : auth.session.user.sub;
-    const driverEmail = (userIsAdmin && body.driverEmail) ? body.driverEmail : auth.session.user.email;
-    const driverDisplayName = (userIsAdmin && body.driverDisplayName) ? body.driverDisplayName : auth.session.user.name;
+    // Écart 5 (D24) : l'identité d'une autre personne vient de l'annuaire, jamais du corps de la requête
+    const driver = userIsAdmin && body.driverSub
+      ? await resolveChosenPerson({ sub: body.driverSub, email: body.driverEmail }, caller)
+      : caller;
+    const passengers = await Promise.all(
+      (body.passengers ?? []).map((p) => resolveChosenPerson({ sub: p.userSub, email: p.userEmail }, caller))
+    );
 
     const trip = await createTrip({
       vehicleId: body.vehicleId,
-      driverSub,
-      driverEmail,
-      driverDisplayName,
+      driverSub: driver.sub,
+      driverEmail: driver.email,
+      driverDisplayName: driver.name,
       type: body.type,
       originCampusId: body.originCampusId,
       destinationCampusId: body.destinationCampusId,
@@ -122,7 +129,9 @@ export async function POST(request: NextRequest) {
       returnDepartureTime: body.returnDepartureTime,
       estimatedReturnArrivalTime: body.estimatedReturnArrivalTime,
       comment: body.comment,
-      passengers: body.passengers,
+      passengers: passengers.length
+        ? passengers.map((p) => ({ userSub: p.sub, userEmail: p.email, userDisplayName: p.name }))
+        : undefined,
     });
 
     return NextResponse.json(trip, { status: 201 });

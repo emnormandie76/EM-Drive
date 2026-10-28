@@ -14,6 +14,7 @@ import {
   createTrip,
   removePassenger,
   updateDepartureTime,
+  updateTripInfo,
   type CreateTripInput,
 } from "@/lib/services/trip-service";
 import {
@@ -273,5 +274,20 @@ describe("createTrip : passagers (cas limite 1)", () => {
   it("refuse le conducteur parmi les passagers", async () => {
     await expect(createTrip(input([DRIVER]))).rejects.toBeInstanceOf(ValidationError);
     expect(db.trip.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse un passager en double (cas limite 11, D27 : sinon l'unicité de la base répond 500)", async () => {
+    await expect(createTrip(input(["u1", "u1"]))).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateTripInfo : nouveau conducteur (écart 5, D24)", () => {
+  it("refuse un nouveau conducteur déjà passager du trajet", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip({ passengers: [makePassenger({ userSub: "u1" })] }));
+    await expect(
+      updateTripInfo("trip-1", { driverSub: "u1", driverEmail: "u1@em-normandie.fr", driverDisplayName: "U1" }, OTHER, "a@em-normandie.fr", true)
+    ).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.update).not.toHaveBeenCalled();
   });
 });

@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import useSWR from "swr";
 import { Input } from "@/components/ui/Input";
 
+/** Une personne de l'annuaire du portail, telle que la rend /api/users/search (D26). */
 export interface UserSuggestion {
   sub: string;
-  displayName: string;
+  name: string;
   email: string;
 }
 
@@ -14,9 +15,29 @@ interface UserSearchAutocompleteProps {
   onSelect: (user: UserSuggestion | null) => void;
   error?: string;
   defaultValue?: string;
+  /** Personnes à ne pas proposer (le conducteur, les passagers déjà choisis : D27). */
+  excludeSubs?: string[];
+  /** Vide le champ après un choix, pour en faire un autre (passagers). */
+  clearOnSelect?: boolean;
 }
 
-export function UserSearchAutocomplete({ label, placeholder, onSelect, error, defaultValue }: UserSearchAutocompleteProps) {
+/** Une erreur de la recherche (annuaire fermé, 429 : D25) porte le message à afficher. */
+async function fetchSuggestions(url: string): Promise<UserSuggestion[]> {
+  const res = await fetch(url);
+  const body = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(body?.message ?? "La recherche de collègues est indisponible.");
+  return body;
+}
+
+export function UserSearchAutocomplete({
+  label,
+  placeholder,
+  onSelect,
+  error,
+  defaultValue,
+  excludeSubs,
+  clearOnSelect,
+}: UserSearchAutocompleteProps) {
   const [query, setQuery] = useState(defaultValue || "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -29,10 +50,13 @@ export function UserSearchAutocomplete({ label, placeholder, onSelect, error, de
     return () => clearTimeout(handler);
   }, [query]);
 
-  const { data: results, isLoading } = useSWR<UserSuggestion[]>(
+  // Ni nouvel essai ni relecture au retour sur l'onglet : chaque requête interroge l'annuaire du portail
+  const { data, error: searchError, isLoading } = useSWR<UserSuggestion[], Error>(
     debouncedQuery.length >= 2 ? `/api/users/search?q=${encodeURIComponent(debouncedQuery)}` : null,
-    (url: string) => fetch(url).then(res => res.json())
+    fetchSuggestions,
+    { shouldRetryOnError: false, revalidateOnFocus: false }
   );
+  const results = data?.filter((u) => !excludeSubs?.includes(u.sub));
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -54,7 +78,7 @@ export function UserSearchAutocomplete({ label, placeholder, onSelect, error, de
   };
 
   const handleSelect = (user: UserSuggestion) => {
-    setQuery(`${user.displayName} (${user.email})`);
+    setQuery(clearOnSelect ? "" : `${user.name} (${user.email})`);
     setIsOpen(false);
     onSelect(user);
   };
@@ -80,10 +104,12 @@ export function UserSearchAutocomplete({ label, placeholder, onSelect, error, de
         }}>
           {isLoading ? (
             <li style={{ padding: "0.5rem", color: "var(--color-text-muted)", fontSize: "0.9rem" }}>Recherche en cours...</li>
+          ) : searchError ? (
+            <li role="alert" style={{ padding: "0.5rem", color: "var(--color-danger)", fontSize: "0.9rem" }}>{searchError.message}</li>
           ) : results && results.length > 0 ? (
-            results.map((u, i) => (
+            results.map((u) => (
               <li
-                key={i}
+                key={u.sub}
                 onClick={() => handleSelect(u)}
                 style={{
                   padding: "0.5rem", cursor: "pointer", borderRadius: "var(--radius-sm)",
@@ -92,7 +118,7 @@ export function UserSearchAutocomplete({ label, placeholder, onSelect, error, de
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--color-background, #f5f5f5)"}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
               >
-                <span style={{ fontWeight: 500 }}>{u.displayName}</span>
+                <span style={{ fontWeight: 500 }}>{u.name}</span>
                 <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>{u.email}</span>
               </li>
             ))

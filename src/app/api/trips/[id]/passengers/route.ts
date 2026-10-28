@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
 import { isAdmin } from "@/lib/auth";
 import { addPassenger } from "@/lib/services/trip-service";
+import { resolveChosenPerson } from "@/lib/portail-directory";
 import { addPassengerSchema, parseJsonBody } from "@/lib/validators/request-schemas";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -24,12 +25,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // L'utilisateur s'inscrit lui-même
       await addPassenger(tripId, sub, email, name, "SELF", sub, email, userIsAdmin);
     } else {
-      // Ajout par le conducteur (ou un admin) : le service vérifie le droit d'ajouter
+      // Ajout par le conducteur (ou un admin) : le passager vient de l'annuaire (écart 5, D24), jamais du corps ;
+      // le service vérifie le droit d'ajouter
+      const passenger = await resolveChosenPerson({ sub: body.userSub!, email: body.userEmail }, { sub, email, name });
       await addPassenger(
         tripId,
-        body.userSub!,
-        body.userEmail!,
-        body.userDisplayName!,
+        passenger.sub,
+        passenger.email,
+        passenger.name,
         "DRIVER",
         sub,
         email,

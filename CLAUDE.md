@@ -39,7 +39,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
 - **étape 2a faite et validée** (2026-10-28, commit `25a24c0`) : connexion par le portail (fournisseur OIDC
   `portail`, table `people`, colonnes `*_sub`, 8 h fixes, cookies `resavroom.*`, déconnexion par le portail),
   décisions D17 à D23, migration `20261028160000_portail_identity` appliquée, essai réel conforme ;
-- **ensuite**, dans l'ordre : 2b (annuaire, en cours), 3 (polish), 4 (mise en ligne).
+- **étape 2b faite et validée** (2026-10-28) : recherche par l'annuaire du portail
+  (`src/lib/portail-directory.ts`, `server-only`), identité d'une autre personne lue dans l'annuaire (écart 5),
+  passagers choisis dans l'annuaire (cas limite 11), décisions D24 à D28, essai réel conforme, annuaire refermé ;
+- **ensuite**, dans l'ordre : 3 (polish), 4 (mise en ligne).
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -137,9 +140,9 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 `PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
 ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
-`http://localhost:3002`, annuaire **ouvert sur le client `dev`** depuis le 2026-10-28 pour l'étape 2b (à
-refermer après son essai : prévenir alors le propriétaire), propriétaire dans la grille en `ADMIN` (détails dans
-le mémo §3). Pour se connecter à ResaVroom sur le poste, il faut un rôle dans la grille : le demander au
+`http://localhost:3002`, annuaire **fermé** sur le client `dev` (ouvert pour l'étape 2b, refermé le 2026-10-28
+à 16 h 59 ; le rouvrir revient au super-admin), propriétaire dans la grille en `ADMIN` (détails dans le mémo §3).
+Sans annuaire, la recherche de collègues répond 503 : c'est attendu. Pour se connecter à ResaVroom sur le poste, il faut un rôle dans la grille : le demander au
 super-admin du portail.
 
 ## Commandes
@@ -147,7 +150,7 @@ super-admin du portail.
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
-| `npm test` | Vitest : aucun réseau, aucune base (169 tests à la fin de l'étape 2a) |
+| `npm test` | Vitest : aucun réseau, aucune base, portail imité (219 tests à la fin de l'étape 2b) |
 | `npx tsc --noEmit` | contrôle des types (0 erreur) |
 | `npm run lint` | ESLint (17 problèmes depuis l'étape 1, tous antérieurs ; corrigés à l'étape 3) |
 | `npx next typegen` | régénère les types de routes de `.next/types` après le retrait d'une route (sinon `tsc` cite l'ancienne) ; `.next/dev/types`, laissé par `next dev`, se régénère au `next dev` suivant ou peut être effacé (cache ignoré par Git) |

@@ -67,9 +67,14 @@ describe("createTripSchema", () => {
     expect(createTripSchema.safeParse({ ...stepConfirmBody, type: "TELEPORT" }).success).toBe(false);
   });
 
-  it("exige l'identité de chaque passager (cas limite 11 : StepConfirm envoie nom et e-mail seuls)", () => {
+  it("exige le sub de chaque passager (cas limite 11 : avant l'étape 2b, StepConfirm envoyait nom et e-mail seuls)", () => {
     const body = { ...stepConfirmBody, passengers: [{ userEmail: "p@em-normandie.fr", userDisplayName: "P" }] };
     expect(createTripSchema.safeParse(body).success).toBe(false);
+  });
+
+  it("accepte un passager choisi dans l'annuaire : son sub et son adresse, sans nom (D24, D27)", () => {
+    const body = { ...stepConfirmBody, passengers: [{ userSub: "sub-p", userEmail: "p@em-normandie.fr" }] };
+    expect(createTripSchema.safeParse(body).success).toBe(true);
   });
 
   it("ignore les champs inconnus", () => {
@@ -118,6 +123,14 @@ describe("addPassengerSchema", () => {
   it("accepte un ajout complet par le conducteur", () => {
     const body = { addedBy: "DRIVER", userSub: "u1", userEmail: "u1@em-normandie.fr", userDisplayName: "U1" };
     expect(addPassengerSchema.safeParse(body).success).toBe(true);
+  });
+
+  it("accepte un ajout par le conducteur avec le sub et l'adresse seuls : le nom vient de l'annuaire (D24)", () => {
+    expect(addPassengerSchema.safeParse({ addedBy: "DRIVER", userSub: "u1", userEmail: "u1@em-normandie.fr" }).success).toBe(true);
+  });
+
+  it("exige l'adresse pour un ajout par le conducteur : l'annuaire cherche par adresse, pas par sub (D24)", () => {
+    expect(addPassengerSchema.safeParse({ addedBy: "DRIVER", userSub: "u1" }).success).toBe(false);
   });
 
   it("refuse une autre valeur de addedBy", () => {

@@ -7,16 +7,32 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
 import { isAdmin } from "@/lib/auth";
-import { getTripById, cancelTrip, updateDepartureTime, updateTripInfo } from "@/lib/services/trip-service";
+import { getTripById, cancelTrip, updateDepartureTime, updateTripInfo, type TripInfoUpdate } from "@/lib/services/trip-service";
+import { resolveChosenPerson, type PersonIdentity } from "@/lib/portail-directory";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
 import { canDeleteTrip, canModifyDepartureTime, canJoinAsPassenger } from "@/lib/validators/permission-checker";
-import { parseJsonBody, updateTripSchema } from "@/lib/validators/request-schemas";
+import { parseJsonBody, updateTripSchema, type UpdateTripInput } from "@/lib/validators/request-schemas";
 import { ValidationError } from "@/lib/utils/errors";
 
 /** Champs qu'un PATCH « horaire » peut porter ; tout autre champ envoyé par un admin passe par updateTripInfo. */
 const TIME_ONLY_FIELDS = ["departureTime", "estimatedArrivalTime", "returnDepartureTime", "estimatedReturnArrivalTime", "status"];
 
 type RouteParams = { params: Promise<{ id: string }> };
+
+/**
+ * Écart 5 (D24) : un nouveau conducteur est vérifié dans l'annuaire, qui donne son nom et son adresse ; un
+ * conducteur inchangé (la modale admin le renvoie à chaque enregistrement) garde ses valeurs en base, sans appel.
+ */
+async function withVerifiedDriver(tripId: string, body: UpdateTripInput, caller: PersonIdentity): Promise<TripInfoUpdate> {
+  const { driverSub, driverEmail, ...rest } = body;
+  if (!driverSub) return rest;
+
+  const trip = await getTripById(tripId);
+  if (!trip || trip.driverSub === driverSub) return rest;
+
+  const driver = await resolveChosenPerson({ sub: driverSub, email: driverEmail }, caller);
+  return { ...rest, driverSub: driver.sub, driverEmail: driver.email, driverDisplayName: driver.name };
+}
 
 // ══════════════════════════════════════════════
 // GET /api/trips/[id]
@@ -74,13 +90,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await parseJsonBody(request, updateTripSchema);
-    const userIsAdmin = await isAdmin(auth.session.user.sub);
+    const { sub, email, name } = auth.session.user;
+    const userIsAdmin = await isAdmin(sub);
 
     // Si c'est un admin et qu'on modifie autre chose que l'heure de départ
     if (userIsAdmin && Object.keys(body).some((key) => !TIME_ONLY_FIELDS.includes(key))) {
       const updated = await updateTripInfo(
         id,
-        body,
+        await withVerifiedDriver(id, body, { sub, email, name }),
         auth.session.user.sub,
         auth.session.user.email,
         userIsAdmin

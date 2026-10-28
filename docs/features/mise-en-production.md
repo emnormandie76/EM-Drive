@@ -4,7 +4,9 @@
 > par le **portail admission** (G9 ; prompt guidé P-01 du portail, contrat portail v1). L'étape 0 de ce
 > branchement (préparation, sans code) est faite, validée et commitée (2026-10-28). **D7 tranchée** :
 > projet Neon neuf `resavroom`, migré et seedé. **Étape 1 faite et validée le 2026-10-28.** **Étape 2a faite et validée le
-> 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). Prochaine : 2b (annuaire).
+> 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). **Étape 2b faite et validée le
+> 2026-10-28** (recherche par l'annuaire, écart 5, cas limite 11 ; essai réel conforme, annuaire refermé).
+> Prochaine : 3.
 > Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Les étapes 3 et 4 restent des ébauches. Le détail de chaque étape
 > est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
@@ -168,6 +170,18 @@ Toutes par le propriétaire, recommandation retenue. Base relue avant (SELECT su
 | D21 | Admin `TO_BE_CONFIGURED` et données des comptes simulés | **Rien à reprendre** : l'admin du seed disparaît avec `admins`, le seed n'en crée plus, aucun trajet n'existe. Le premier administrateur est la personne qui reçoit `ADMIN` du portail. |
 | D22 | Où faire le rapprochement du contrat §3.2 | **Rappel `signIn`** : rapprochement, écriture en base, refus consigné et renvoyé vers `/unauthorized`. **Rappel `jwt`** : pose `sub`, rôle (affichage), heure de connexion et `id_token` à la connexion, refuse le jeton 8 h après ; il ne lit pas la base. *Écart au texte du prompt de l'étape (« rappel jwt »)* : NextAuth v4 ne laisse que `signIn` choisir la page d'un refus. |
 | D23 | Déconnexion par le portail | **Route serveur `POST /api/auth/logout`**, appelée par un formulaire : lit l'`id_token` dans le cookie, efface la session, renvoie (303) vers `end_session_endpoint` de la découverte avec `id_token_hint`, `client_id`, `post_logout_redirect_uri` ; vers `/login` sans session ou si le portail ne répond pas. |
+
+### 2.6. Tranchées au début de l'étape 2b (2026-10-28)
+
+Toutes par le propriétaire, recommandation retenue. Source : contrat portail v1 §7 (copie figée au §3.7 du P-01).
+
+| # | Question | Réponse |
+|---|---|---|
+| D24 | Écart 5 : d'où le serveur tire-t-il l'identité d'une autre personne (conducteur choisi par un admin, à la création ou en modification ; passagers à la création ; passager ajouté par le conducteur), alors que l'annuaire ne cherche pas par `sub` ? | **Revérifier dans l'annuaire.** L'écran n'envoie que le `sub` et l'adresse ; le serveur interroge l'annuaire avec `q` = cette adresse, garde l'entrée au `sub` identique et recopie le nom et l'adresse rendus par le portail ; introuvable → 400. L'appelant lui-même vient de sa session ; un conducteur inchangé (PATCH de la modale admin) garde ses valeurs en base, sans appel. Annuaire fermé ou en panne → 503 pour ces écritures. Écarté : un jeton de sélection signé (un mécanisme de plus ; un retrait d'accès ignoré pendant sa vie). |
+| D25 | Ce que rend `/api/users/search` quand l'annuaire ne répond pas (fermé, 401 après un jeton neuf, 429, panne, délai) | **Erreur explicite** : 503 `DIRECTORY_UNAVAILABLE` (fermé, 401 répété, panne, délai de 5 s, réponse illisible) ou 429 `DIRECTORY_RATE_LIMITED`, avec un message en français que la liste de suggestions affiche ; une ligne de journal serveur avec le seul motif, jamais le jeton, le secret, un nom ou une adresse. Écarté : une liste vide silencieuse. |
+| D26 | Forme de la réponse de la recherche | **`[{ sub, name, email }]`, sans le rôle** (le contrat demande de ne garder que le nécessaire, et le rôle dirait à tout utilisateur qui est administrateur). Les écrans passent de `displayName` à `name`. |
+| D27 | Choix des passagers dans `StepConfirm` (cas limite 11) | **Par la recherche de l'annuaire**, le conducteur (l'appelant, ou celui que l'admin choisit) et les personnes déjà ajoutées **masqués** des suggestions ; un passager choisi ensuite comme conducteur est retiré de la liste, avec un message. L'écran envoie `{ userSub, userEmail }` par passager (D24). Le serveur refuse quand même en 400 un passager égal au conducteur ou en double. |
+| D28 | Garantir que le module qui détient `PORTAIL_CLIENT_SECRET` n'est jamais importé par un composant client | **`import "server-only"`, sans paquet** : Next 16 le résout lui-même (installation facultative selon sa doc, types fournis par `next`) ; module à part, `src/lib/portail-directory.ts` ; Vitest reçoit un alias vers le module vide de Next. Écarté : un test des importations, sans marqueur. |
 
 ---
 
@@ -395,24 +409,42 @@ cas limites 12 et 13 ajoutés ; `README.md` mis à jour (il décrivait la connex
 **Docs :** architecture §1, §2, §3, §4, §5, §7, §8, §9 ; mémo §0, §1, §2, §3, §5 ; `edgecase.md` (EC 4, 5, 10, 11,
 12, 13) ; `.env.example` ; CLAUDE.md ; `README.md`.
 
-### Étape 2b — Recherche par l'annuaire du portail
+### Étape 2b — Recherche par l'annuaire du portail ✅ (2026-10-28)
+
+**Source :** contrat portail v1 §7 (copie figée au §3.7 du P-01). **Tranchées en début d'étape :** D24 à D28 (§2.6).
 
 - [x] Le propriétaire fait ouvrir l'annuaire sur le client `dev` par le super-admin du portail (G22). *Ouvert
-      le 2026-10-28 à 16 h 18, selon l'agent du portail ; à refermer après l'essai de 2b (prévenir le
-      propriétaire).*
-- [ ] Tests d'abord contre une imitation qui suit le §3.7 du contrat (aucun réseau, règle 7) : jeton
+      le 2026-10-28 à 16 h 18, selon l'agent du portail ; refermé à 16 h 59 après l'essai (dernière case).*
+- [x] Tests d'abord contre une imitation qui suit le §3.7 du contrat (aucun réseau, règle 7) : jeton
       `client_credentials` et `scope=directory` gardé jusqu'à `expires_in` (une heure), `q` d'au moins deux
-      caractères, 400 `unauthorized_client`, 401, 429.
-- [ ] `/api/users/search` appelle l'annuaire côté serveur, avec le client de son environnement, et rend `sub`,
-      `name`, `email` ; `UserSearchAutocomplete`, `StepConfirm` et `AdminEditTripModal` passent sur `sub`.
-- [ ] L'identité d'une autre personne (conducteur choisi par un admin, passager ajouté) ne se recopie plus du
-      corps de la requête sans contrôle (écart 5 ci-dessus) : à trancher en début d'étape.
-- [ ] Passagers à la création d'un trajet choisis dans l'annuaire, avec leur `sub` (cas limite 11 : aujourd'hui
-      saisis en texte libre, sans identifiant, donc refusés).
-- [ ] Essai sur le poste, annuaire ouvert sur le client `dev`, puis refermé par le super-admin : **à la fin de
-      l'essai, prévenir le propriétaire** pour qu'il le fasse refermer.
+      caractères, 400 `unauthorized_client`, 401, 429. (`tests/helpers/portail-fake.ts`,
+      `tests/portail-directory.test.ts`, `tests/directory-routes.test.ts`, ajouts aux tests des schémas et du
+      service : 45 en échec contre l'ancien code, dont les 24 du module absent.)
+- [x] `/api/users/search` appelle l'annuaire côté serveur, avec le client de son environnement, et rend `sub`,
+      `name`, `email` (D26) ; `UserSearchAutocomplete`, `StepConfirm` et `AdminEditTripModal` passent sur `sub`
+      et `name`. Module `src/lib/portail-directory.ts`, `server-only` (D28) ; erreurs 503 et 429 (D25).
+- [x] L'identité d'une autre personne (conducteur choisi par un admin, passager ajouté) ne se recopie plus du
+      corps de la requête sans contrôle (écart 5 ci-dessus) : relue dans l'annuaire (D24), dans les trois routes.
+- [x] Passagers à la création d'un trajet choisis dans l'annuaire, avec leur `sub` (cas limite 11) ; conducteur
+      et doublons masqués et refusés (D27).
+- [x] Essai sur le poste, annuaire ouvert sur le client `dev`, puis refermé : (1) recherche, (2) un admin choisit
+      le conducteur dans l'annuaire, (3) écart 5 et passager égal au conducteur refusés, puis fermeture et
+      comportement « annuaire fermé ». *Fait le 2026-10-28, conforme (journal) ; passager de bout en bout non
+      essayé en réel (une seule personne dans la grille, choix du propriétaire).*
+- [x] Validation du propriétaire (2026-10-28) ; commit à sa demande, le même jour.
 
-**Docs :** architecture §4 ; mémo §1, §3.
+Vérifications de fin d'étape : `npm test` 219 tests verts (11 fichiers) ; `npx tsc --noEmit` 0 erreur ;
+`npm run lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs à l'étape 1 (aucun nouveau). Aucune
+migration.
+
+Écarts au plan : `updateTripInfo` refuse aussi un nouveau conducteur qui est passager du trajet, et la modale
+admin ne propose pas les passagers comme conducteur (même règle que « passager égal au conducteur », relevée en
+écrivant l'écart 5) ; `createTrip` refuse un passager en double (sinon 500) ; l'annuaire a été refermé par
+l'agent, dans le Chrome du propriétaire et à sa demande, et non par le super-admin lui-même ; le temps 3 de
+l'essai a été joué par l'agent dans la session du propriétaire (Claude in Chrome), à sa demande.
+
+**Docs :** architecture §1, §2.1 (et §2.1 bis, nouveau), §2.4, §3, §4, §4.1, §7, §8, §9 ; mémo §0, §1, §3, §5 ;
+`edgecase.md` (5, 7, 11) ; `CLAUDE.md` ; `README.md`.
 
 ### Étape 3 — Polish (ébauche, phase 11 du SAD)
 
@@ -505,3 +537,12 @@ décrit change.
 | 2026-10-28 | 2a | **Commit et push** sur `dev-claude` (`origin`), à la demande du propriétaire. | Case « Validation du propriétaire » laissée ouverte : à cocher sur sa validation explicite. |
 | 2026-10-28 | 2a (suivi du portail) | **Message de l'agent du portail**, transmis par le propriétaire (information, pas un nouveau prompt) : le propriétaire est dans la grille de `resavroom` avec le rôle `ADMIN` depuis 15 h 56 (accès rendu juste après l'essai) ; **l'annuaire est ouvert sur le client `dev`** depuis 16 h 18 et renverra une personne ; il sera refermé après l'essai de 2b. Journal, mémo §3 et `CLAUDE.md` corrigés ; première case de l'étape 2b cochée. | Rien vérifié côté portail (aucun appel, règle du portail). **À la fin de l'essai de 2b : prévenir le propriétaire**, pour qu'il fasse refermer l'annuaire. Annuaire ouvert : risque accepté par le portail (G22), le secret du client `dev` du poste lit les noms et adresses des personnes qui ont accès. |
 | 2026-10-28 | 2a | **Étape 2a validée** par le propriétaire. Prompt de départ de l'étape 2b rédigé pour un agent neuf (remis au propriétaire, hors du dépôt). | Corrections de docs de ce jour (journal, mémo §3, `CLAUDE.md`, validation) non commitées au moment de la validation. Prochaine étape : 2b. |
+| 2026-10-28 | 2b | **Départ vérifié.** `dev-claude` sur `25a24c0` ; arbre non propre : les corrections de docs du jour (validation de la 2a, journal, mémo §3, `CLAUDE.md`), signalées au propriétaire, puis commitées à part à sa demande (`0e02221`, sans push). `npm test` 169 verts (9 fichiers) ; `npx tsc --noEmit` 0 erreur ; `npm run lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs. Lus : ce plan, l'architecture, le mémo, les cas limites, le contrat portail v1 §7 et le P-01 §3.7 ; guides Next `route.md`, `05-server-and-client-components.md` (« server-only »), `data-security.md`. Pour information, en lecture seule, le code de l'annuaire du portail : filtre `ILIKE` sur le nom ou l'adresse, secrets de 48 caractères alphanumériques, 120 requêtes par minute. | Session sur Opus 5.5. |
+| 2026-10-28 | 2b | **Décisions de début d'étape** : D24 à D28 (§2.6), toutes les recommandations retenues. | — |
+| 2026-10-28 | 2b | **Tests d'abord, vus en échec.** Imitation du portail (`tests/helpers/portail-fake.ts` : découverte, jeton vérifié en `client_secret_basic`, annuaire filtré comme celui du portail, pannes réglables) ; `tests/portail-directory.test.ts` (24) ; `tests/directory-routes.test.ts` (21) ; 3 tests ajoutés aux schémas, 2 au service. Contre l'ancien code : 45 en échec (24 : module absent ; 17 routes ; 2 schémas ; 2 service), 4 au vert (comportements à garder : 401, moins de deux caractères, conducteur non admin, création sans annuaire). Un test qui passait pour une mauvaise raison (refus du schéma, pas de l'annuaire) a été resserré sur le code `PERSON_NOT_IN_DIRECTORY`. Secret fictif : un deux-points et l'exemple de l'annexe B de la RFC 6749. | — |
+| 2026-10-28 | 2b | **Code.** `src/lib/portail-directory.ts` (`server-only`), trois erreurs métier (503, 429, 400), route de recherche, `resolveChosenPerson` dans `POST /api/trips`, `PATCH /api/trips/[id]` et `POST /api/trips/[id]/passengers`, schémas (le nom n'est plus lu), `createTrip` (doublon), `updateTripInfo` (nouveau conducteur passager), `UserSearchAutocomplete`, `StepConfirm`, `AdminEditTripModal`, alias Vitest. 219 tests verts ; `tsc` 0 erreur ; lint inchangé. | `tsc` : les routes ont un type de retour qui admet `undefined` (union de `requireAuthSession`), déjà contourné à l'étape 1 ; le nouveau test enveloppe les routes. |
+| 2026-10-28 | 2b | **Contrôle du serveur** (`npm run dev`, sans connexion) : la route compile avec `server-only` sous Turbopack ; `/api/users/search` → 401 sans appel au portail ; `/trips/new` → 307 `/login`. | — |
+| 2026-10-28 | 2b | **Essai réel**, le propriétaire connecté lui-même : (1) recherche : côté passagers, le propriétaire (conducteur) n'est pas proposé ; côté conducteur (admin, « pour vous » décoché), il apparaît avec son adresse ; journal : une recherche en 200 (416 ms, jeton compris), aucune erreur ; (2) accord du propriétaire, il se choisit comme conducteur et confirme : 201 ; base (SELECT) : un trajet `SCHEDULED`, conducteur = sa ligne de `people` (même `sub`, adresse, nom), aucun passager, audit `TRIP_CREATED` ; (3) à sa demande, l'agent joue dans sa session (Claude in Chrome, `fetch` depuis la page) trois créations forgées : conducteur au `sub` inventé avec son adresse → 400 `PERSON_NOT_IN_DIRECTORY` ; passager égal au conducteur → 400 `VALIDATION_ERROR` ; passager au `sub` inventé → 400 `PERSON_NOT_IN_DIRECTORY` ; base inchangée (1 trajet, 0 passager, 1 audit). Choix du propriétaire : pas de passager de bout en bout (une seule personne dans la grille) ; trajet d'essai laissé en place. | Au temps 1, la seconde recherche (même texte) est venue du cache du navigateur (SWR), sans requête. Le choix « soi-même comme conducteur » passe par la session, pas par l'annuaire : la vérification par l'annuaire n'a été vue en réel qu'au temps 3. Le message d'erreur affiché par la liste (D25) n'a pas été regardé à l'écran en réel (vérifié par l'API). |
+| 2026-10-28 | 2b | **Annuaire refermé** à 16 h 59, à la demande du propriétaire, par l'agent dans le Chrome du propriétaire (administration du portail, fiche ResaVroom, client « Dev (poste) », « Fermer l'annuaire » ; la page affiche ensuite « Annuaire : fermé »). Rien d'autre touché dans le portail ; aucun MCP sur ses ressources. Vérifié aussitôt depuis la session du propriétaire : deux recherches → 503 `DIRECTORY_UNAVAILABLE` ; journal du serveur : `[ANNUAIRE] Indisponible : annuaire fermé sur ce client (unauthorized_client).`, sans autre donnée. Serveur arrêté par son port après vérification de sa ligne de commande ; onglet du portail fermé. | **Écart** : le plan voulait le super-admin, puis un avertissement au propriétaire ; le propriétaire (connecté au portail avec le menu d'administration) a demandé à l'agent de le faire. À signaler à l'agent du portail (compte rendu). |
+| 2026-10-28 | 2b | **Fin d'étape.** `npm test` 219 verts (11 fichiers) ; `tsc` 0 erreur ; `lint` 17 problèmes, tous antérieurs. Aucune migration, aucune dépendance. Docs : architecture (§1, §2.1, §2.1 bis nouveau, §2.4, §3, §4, §4.1, §7, §8, §9, « contrat portail v1 »), mémo (§0, §1, §3, §5), cas limites (5, 7, 11), `CLAUDE.md`, `README.md`, ce plan (§2.6, étape 2b). Compte rendu pour l'agent du portail préparé. | Rien n'est commité (le commit `0e02221` ne porte que les docs de la 2a). En attente de validation. |
+| 2026-10-28 | 2b | **Étape 2b validée** par le propriétaire, et commitée à sa demande sur `dev-claude` (sans push). | Prochaine étape : 3, sur son feu vert. Le compte rendu pour l'agent du portail est remis au propriétaire. |

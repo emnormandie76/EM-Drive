@@ -17,6 +17,8 @@ de Caen et de Paris.
 ### Réservation et covoiturage
 
 - Recherche d'un véhicule libre, ou d'un trajet existant à rejoindre comme passager.
+- Passagers (et, pour un administrateur, le conducteur) choisis dans l'annuaire du portail admission : seules
+  les personnes qui ont accès à ResaVroom y figurent.
 - Trois types de trajet : aller simple entre campus, aller-retour entre campus, aller-retour vers une adresse
   libre.
 - Adresses par l'API BAN (api-adresse.data.gouv.fr), durées par OpenRouteService (estimation à vol d'oiseau
@@ -114,10 +116,11 @@ pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de c
 
 ## Limites connues
 
-- Créer un trajet avec passagers depuis l'assistant ne fonctionne pas encore (cas limite 11, prévu à
-  l'étape 2b) ; les passagers peuvent rejoindre le trajet une fois créé.
-- La recherche de collègues est simulée (personnes fictives) jusqu'à l'étape 2b, qui la fera passer par
-  l'annuaire du portail.
+- La recherche de collègues passe par l'annuaire du portail, que le super-admin ouvre client par client.
+  **Sur le poste, il est fermé** (refermé le 2026-10-28 après l'essai de l'étape 2b) : la recherche affiche
+  « La recherche de collègues est indisponible… », et l'on ne peut ni ajouter de passager à la création d'un
+  trajet ni choisir un autre conducteur. Créer un trajet pour soi, sans passager, marche toujours ; les
+  passagers peuvent rejoindre le trajet une fois créé.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 
 ## Documentation

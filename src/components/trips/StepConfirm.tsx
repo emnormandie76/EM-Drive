@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
 import { TripSearchParams } from "./StepSearch";
-import { Car, MapPin, Calendar, Clock, UserPlus, Info } from "lucide-react";
+import { Car, MapPin, Calendar, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -14,11 +14,6 @@ import {
   UserSearchAutocomplete,
   UserSuggestion,
 } from "@/components/ui/UserSearchAutocomplete";
-
-interface PassengerInput {
-  name: string;
-  email: string;
-}
 
 interface StepConfirmVehicle {
   id: string;
@@ -43,9 +38,8 @@ export function StepConfirm({
   isLoading,
 }: StepConfirmProps) {
   const [comment, setComment] = useState("");
-  const [passengers, setPassengers] = useState<PassengerInput[]>([]);
-  const [newPassengerName, setNewPassengerName] = useState("");
-  const [newPassengerEmail, setNewPassengerEmail] = useState("");
+  // Passagers choisis dans l'annuaire du portail (cas limite 11, D27)
+  const [passengers, setPassengers] = useState<UserSuggestion[]>([]);
 
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.isAdmin === true;
@@ -53,9 +47,19 @@ export function StepConfirm({
   const [selectedDriver, setSelectedDriver] = useState<UserSuggestion | null>(
     null,
   );
+  const driverSub = isForMe ? session?.user?.sub : selectedDriver?.sub;
 
-  const handleAddPassenger = () => {
-    if (!newPassengerName || !newPassengerEmail) return;
+  /** Le conducteur ne peut pas être passager (D27) : s'il figurait parmi eux, il en sort, avec un message. */
+  const assignDriver = (newDriverSub: string | undefined) => {
+    const former = passengers.find((p) => p.sub === newDriverSub);
+    if (!former) return;
+    setPassengers(passengers.filter((p) => p.sub !== newDriverSub));
+    toast.info(`${former.name} conduit ce trajet et ne figure plus parmi les passagers.`);
+  };
+
+  const handleAddPassenger = (user: UserSuggestion | null) => {
+    // Le conducteur et les passagers déjà choisis ne sont pas proposés (excludeSubs)
+    if (!user || user.sub === driverSub || passengers.some((p) => p.sub === user.sub)) return;
     // La limite de passagers dépend du véhicule (si seats = 5, on a le conducteur + 4 passagers)
     if (passengers.length >= vehicle.seats - 1) {
       toast.error(
@@ -63,12 +67,7 @@ export function StepConfirm({
       );
       return;
     }
-    setPassengers([
-      ...passengers,
-      { name: newPassengerName, email: newPassengerEmail },
-    ]);
-    setNewPassengerName("");
-    setNewPassengerEmail("");
+    setPassengers([...passengers, user]);
   };
 
   const handleRemovePassenger = (index: number) => {
@@ -93,15 +92,14 @@ export function StepConfirm({
       estimatedReturnArrivalTime:
         params.estimatedReturnArrivalTime?.toISOString(),
       comment,
+      // Le sub et l'adresse seulement : le serveur relit le nom et l'adresse dans l'annuaire (D24)
       driverSub:
         !isForMe && selectedDriver ? selectedDriver.sub : undefined,
       driverEmail:
         !isForMe && selectedDriver ? selectedDriver.email : undefined,
-      driverDisplayName:
-        !isForMe && selectedDriver ? selectedDriver.displayName : undefined,
       passengers: passengers.map((p) => ({
+        userSub: p.sub,
         userEmail: p.email,
-        userDisplayName: p.name,
       })),
     };
 
@@ -308,7 +306,10 @@ export function StepConfirm({
             <input
               type="checkbox"
               checked={isForMe}
-              onChange={(e) => setIsForMe(e.target.checked)}
+              onChange={(e) => {
+                setIsForMe(e.target.checked);
+                assignDriver(e.target.checked ? session?.user?.sub : selectedDriver?.sub);
+              }}
               style={{ width: "16px", height: "16px" }}
             />
             <span>Ce trajet est pour vous</span>
@@ -321,7 +322,10 @@ export function StepConfirm({
               </label>
               <UserSearchAutocomplete
                 placeholder="Ex: Jean Dupont"
-                onSelect={(user) => setSelectedDriver(user)}
+                onSelect={(user) => {
+                  setSelectedDriver(user);
+                  assignDriver(user?.sub);
+                }}
               />
               <p
                 className="text-sm"
@@ -355,7 +359,7 @@ export function StepConfirm({
 
         {passengers.map((p, i) => (
           <div
-            key={i}
+            key={p.sub}
             className="flex justify-between items-center bg-[var(--color-surface)] p-2 mb-2 rounded border border-[var(--color-border)]"
           >
             <div>
@@ -375,25 +379,16 @@ export function StepConfirm({
         ))}
 
         {passengers.length < vehicle.seats - 1 && (
-          <div className="flex gap-2 items-end mt-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Nom du passager"
-                value={newPassengerName}
-                onChange={(e) => setNewPassengerName(e.target.value)}
-              />
-            </div>
-            <div className="flex-1">
-              <Input
-                placeholder="Email professionnel"
-                type="email"
-                value={newPassengerEmail}
-                onChange={(e) => setNewPassengerEmail(e.target.value)}
-              />
-            </div>
-            <Button variant="secondary" onClick={handleAddPassenger}>
-              <UserPlus size={18} />
-            </Button>
+          <div className="mt-4">
+            <UserSearchAutocomplete
+              placeholder="Ajouter un passager : nom ou adresse"
+              excludeSubs={[
+                ...(driverSub ? [driverSub] : []),
+                ...passengers.map((p) => p.sub),
+              ]}
+              clearOnSelect
+              onSelect={handleAddPassenger}
+            />
           </div>
         )}
       </div>

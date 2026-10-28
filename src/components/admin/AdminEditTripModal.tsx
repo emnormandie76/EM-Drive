@@ -104,7 +104,7 @@ export function AdminEditTripModal({
       if (trip.driverSub) {
         setDriver({
           sub: trip.driverSub,
-          displayName: trip.driverDisplayName || "",
+          name: trip.driverDisplayName || "",
           email: trip.driverEmail || "",
         });
       } else {
@@ -196,10 +196,11 @@ export function AdminEditTripModal({
       status,
     };
 
+    // Le sub et l'adresse seulement : un nouveau conducteur est relu dans l'annuaire, un conducteur inchangé
+    // garde ses valeurs en base (D24)
     if (driver) {
       payload.driverSub = driver.sub;
       payload.driverEmail = driver.email;
-      payload.driverDisplayName = driver.displayName;
     }
 
     if (destinationCampusId) {
@@ -271,6 +272,8 @@ export function AdminEditTripModal({
                 ? `${trip.driverDisplayName} (${trip.driverEmail})`
                 : ""
             }
+            // Un passager du trajet ne peut pas en devenir le conducteur (le serveur le refuse aussi)
+            excludeSubs={trip?.passengers?.map((p: { userSub: string }) => p.userSub)}
             onSelect={(user) => setDriver(user)}
           />
         </div>

@@ -87,3 +87,43 @@ export class ValidationError extends BusinessError {
     this.name = "ValidationError";
   }
 }
+
+/**
+ * L'annuaire du portail ne répond pas : fermé sur ce client, jeton refusé, panne ou délai dépassé (D25).
+ */
+export class DirectoryUnavailableError extends BusinessError {
+  constructor() {
+    super(
+      "La recherche de collègues est indisponible : l'annuaire du portail ne répond pas. Réessayez plus tard.",
+      "DIRECTORY_UNAVAILABLE",
+      undefined,
+      503
+    );
+    this.name = "DirectoryUnavailableError";
+  }
+}
+
+/**
+ * L'annuaire du portail limite le nombre de requêtes (D25).
+ */
+export class DirectoryRateLimitedError extends BusinessError {
+  constructor() {
+    super("Trop de recherches dans l'annuaire du portail : réessayez dans un instant.", "DIRECTORY_RATE_LIMITED", undefined, 429);
+    this.name = "DirectoryRateLimitedError";
+  }
+}
+
+/**
+ * La personne choisie par un écran n'est pas (ou plus) dans l'annuaire de ResaVroom (D24).
+ */
+export class UnknownPersonError extends BusinessError {
+  constructor() {
+    super(
+      "Cette personne n'a pas (ou plus) accès à ResaVroom : choisissez-la de nouveau dans la recherche.",
+      "PERSON_NOT_IN_DIRECTORY",
+      undefined,
+      400
+    );
+    this.name = "UnknownPersonError";
+  }
+}
