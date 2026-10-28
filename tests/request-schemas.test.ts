@@ -116,7 +116,7 @@ describe("addPassengerSchema", () => {
   });
 
   it("accepte un ajout complet par le conducteur", () => {
-    const body = { addedBy: "DRIVER", userEntraId: "u1", userEmail: "u1@em-normandie.fr", userDisplayName: "U1" };
+    const body = { addedBy: "DRIVER", userSub: "u1", userEmail: "u1@em-normandie.fr", userDisplayName: "U1" };
     expect(addPassengerSchema.safeParse(body).success).toBe(true);
   });
 

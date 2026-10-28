@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const { data: session, status } = useSession({ required: true });
   const { vehicles, isLoading: loadingVehicles, mutate: mutateVehicles } = useVehicles();
   const { myTrips, isLoading: loadingTrips, mutate: mutateTrips } = useMyTrips(
-    (session?.user as any)?.entraId
+    (session?.user as any)?.sub
   );
 
   const handleRefresh = () => {

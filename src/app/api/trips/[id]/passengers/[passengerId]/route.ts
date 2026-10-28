@@ -14,12 +14,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id: tripId, passengerId } = await params;
 
   try {
-    const userIsAdmin = await isAdmin(auth.session.user.entraId);
+    const userIsAdmin = await isAdmin(auth.session.user.sub);
 
     await removePassenger(
       tripId,
       passengerId,
-      auth.session.user.entraId,
+      auth.session.user.sub,
       auth.session.user.email,
       userIsAdmin
     );

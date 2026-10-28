@@ -93,8 +93,8 @@ export function StepConfirm({
       estimatedReturnArrivalTime:
         params.estimatedReturnArrivalTime?.toISOString(),
       comment,
-      driverEntraId:
-        !isForMe && selectedDriver ? selectedDriver.entraId : undefined,
+      driverSub:
+        !isForMe && selectedDriver ? selectedDriver.sub : undefined,
       driverEmail:
         !isForMe && selectedDriver ? selectedDriver.email : undefined,
       driverDisplayName:

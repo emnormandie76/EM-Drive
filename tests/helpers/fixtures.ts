@@ -11,7 +11,7 @@ export function hoursFromNow(hours: number): Date {
 export interface PassengerFixture {
   id: string;
   tripId: string;
-  userEntraId: string;
+  userSub: string;
   userEmail: string;
   userDisplayName: string;
   addedBy: "SELF" | "DRIVER";
@@ -21,7 +21,7 @@ export function makePassenger(overrides: Partial<PassengerFixture> = {}): Passen
   return {
     id: "passenger-row-1",
     tripId: "trip-1",
-    userEntraId: PASSENGER,
+    userSub: PASSENGER,
     userEmail: "passenger@em-normandie.fr",
     userDisplayName: "Passager",
     addedBy: "SELF",
@@ -34,7 +34,7 @@ export function makeTrip(overrides: Record<string, unknown> = {}) {
   return {
     id: "trip-1",
     vehicleId: "vehicle-1",
-    driverEntraId: DRIVER,
+    driverSub: DRIVER,
     driverEmail: "driver@em-normandie.fr",
     driverDisplayName: "Conducteur",
     type: "ONE_WAY" as const,

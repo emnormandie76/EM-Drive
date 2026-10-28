@@ -76,7 +76,7 @@ describe("canJoinAsPassenger", () => {
   });
 
   it("refuse un trajet complet (places du véhicule moins le conducteur)", () => {
-    const passengers = [1, 2, 3, 4].map((n) => makePassenger({ id: `p${n}`, userEntraId: `user-${n}` }));
+    const passengers = [1, 2, 3, 4].map((n) => makePassenger({ id: `p${n}`, userSub: `user-${n}` }));
     expect(canJoinAsPassenger(joinable({ passengers }), PASSENGER).allowed).toBe(false);
   });
 });

@@ -30,7 +30,7 @@ export type AggregatePassenger = {
 export type PassengerMinAggregateOutputType = {
   id: string | null
   tripId: string | null
-  userEntraId: string | null
+  userSub: string | null
   userEmail: string | null
   userDisplayName: string | null
   addedBy: $Enums.PassengerAddedBy | null
@@ -40,7 +40,7 @@ export type PassengerMinAggregateOutputType = {
 export type PassengerMaxAggregateOutputType = {
   id: string | null
   tripId: string | null
-  userEntraId: string | null
+  userSub: string | null
   userEmail: string | null
   userDisplayName: string | null
   addedBy: $Enums.PassengerAddedBy | null
@@ -50,7 +50,7 @@ export type PassengerMaxAggregateOutputType = {
 export type PassengerCountAggregateOutputType = {
   id: number
   tripId: number
-  userEntraId: number
+  userSub: number
   userEmail: number
   userDisplayName: number
   addedBy: number
@@ -62,7 +62,7 @@ export type PassengerCountAggregateOutputType = {
 export type PassengerMinAggregateInputType = {
   id?: true
   tripId?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   userDisplayName?: true
   addedBy?: true
@@ -72,7 +72,7 @@ export type PassengerMinAggregateInputType = {
 export type PassengerMaxAggregateInputType = {
   id?: true
   tripId?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   userDisplayName?: true
   addedBy?: true
@@ -82,7 +82,7 @@ export type PassengerMaxAggregateInputType = {
 export type PassengerCountAggregateInputType = {
   id?: true
   tripId?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   userDisplayName?: true
   addedBy?: true
@@ -165,7 +165,7 @@ export type PassengerGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 export type PassengerGroupByOutputType = {
   id: string
   tripId: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -196,7 +196,7 @@ export type PassengerWhereInput = {
   NOT?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   id?: Prisma.StringFilter<"Passenger"> | string
   tripId?: Prisma.StringFilter<"Passenger"> | string
-  userEntraId?: Prisma.StringFilter<"Passenger"> | string
+  userSub?: Prisma.StringFilter<"Passenger"> | string
   userEmail?: Prisma.StringFilter<"Passenger"> | string
   userDisplayName?: Prisma.StringFilter<"Passenger"> | string
   addedBy?: Prisma.EnumPassengerAddedByFilter<"Passenger"> | $Enums.PassengerAddedBy
@@ -207,7 +207,7 @@ export type PassengerWhereInput = {
 export type PassengerOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   userDisplayName?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
@@ -217,23 +217,23 @@ export type PassengerOrderByWithRelationInput = {
 
 export type PassengerWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  tripId_userEntraId?: Prisma.PassengerTripIdUserEntraIdCompoundUniqueInput
+  tripId_userSub?: Prisma.PassengerTripIdUserSubCompoundUniqueInput
   AND?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   OR?: Prisma.PassengerWhereInput[]
   NOT?: Prisma.PassengerWhereInput | Prisma.PassengerWhereInput[]
   tripId?: Prisma.StringFilter<"Passenger"> | string
-  userEntraId?: Prisma.StringFilter<"Passenger"> | string
+  userSub?: Prisma.StringFilter<"Passenger"> | string
   userEmail?: Prisma.StringFilter<"Passenger"> | string
   userDisplayName?: Prisma.StringFilter<"Passenger"> | string
   addedBy?: Prisma.EnumPassengerAddedByFilter<"Passenger"> | $Enums.PassengerAddedBy
   createdAt?: Prisma.DateTimeFilter<"Passenger"> | Date | string
   trip?: Prisma.XOR<Prisma.TripScalarRelationFilter, Prisma.TripWhereInput>
-}, "id" | "tripId_userEntraId">
+}, "id" | "tripId_userSub">
 
 export type PassengerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   userDisplayName?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
@@ -249,7 +249,7 @@ export type PassengerScalarWhereWithAggregatesInput = {
   NOT?: Prisma.PassengerScalarWhereWithAggregatesInput | Prisma.PassengerScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
   tripId?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
-  userEntraId?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
+  userSub?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
   userEmail?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
   userDisplayName?: Prisma.StringWithAggregatesFilter<"Passenger"> | string
   addedBy?: Prisma.EnumPassengerAddedByWithAggregatesFilter<"Passenger"> | $Enums.PassengerAddedBy
@@ -258,7 +258,7 @@ export type PassengerScalarWhereWithAggregatesInput = {
 
 export type PassengerCreateInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -269,7 +269,7 @@ export type PassengerCreateInput = {
 export type PassengerUncheckedCreateInput = {
   id?: string
   tripId: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -278,7 +278,7 @@ export type PassengerUncheckedCreateInput = {
 
 export type PassengerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -289,7 +289,7 @@ export type PassengerUpdateInput = {
 export type PassengerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -299,7 +299,7 @@ export type PassengerUncheckedUpdateInput = {
 export type PassengerCreateManyInput = {
   id?: string
   tripId: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -308,7 +308,7 @@ export type PassengerCreateManyInput = {
 
 export type PassengerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -318,7 +318,7 @@ export type PassengerUpdateManyMutationInput = {
 export type PassengerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tripId?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -335,15 +335,15 @@ export type PassengerOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type PassengerTripIdUserEntraIdCompoundUniqueInput = {
+export type PassengerTripIdUserSubCompoundUniqueInput = {
   tripId: string
-  userEntraId: string
+  userSub: string
 }
 
 export type PassengerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   userDisplayName?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
@@ -353,7 +353,7 @@ export type PassengerCountOrderByAggregateInput = {
 export type PassengerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   userDisplayName?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
@@ -363,7 +363,7 @@ export type PassengerMaxOrderByAggregateInput = {
 export type PassengerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tripId?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   userDisplayName?: Prisma.SortOrder
   addedBy?: Prisma.SortOrder
@@ -418,7 +418,7 @@ export type EnumPassengerAddedByFieldUpdateOperationsInput = {
 
 export type PassengerCreateWithoutTripInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -427,7 +427,7 @@ export type PassengerCreateWithoutTripInput = {
 
 export type PassengerUncheckedCreateWithoutTripInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -466,7 +466,7 @@ export type PassengerScalarWhereInput = {
   NOT?: Prisma.PassengerScalarWhereInput | Prisma.PassengerScalarWhereInput[]
   id?: Prisma.StringFilter<"Passenger"> | string
   tripId?: Prisma.StringFilter<"Passenger"> | string
-  userEntraId?: Prisma.StringFilter<"Passenger"> | string
+  userSub?: Prisma.StringFilter<"Passenger"> | string
   userEmail?: Prisma.StringFilter<"Passenger"> | string
   userDisplayName?: Prisma.StringFilter<"Passenger"> | string
   addedBy?: Prisma.EnumPassengerAddedByFilter<"Passenger"> | $Enums.PassengerAddedBy
@@ -475,7 +475,7 @@ export type PassengerScalarWhereInput = {
 
 export type PassengerCreateManyTripInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   userDisplayName: string
   addedBy: $Enums.PassengerAddedBy
@@ -484,7 +484,7 @@ export type PassengerCreateManyTripInput = {
 
 export type PassengerUpdateWithoutTripInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -493,7 +493,7 @@ export type PassengerUpdateWithoutTripInput = {
 
 export type PassengerUncheckedUpdateWithoutTripInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -502,7 +502,7 @@ export type PassengerUncheckedUpdateWithoutTripInput = {
 
 export type PassengerUncheckedUpdateManyWithoutTripInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   userDisplayName?: Prisma.StringFieldUpdateOperationsInput | string
   addedBy?: Prisma.EnumPassengerAddedByFieldUpdateOperationsInput | $Enums.PassengerAddedBy
@@ -514,7 +514,7 @@ export type PassengerUncheckedUpdateManyWithoutTripInput = {
 export type PassengerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tripId?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   userDisplayName?: boolean
   addedBy?: boolean
@@ -525,7 +525,7 @@ export type PassengerSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type PassengerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tripId?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   userDisplayName?: boolean
   addedBy?: boolean
@@ -536,7 +536,7 @@ export type PassengerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type PassengerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tripId?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   userDisplayName?: boolean
   addedBy?: boolean
@@ -547,14 +547,14 @@ export type PassengerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 export type PassengerSelectScalar = {
   id?: boolean
   tripId?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   userDisplayName?: boolean
   addedBy?: boolean
   createdAt?: boolean
 }
 
-export type PassengerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tripId" | "userEntraId" | "userEmail" | "userDisplayName" | "addedBy" | "createdAt", ExtArgs["result"]["passenger"]>
+export type PassengerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tripId" | "userSub" | "userEmail" | "userDisplayName" | "addedBy" | "createdAt", ExtArgs["result"]["passenger"]>
 export type PassengerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   trip?: boolean | Prisma.TripDefaultArgs<ExtArgs>
 }
@@ -573,7 +573,7 @@ export type $PassengerPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     tripId: string
-    userEntraId: string
+    userSub: string
     userEmail: string
     userDisplayName: string
     addedBy: $Enums.PassengerAddedBy
@@ -1004,7 +1004,7 @@ export interface Prisma__PassengerClient<T, Null = never, ExtArgs extends runtim
 export interface PassengerFieldRefs {
   readonly id: Prisma.FieldRef<"Passenger", 'String'>
   readonly tripId: Prisma.FieldRef<"Passenger", 'String'>
-  readonly userEntraId: Prisma.FieldRef<"Passenger", 'String'>
+  readonly userSub: Prisma.FieldRef<"Passenger", 'String'>
   readonly userEmail: Prisma.FieldRef<"Passenger", 'String'>
   readonly userDisplayName: Prisma.FieldRef<"Passenger", 'String'>
   readonly addedBy: Prisma.FieldRef<"Passenger", 'PassengerAddedBy'>

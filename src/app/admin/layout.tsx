@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession, isAdmin } from "@/lib/auth";
 import Link from "next/link";
-import { Car, Map, Settings, Users, ShieldAlert } from "lucide-react";
+import { Car, Map, Settings, ShieldAlert } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 
 export default async function AdminLayout({
@@ -15,9 +15,8 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  // NOTE: This role check relies on the temporary provider's session/DB setup right now.
-  // It will need to be adapted when switching to Entra ID (Phase 2 note).
-  const adminStatus = await isAdmin(session.user.entraId);
+  // Rôle relu en base (règle 9) : celui que le portail a donné à la dernière connexion
+  const adminStatus = await isAdmin(session.user.sub);
 
   if (!adminStatus) {
     redirect("/dashboard");
@@ -27,7 +26,6 @@ export default async function AdminLayout({
     { name: "Vue d'ensemble", href: "/admin", icon: Settings, exact: true },
     { name: "Flotte (Véhicules)", href: "/admin/vehicles", icon: Car },
     { name: "Trajets", href: "/admin/trips", icon: Map },
-    { name: "Utilisateurs & Services", href: "/admin/users", icon: Users },
     { name: "Paramètres Globaux", href: "/admin/settings", icon: Settings },
     { name: "Journal d'Audit", href: "/admin/audit", icon: ShieldAlert },
   ];

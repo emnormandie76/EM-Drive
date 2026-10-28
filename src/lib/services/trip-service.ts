@@ -30,7 +30,7 @@ import type { Trip, TripType } from "@/generated/prisma/client";
 export interface CreateTripInput {
   status?: "SCHEDULED" | "CANCELLED";
   vehicleId: string;
-  driverEntraId: string;
+  driverSub: string;
   driverEmail: string;
   driverDisplayName: string;
   type: TripType;
@@ -46,7 +46,7 @@ export interface CreateTripInput {
   estimatedReturnArrivalTime?: Date;
   comment?: string;
   passengers?: Array<{
-    userEntraId: string;
+    userSub: string;
     userEmail: string;
     userDisplayName: string;
   }>;
@@ -65,7 +65,7 @@ type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0
  */
 export async function findPersonConflict(
   tx: TransactionClient,
-  userEntraId: string,
+  userSub: string,
   start: Date,
   end: Date,
   excludeTripId?: string
@@ -85,14 +85,14 @@ export async function findPersonConflict(
 
   // Vérifier en tant que conducteur
   const asDriver = await tx.trip.findFirst({
-    where: { ...baseWhere, driverEntraId: userEntraId },
+    where: { ...baseWhere, driverSub: userSub },
     select: { id: true },
   });
   if (asDriver) return asDriver;
 
   // Vérifier en tant que passager
   const asPassenger = await tx.trip.findFirst({
-    where: { ...baseWhere, passengers: { some: { userEntraId } } },
+    where: { ...baseWhere, passengers: { some: { userSub } } },
     select: { id: true },
   });
 
@@ -135,7 +135,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
             `Ce véhicule n'accepte que ${vehicle.seats - 1} passagers en plus du conducteur.`
           );
         }
-        if (input.passengers.some((p) => p.userEntraId === input.driverEntraId)) {
+        if (input.passengers.some((p) => p.userSub === input.driverSub)) {
           throw new ValidationError("Le conducteur ne peut pas être passager de son propre trajet.");
         }
       }
@@ -157,7 +157,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
       // ── VÉRIF 2 : Conducteur pas de chevauchement ──
       const driverConflict = await findPersonConflict(
         tx,
-        input.driverEntraId,
+        input.driverSub,
         input.departureTime,
         endTimeWithBuffer
       );
@@ -173,7 +173,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
         for (const passenger of input.passengers) {
           const passengerConflict = await findPersonConflict(
             tx,
-            passenger.userEntraId,
+            passenger.userSub,
             input.departureTime,
             endTimeWithBuffer
           );
@@ -191,7 +191,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
       return await tx.trip.create({
         data: {
           vehicleId: input.vehicleId,
-          driverEntraId: input.driverEntraId,
+          driverSub: input.driverSub,
           driverEmail: input.driverEmail,
           driverDisplayName: input.driverDisplayName,
           type: input.type,
@@ -210,7 +210,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
             ? {
                 createMany: {
                   data: input.passengers.map((p) => ({
-                    userEntraId: p.userEntraId,
+                    userSub: p.userSub,
                     userEmail: p.userEmail,
                     userDisplayName: p.userDisplayName,
                     addedBy: "DRIVER" as const,
@@ -227,7 +227,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
 
   // ── HORS TRANSACTION : Audit ──
   await logAudit({
-    userEntraId: input.driverEntraId,
+    userSub: input.driverSub,
     userEmail: input.driverEmail,
     action: "TRIP_CREATED",
     entityType: "trip",
@@ -248,7 +248,7 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
  */
 export async function cancelTrip(
   tripId: string,
-  userEntraId: string,
+  userSub: string,
   userEmail: string,
   userIsAdmin: boolean
 ): Promise<Trip> {
@@ -258,7 +258,7 @@ export async function cancelTrip(
   });
 
   // Vérification des permissions
-  const permission = canDeleteTrip(trip, userEntraId, userIsAdmin);
+  const permission = canDeleteTrip(trip, userSub, userIsAdmin);
   if (!permission.allowed) {
     throw new PermissionError(permission.reason!);
   }
@@ -273,13 +273,13 @@ export async function cancelTrip(
   // Audit
   const action = userIsAdmin ? "TRIP_FORCE_DELETED" : "TRIP_CANCELLED";
   await logAudit({
-    userEntraId,
+    userSub,
     userEmail,
     action,
     entityType: "trip",
     entityId: tripId,
     details: {
-      driverEntraId: trip.driverEntraId,
+      driverSub: trip.driverSub,
       passengerCount: trip.passengers.length,
     },
   });
@@ -300,7 +300,7 @@ export async function cancelTrip(
 export async function updateDepartureTime(
   tripId: string,
   newDepartureTime: Date,
-  userEntraId: string,
+  userSub: string,
   userEmail: string,
   userIsAdmin: boolean
 ): Promise<Trip> {
@@ -310,7 +310,7 @@ export async function updateDepartureTime(
   });
 
   // Vérification des permissions
-  const permission = canModifyDepartureTime(trip, userEntraId, userIsAdmin);
+  const permission = canModifyDepartureTime(trip, userSub, userIsAdmin);
   if (!permission.allowed) {
     throw new PermissionError(permission.reason!);
   }
@@ -344,7 +344,7 @@ export async function updateDepartureTime(
       // ── VÉRIF 2 : Conducteur libre ──
       const driverConflict = await findPersonConflict(
         tx,
-        trip.driverEntraId,
+        trip.driverSub,
         newDepartureTime,
         newEndTimeWithBuffer,
         tripId
@@ -360,7 +360,7 @@ export async function updateDepartureTime(
       for (const passenger of trip.passengers) {
         const passengerConflict = await findPersonConflict(
           tx,
-          passenger.userEntraId,
+          passenger.userSub,
           newDepartureTime,
           newEndTimeWithBuffer,
           tripId
@@ -393,7 +393,7 @@ export async function updateDepartureTime(
 
   // Audit
   await logAudit({
-    userEntraId,
+    userSub,
     userEmail,
     action: "TRIP_UPDATED",
     entityType: "trip",
@@ -410,7 +410,7 @@ export async function updateDepartureTime(
 export async function updateTripInfo(
   tripId: string,
   data: UpdateTripInput,
-  actorEntraId: string,
+  actorSub: string,
   actorEmail: string,
   actorIsAdmin: boolean
 ): Promise<Trip> {
@@ -432,7 +432,7 @@ export async function updateTripInfo(
       : (data.estimatedReturnArrivalTime ? new Date(data.estimatedReturnArrivalTime) : (trip.estimatedReturnArrivalTime || trip.estimatedArrivalTime));
   const newEndTimeWithBuffer = addMinutes(newRawEndTime, bufferMinutes);
   const newVehicleId = data.vehicleId || trip.vehicleId;
-  const newDriverEntraId = data.driverEntraId || trip.driverEntraId;
+  const newDriverSub = data.driverSub || trip.driverSub;
 
   // On re-vérifie dans une transaction
   const updated = await prisma.$transaction(async (tx) => {
@@ -463,7 +463,7 @@ export async function updateTripInfo(
     // ── VÉRIF 2 : Conducteur pas en conflit ──
     const driverConflict = await findPersonConflict(
       tx,
-      newDriverEntraId,
+      newDriverSub,
       newDepartureTime,
       newEndTimeWithBuffer,
       tripId
@@ -481,7 +481,7 @@ export async function updateTripInfo(
         where: { id: tripId },
         data: {
           status: data.status !== undefined ? data.status : undefined,
-          driverEntraId: data.driverEntraId !== undefined ? data.driverEntraId : undefined,
+          driverSub: data.driverSub !== undefined ? data.driverSub : undefined,
           driverEmail: data.driverEmail !== undefined ? data.driverEmail : undefined,
           driverDisplayName: data.driverDisplayName !== undefined ? data.driverDisplayName : undefined,
           vehicleId: data.vehicleId !== undefined ? data.vehicleId : undefined,
@@ -502,7 +502,7 @@ export async function updateTripInfo(
   }, { isolationLevel: "Serializable" });
 
   await logAudit({
-    userEntraId: actorEntraId,
+    userSub: actorSub,
     userEmail: actorEmail,
     action: "TRIP_UPDATED",
     entityType: "trip",
@@ -526,11 +526,11 @@ export async function updateTripInfo(
  */
 export async function addPassenger(
   tripId: string,
-  userEntraId: string,
+  userSub: string,
   userEmail: string,
   userDisplayName: string,
   addedBy: "SELF" | "DRIVER",
-  actorEntraId: string,
+  actorSub: string,
   actorEmail: string,
   actorIsAdmin: boolean
 ): Promise<void> {
@@ -542,11 +542,11 @@ export async function addPassenger(
       include: { passengers: true, vehicle: true },
     });
 
-    if (addedBy === "DRIVER" && !actorIsAdmin && trip.driverEntraId !== actorEntraId) {
+    if (addedBy === "DRIVER" && !actorIsAdmin && trip.driverSub !== actorSub) {
       throw new PermissionError("Seul le conducteur ou un admin peut ajouter un passager à ce trajet.");
     }
 
-    const permission = canJoinAsPassenger({ ...trip, vehicleSeats: trip.vehicle.seats }, userEntraId);
+    const permission = canJoinAsPassenger({ ...trip, vehicleSeats: trip.vehicle.seats }, userSub);
     if (!permission.allowed) {
       throw new PermissionError(permission.reason!);
     }
@@ -557,7 +557,7 @@ export async function addPassenger(
     );
     const conflict = await findPersonConflict(
       tx,
-      userEntraId,
+      userSub,
       trip.departureTime,
       endTimeWithBuffer
     );
@@ -572,7 +572,7 @@ export async function addPassenger(
     await tx.passenger.create({
       data: {
         tripId,
-        userEntraId,
+        userSub,
         userEmail,
         userDisplayName,
         addedBy,
@@ -582,12 +582,12 @@ export async function addPassenger(
 
   // Audit
   await logAudit({
-    userEntraId: actorEntraId,
+    userSub: actorSub,
     userEmail: actorEmail,
     action: "PASSENGER_ADDED",
     entityType: "trip",
     entityId: tripId,
-    details: { passengerEntraId: userEntraId, addedBy },
+    details: { passengerSub: userSub, addedBy },
   });
 }
 
@@ -600,7 +600,7 @@ export async function addPassenger(
 export async function removePassenger(
   tripId: string,
   passengerId: string,
-  actorEntraId: string,
+  actorSub: string,
   actorEmail: string,
   actorIsAdmin: boolean
 ): Promise<void> {
@@ -617,8 +617,8 @@ export async function removePassenger(
   }
 
   if (!actorIsAdmin) {
-    const isSelf = passenger.userEntraId.trim().toLowerCase() === actorEntraId.trim().toLowerCase();
-    const isDriver = trip.driverEntraId.trim().toLowerCase() === actorEntraId.trim().toLowerCase();
+    const isSelf = passenger.userSub.trim().toLowerCase() === actorSub.trim().toLowerCase();
+    const isDriver = trip.driverSub.trim().toLowerCase() === actorSub.trim().toLowerCase();
 
     if (!isSelf && !(isDriver && passenger.addedBy === "DRIVER")) {
       throw new PermissionError(
@@ -642,12 +642,12 @@ export async function removePassenger(
 
   // Audit
   await logAudit({
-    userEntraId: actorEntraId,
+    userSub: actorSub,
     userEmail: actorEmail,
     action: "PASSENGER_REMOVED",
     entityType: "trip",
     entityId: tripId,
-    details: { removedPassengerEntraId: passenger.userEntraId },
+    details: { removedPassengerSub: passenger.userSub },
   });
 }
 
@@ -674,12 +674,12 @@ export async function getTripById(tripId: string) {
 /**
  * Récupère les trajets d'un utilisateur (comme conducteur ou passager).
  */
-export async function getUserTrips(userEntraId: string) {
+export async function getUserTrips(userSub: string) {
   return prisma.trip.findMany({
     where: {
       OR: [
-        { driverEntraId: userEntraId },
-        { passengers: { some: { userEntraId } } },
+        { driverSub: userSub },
+        { passengers: { some: { userSub } } },
       ],
     },
     include: {

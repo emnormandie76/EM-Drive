@@ -17,21 +17,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await parseJsonBody(request, addPassengerSchema);
-    const { entraId, email, name } = auth.session.user;
-    const userIsAdmin = await isAdmin(entraId);
+    const { sub, email, name } = auth.session.user;
+    const userIsAdmin = await isAdmin(sub);
 
     if (body.addedBy === "SELF") {
       // L'utilisateur s'inscrit lui-même
-      await addPassenger(tripId, entraId, email, name, "SELF", entraId, email, userIsAdmin);
+      await addPassenger(tripId, sub, email, name, "SELF", sub, email, userIsAdmin);
     } else {
       // Ajout par le conducteur (ou un admin) : le service vérifie le droit d'ajouter
       await addPassenger(
         tripId,
-        body.userEntraId!,
+        body.userSub!,
         body.userEmail!,
         body.userDisplayName!,
         "DRIVER",
-        entraId,
+        sub,
         email,
         userIsAdmin
       );

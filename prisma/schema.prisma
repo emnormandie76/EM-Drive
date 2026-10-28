@@ -45,11 +45,14 @@ enum AuditAction {
   VEHICLE_UPDATED
   VEHICLE_MAINTENANCE_ON
   VEHICLE_MAINTENANCE_OFF
-  ADMIN_PROMOTED
-  ADMIN_REVOKED
-  SERVICE_ADDED
-  SERVICE_REMOVED
   SETTINGS_UPDATED
+  SIGNIN_REFUSED // Connexion refusée : adresse liée à un autre sub, ou rôle inconnu (contrat portail v1 §3.2)
+}
+
+/// Rôles déclarés au portail pour ResaVroom (D8) ; leur sens est dans les gardes de l'application.
+enum Role {
+  USER
+  ADMIN
 }
 
 // ══════════════════════════════════════════════
@@ -104,7 +107,7 @@ model Vehicle {
 model Trip {
   id                         String     @id @default(cuid())
   vehicleId                  String     @map("vehicle_id")
-  driverEntraId              String     @map("driver_entra_id")
+  driverSub                  String     @map("driver_sub")
   driverEmail                String     @map("driver_email")
   driverDisplayName          String     @map("driver_display_name")
   type                       TripType
@@ -132,7 +135,7 @@ model Trip {
 
   // Index pour les requêtes de disponibilité (très fréquentes)
   @@index([vehicleId, status, departureTime])
-  @@index([driverEntraId, status])
+  @@index([driverSub, status])
   @@map("trips")
 }
 
@@ -143,7 +146,7 @@ model Trip {
 model Passenger {
   id              String           @id @default(cuid())
   tripId          String           @map("trip_id")
-  userEntraId     String           @map("user_entra_id")
+  userSub         String           @map("user_sub")
   userEmail       String           @map("user_email")
   userDisplayName String           @map("user_display_name")
   addedBy         PassengerAddedBy @map("added_by")
@@ -153,29 +156,27 @@ model Passenger {
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   // Un utilisateur ne peut être inscrit qu'une seule fois par trajet
-  @@unique([tripId, userEntraId])
+  @@unique([tripId, userSub])
   // Index pour les requêtes de chevauchement
-  @@index([userEntraId])
+  @@index([userSub])
   @@map("passengers")
 }
 
-/// Services/groupes autorisés à accéder à l'application.
-model AuthorizedService {
-  id          String   @id @default(cuid())
-  serviceName String   @unique @map("service_name")
-  createdAt   DateTime @default(now()) @map("created_at")
+/// Une personne connue de ResaVroom (D10, D19) : là où le `sub` du portail et l'adresse se rencontrent.
+/// Rapprochement à chaque connexion (contrat portail v1 §3.2) : par `sub`, sinon par l'adresse
+/// (puis `sub` enregistré), sinon création. Le rôle est recopié du portail à chaque connexion et relu
+/// par les gardes (règle 9). Les trajets, passagers et journaux gardent des copies, sans clé étrangère.
+model Person {
+  id          String    @id @default(cuid())
+  sub         String?   @unique // facultatif : permet l'étape « par l'adresse » du rapprochement
+  email       String    @unique
+  name        String
+  role        Role
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  @@map("authorized_services")
-}
-
-/// Administrateurs de l'application.
-model Admin {
-  id          String   @id @default(cuid())
-  userEntraId String   @unique @map("user_entra_id")
-  userEmail   String   @map("user_email")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@map("admins")
+  @@map("people")
 }
 
 /// Paramètres de configuration de l'application.
@@ -192,10 +193,10 @@ model AppSetting {
 /// Journal d'audit (actions critiques, visible uniquement par les admins).
 model AuditLog {
   id          String      @id @default(cuid())
-  userEntraId String      @map("user_entra_id")
+  userSub     String      @map("user_sub")
   userEmail   String      @map("user_email")
   action      AuditAction
-  entityType  String      @map("entity_type") // "trip", "vehicle", "admin", "service", "setting"
+  entityType  String      @map("entity_type") // "trip", "vehicle", "setting", "person"
   entityId    String      @map("entity_id")
   details     Json?       // Snapshot avant/après pour traçabilité
   createdAt   DateTime    @default(now()) @map("created_at")

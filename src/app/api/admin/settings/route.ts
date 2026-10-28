@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest) {
     });
 
     await logAudit({
-      userEntraId: auth.session.user.entraId,
+      userSub: auth.session.user.sub,
       userEmail: auth.session.user.email,
       action: "SETTINGS_UPDATED",
       entityType: "setting",

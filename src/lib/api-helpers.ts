@@ -22,7 +22,7 @@ export async function requireAdminSession() {
   const result = await requireAuthSession();
   if ("error" in result) return result;
 
-  const adminStatus = await isAdmin(result.session.user.entraId);
+  const adminStatus = await isAdmin(result.session.user.sub);
   if (!adminStatus) {
     return { error: NextResponse.json({ error: "FORBIDDEN", message: "Accès administrateur requis." }, { status: 403 }) };
   }

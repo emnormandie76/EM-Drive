@@ -42,11 +42,7 @@ const settings = [
   { key: "buffer_minutes", value: "30" },
 ];
 
-// L'admin initial — à remplacer par l'email réel de l'admin
-const initialAdmin = {
-  userEntraId: "TO_BE_CONFIGURED",
-  userEmail: "admin@entreprise.fr",
-};
+// Pas d'administrateur de départ (D21) : le rôle vient du portail à chaque connexion (contrat portail v1).
 
 // ══════════════════════════════════════════════
 // EXÉCUTION DU SEED
@@ -93,14 +89,6 @@ async function main() {
     });
     console.log(`  ✅ Paramètre: ${setting.key} = ${setting.value}`);
   }
-
-  // 4. Créer l'admin initial
-  await prisma.admin.upsert({
-    where: { userEntraId: initialAdmin.userEntraId },
-    update: {},
-    create: initialAdmin,
-  });
-  console.log(`  ✅ Admin initial: ${initialAdmin.userEmail}`);
 
   console.log("\n🎉 Seed terminé avec succès !");
 }

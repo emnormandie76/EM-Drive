@@ -30,6 +30,11 @@ export function createPrismaMock() {
     auditLog: {
       create: vi.fn(),
     },
+    person: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     // Une transaction exécute son callback avec le même client simulé
     $transaction: vi.fn(),
   };
@@ -40,7 +45,7 @@ export type PrismaMock = ReturnType<typeof createPrismaMock>;
 
 /** Remet toutes les méthodes à zéro ; la transaction rappelle le callback avec le client. */
 export function resetPrismaMock(mock: PrismaMock) {
-  for (const model of [mock.trip, mock.passenger, mock.vehicle, mock.appSetting, mock.auditLog]) {
+  for (const model of [mock.trip, mock.passenger, mock.vehicle, mock.appSetting, mock.auditLog, mock.person]) {
     for (const fn of Object.values(model)) fn.mockReset();
   }
   mock.$transaction.mockReset();

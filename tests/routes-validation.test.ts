@@ -34,7 +34,7 @@ async function expectValidationError(response: Response | undefined) {
 beforeEach(() => {
   resetPrismaMock(db);
   vi.mocked(getSession).mockResolvedValue({
-    user: { entraId: DRIVER, email: "d@em-normandie.fr", name: "Conducteur" },
+    user: { sub: DRIVER, email: "d@em-normandie.fr", name: "Conducteur" },
     expires: "2099-01-01T00:00:00.000Z",
   });
   vi.mocked(isAdmin).mockResolvedValue(false);

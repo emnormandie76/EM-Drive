@@ -59,11 +59,11 @@ describe("findPersonConflict", () => {
   it("cherche la personne comme conducteur, puis comme passager", async () => {
     await findPersonConflict(db as never, "user-1", start, end);
     expect(db.trip.findFirst).toHaveBeenNthCalledWith(1, {
-      where: { ...overlap, driverEntraId: "user-1" },
+      where: { ...overlap, driverSub: "user-1" },
       select: { id: true },
     });
     expect(db.trip.findFirst).toHaveBeenNthCalledWith(2, {
-      where: { ...overlap, passengers: { some: { userEntraId: "user-1" } } },
+      where: { ...overlap, passengers: { some: { userSub: "user-1" } } },
       select: { id: true },
     });
   });

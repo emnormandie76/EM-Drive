@@ -39,8 +39,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const currentUserId = session?.user?.entraId || "";
-  const isDriver = trip.driverEntraId === currentUserId;
+  const currentUserId = session?.user?.sub || "";
+  const isDriver = trip.driverSub === currentUserId;
   const isAdmin = session?.user?.isAdmin || false;
 
   return (

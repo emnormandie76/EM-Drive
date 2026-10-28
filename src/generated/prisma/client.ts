@@ -74,15 +74,13 @@ export type Trip = Prisma.TripModel
  */
 export type Passenger = Prisma.PassengerModel
 /**
- * Model AuthorizedService
- * Services/groupes autorisés à accéder à l'application.
+ * Model Person
+ * Une personne connue de ResaVroom (D10, D19) : là où le `sub` du portail et l'adresse se rencontrent.
+ * Rapprochement à chaque connexion (contrat portail v1 §3.2) : par `sub`, sinon par l'adresse
+ * (puis `sub` enregistré), sinon création. Le rôle est recopié du portail à chaque connexion et relu
+ * par les gardes (règle 9). Les trajets, passagers et journaux gardent des copies, sans clé étrangère.
  */
-export type AuthorizedService = Prisma.AuthorizedServiceModel
-/**
- * Model Admin
- * Administrateurs de l'application.
- */
-export type Admin = Prisma.AdminModel
+export type Person = Prisma.PersonModel
 /**
  * Model AppSetting
  * Paramètres de configuration de l'application.

@@ -388,8 +388,7 @@ export const ModelName = {
   Vehicle: 'Vehicle',
   Trip: 'Trip',
   Passenger: 'Passenger',
-  AuthorizedService: 'AuthorizedService',
-  Admin: 'Admin',
+  Person: 'Person',
   AppSetting: 'AppSetting',
   AuditLog: 'AuditLog'
 } as const
@@ -407,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "campus" | "vehicle" | "trip" | "passenger" | "authorizedService" | "admin" | "appSetting" | "auditLog"
+    modelProps: "campus" | "vehicle" | "trip" | "passenger" | "person" | "appSetting" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -707,151 +706,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    AuthorizedService: {
-      payload: Prisma.$AuthorizedServicePayload<ExtArgs>
-      fields: Prisma.AuthorizedServiceFieldRefs
+    Person: {
+      payload: Prisma.$PersonPayload<ExtArgs>
+      fields: Prisma.PersonFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.AuthorizedServiceFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload> | null
+          args: Prisma.PersonFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.AuthorizedServiceFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         findFirst: {
-          args: Prisma.AuthorizedServiceFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload> | null
+          args: Prisma.PersonFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.AuthorizedServiceFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         findMany: {
-          args: Prisma.AuthorizedServiceFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>[]
+          args: Prisma.PersonFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
         }
         create: {
-          args: Prisma.AuthorizedServiceCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         createMany: {
-          args: Prisma.AuthorizedServiceCreateManyArgs<ExtArgs>
+          args: Prisma.PersonCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.AuthorizedServiceCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>[]
+          args: Prisma.PersonCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
         }
         delete: {
-          args: Prisma.AuthorizedServiceDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         update: {
-          args: Prisma.AuthorizedServiceUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         deleteMany: {
-          args: Prisma.AuthorizedServiceDeleteManyArgs<ExtArgs>
+          args: Prisma.PersonDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.AuthorizedServiceUpdateManyArgs<ExtArgs>
+          args: Prisma.PersonUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.AuthorizedServiceUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>[]
+          args: Prisma.PersonUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>[]
         }
         upsert: {
-          args: Prisma.AuthorizedServiceUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuthorizedServicePayload>
+          args: Prisma.PersonUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PersonPayload>
         }
         aggregate: {
-          args: Prisma.AuthorizedServiceAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateAuthorizedService>
+          args: Prisma.PersonAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePerson>
         }
         groupBy: {
-          args: Prisma.AuthorizedServiceGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AuthorizedServiceGroupByOutputType>[]
+          args: Prisma.PersonGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonGroupByOutputType>[]
         }
         count: {
-          args: Prisma.AuthorizedServiceCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AuthorizedServiceCountAggregateOutputType> | number
-        }
-      }
-    }
-    Admin: {
-      payload: Prisma.$AdminPayload<ExtArgs>
-      fields: Prisma.AdminFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.AdminFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.AdminFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        findFirst: {
-          args: Prisma.AdminFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.AdminFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        findMany: {
-          args: Prisma.AdminFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>[]
-        }
-        create: {
-          args: Prisma.AdminCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        createMany: {
-          args: Prisma.AdminCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.AdminCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>[]
-        }
-        delete: {
-          args: Prisma.AdminDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        update: {
-          args: Prisma.AdminUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        deleteMany: {
-          args: Prisma.AdminDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.AdminUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.AdminUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>[]
-        }
-        upsert: {
-          args: Prisma.AdminUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdminPayload>
-        }
-        aggregate: {
-          args: Prisma.AdminAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateAdmin>
-        }
-        groupBy: {
-          args: Prisma.AdminGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AdminGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.AdminCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AdminCountAggregateOutputType> | number
+          args: Prisma.PersonCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PersonCountAggregateOutputType> | number
         }
       }
     }
@@ -1070,7 +995,7 @@ export type VehicleScalarFieldEnum = (typeof VehicleScalarFieldEnum)[keyof typeo
 export const TripScalarFieldEnum = {
   id: 'id',
   vehicleId: 'vehicleId',
-  driverEntraId: 'driverEntraId',
+  driverSub: 'driverSub',
   driverEmail: 'driverEmail',
   driverDisplayName: 'driverDisplayName',
   type: 'type',
@@ -1096,7 +1021,7 @@ export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof Trip
 export const PassengerScalarFieldEnum = {
   id: 'id',
   tripId: 'tripId',
-  userEntraId: 'userEntraId',
+  userSub: 'userSub',
   userEmail: 'userEmail',
   userDisplayName: 'userDisplayName',
   addedBy: 'addedBy',
@@ -1106,23 +1031,18 @@ export const PassengerScalarFieldEnum = {
 export type PassengerScalarFieldEnum = (typeof PassengerScalarFieldEnum)[keyof typeof PassengerScalarFieldEnum]
 
 
-export const AuthorizedServiceScalarFieldEnum = {
+export const PersonScalarFieldEnum = {
   id: 'id',
-  serviceName: 'serviceName',
-  createdAt: 'createdAt'
+  sub: 'sub',
+  email: 'email',
+  name: 'name',
+  role: 'role',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
-export type AuthorizedServiceScalarFieldEnum = (typeof AuthorizedServiceScalarFieldEnum)[keyof typeof AuthorizedServiceScalarFieldEnum]
-
-
-export const AdminScalarFieldEnum = {
-  id: 'id',
-  userEntraId: 'userEntraId',
-  userEmail: 'userEmail',
-  createdAt: 'createdAt'
-} as const
-
-export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof AdminScalarFieldEnum]
+export type PersonScalarFieldEnum = (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum]
 
 
 export const AppSettingScalarFieldEnum = {
@@ -1136,7 +1056,7 @@ export type AppSettingScalarFieldEnum = (typeof AppSettingScalarFieldEnum)[keyof
 
 export const AuditLogScalarFieldEnum = {
   id: 'id',
-  userEntraId: 'userEntraId',
+  userSub: 'userSub',
   userEmail: 'userEmail',
   action: 'action',
   entityType: 'entityType',
@@ -1308,6 +1228,20 @@ export type ListEnumPassengerAddedByFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
+ * Reference to a field of type 'Role'
+ */
+export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
+    
+
+
+/**
+ * Reference to a field of type 'Role[]'
+ */
+export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
+    
+
+
+/**
  * Reference to a field of type 'AuditAction'
  */
 export type EnumAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditAction'>
@@ -1433,8 +1367,7 @@ export type GlobalOmitConfig = {
   vehicle?: Prisma.VehicleOmit
   trip?: Prisma.TripOmit
   passenger?: Prisma.PassengerOmit
-  authorizedService?: Prisma.AuthorizedServiceOmit
-  admin?: Prisma.AdminOmit
+  person?: Prisma.PersonOmit
   appSetting?: Prisma.AppSettingOmit
   auditLog?: Prisma.AuditLogOmit
 }

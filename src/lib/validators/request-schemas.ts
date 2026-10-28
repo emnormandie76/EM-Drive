@@ -20,7 +20,7 @@ const tripType = z.enum(["ONE_WAY", "ROUND_TRIP", "ROUND_TRIP_OTHER"]);
 const dateTime = z.iso.datetime({ offset: true }).transform((value) => new Date(value));
 
 const passenger = z.object({
-  userEntraId: id,
+  userSub: id,
   userEmail: z.email(),
   userDisplayName: displayName,
 });
@@ -46,7 +46,7 @@ export const createTripSchema = z
     estimatedReturnArrivalTime: dateTime.optional(),
     comment: z.string().max(1000).optional(),
     // Pris en compte seulement pour un admin (POST /api/trips)
-    driverEntraId: id.optional(),
+    driverSub: id.optional(),
     driverEmail: z.email().optional(),
     driverDisplayName: displayName.optional(),
     passengers: z.array(passenger).max(8).optional(),
@@ -83,7 +83,7 @@ export const updateTripSchema = z.object({
   returnDepartureTime: dateTime.nullable().optional(),
   estimatedReturnArrivalTime: dateTime.nullable().optional(),
   comment: z.string().max(1000).nullable().optional(),
-  driverEntraId: id.optional(),
+  driverSub: id.optional(),
   driverEmail: z.email().optional(),
   driverDisplayName: displayName.optional(),
 });
@@ -94,12 +94,12 @@ export type UpdateTripInput = z.output<typeof updateTripSchema>;
 export const addPassengerSchema = z
   .object({
     addedBy: z.enum(["SELF", "DRIVER"]).default("SELF"),
-    userEntraId: id.optional(),
+    userSub: id.optional(),
     userEmail: z.email().optional(),
     userDisplayName: displayName.optional(),
   })
-  .refine((body) => body.addedBy === "SELF" || (body.userEntraId && body.userEmail && body.userDisplayName), {
-    message: "userEntraId, userEmail et userDisplayName sont requis pour addedBy=DRIVER.",
+  .refine((body) => body.addedBy === "SELF" || (body.userSub && body.userEmail && body.userDisplayName), {
+    message: "userSub, userEmail et userDisplayName sont requis pour addedBy=DRIVER.",
     path: ["addedBy"],
   });
 

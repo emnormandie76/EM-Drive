@@ -26,7 +26,7 @@ export type AggregateAuditLog = {
 
 export type AuditLogMinAggregateOutputType = {
   id: string | null
-  userEntraId: string | null
+  userSub: string | null
   userEmail: string | null
   action: $Enums.AuditAction | null
   entityType: string | null
@@ -36,7 +36,7 @@ export type AuditLogMinAggregateOutputType = {
 
 export type AuditLogMaxAggregateOutputType = {
   id: string | null
-  userEntraId: string | null
+  userSub: string | null
   userEmail: string | null
   action: $Enums.AuditAction | null
   entityType: string | null
@@ -46,7 +46,7 @@ export type AuditLogMaxAggregateOutputType = {
 
 export type AuditLogCountAggregateOutputType = {
   id: number
-  userEntraId: number
+  userSub: number
   userEmail: number
   action: number
   entityType: number
@@ -59,7 +59,7 @@ export type AuditLogCountAggregateOutputType = {
 
 export type AuditLogMinAggregateInputType = {
   id?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   action?: true
   entityType?: true
@@ -69,7 +69,7 @@ export type AuditLogMinAggregateInputType = {
 
 export type AuditLogMaxAggregateInputType = {
   id?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   action?: true
   entityType?: true
@@ -79,7 +79,7 @@ export type AuditLogMaxAggregateInputType = {
 
 export type AuditLogCountAggregateInputType = {
   id?: true
-  userEntraId?: true
+  userSub?: true
   userEmail?: true
   action?: true
   entityType?: true
@@ -163,7 +163,7 @@ export type AuditLogGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 
 export type AuditLogGroupByOutputType = {
   id: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   action: $Enums.AuditAction
   entityType: string
@@ -195,7 +195,7 @@ export type AuditLogWhereInput = {
   OR?: Prisma.AuditLogWhereInput[]
   NOT?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
   id?: Prisma.StringFilter<"AuditLog"> | string
-  userEntraId?: Prisma.StringFilter<"AuditLog"> | string
+  userSub?: Prisma.StringFilter<"AuditLog"> | string
   userEmail?: Prisma.StringFilter<"AuditLog"> | string
   action?: Prisma.EnumAuditActionFilter<"AuditLog"> | $Enums.AuditAction
   entityType?: Prisma.StringFilter<"AuditLog"> | string
@@ -206,7 +206,7 @@ export type AuditLogWhereInput = {
 
 export type AuditLogOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   action?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -220,7 +220,7 @@ export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
   OR?: Prisma.AuditLogWhereInput[]
   NOT?: Prisma.AuditLogWhereInput | Prisma.AuditLogWhereInput[]
-  userEntraId?: Prisma.StringFilter<"AuditLog"> | string
+  userSub?: Prisma.StringFilter<"AuditLog"> | string
   userEmail?: Prisma.StringFilter<"AuditLog"> | string
   action?: Prisma.EnumAuditActionFilter<"AuditLog"> | $Enums.AuditAction
   entityType?: Prisma.StringFilter<"AuditLog"> | string
@@ -231,7 +231,7 @@ export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
 
 export type AuditLogOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   action?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -248,7 +248,7 @@ export type AuditLogScalarWhereWithAggregatesInput = {
   OR?: Prisma.AuditLogScalarWhereWithAggregatesInput[]
   NOT?: Prisma.AuditLogScalarWhereWithAggregatesInput | Prisma.AuditLogScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
-  userEntraId?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
+  userSub?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
   userEmail?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
   action?: Prisma.EnumAuditActionWithAggregatesFilter<"AuditLog"> | $Enums.AuditAction
   entityType?: Prisma.StringWithAggregatesFilter<"AuditLog"> | string
@@ -259,7 +259,7 @@ export type AuditLogScalarWhereWithAggregatesInput = {
 
 export type AuditLogCreateInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   action: $Enums.AuditAction
   entityType: string
@@ -270,7 +270,7 @@ export type AuditLogCreateInput = {
 
 export type AuditLogUncheckedCreateInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   action: $Enums.AuditAction
   entityType: string
@@ -281,7 +281,7 @@ export type AuditLogUncheckedCreateInput = {
 
 export type AuditLogUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
   entityType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -292,7 +292,7 @@ export type AuditLogUpdateInput = {
 
 export type AuditLogUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
   entityType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -303,7 +303,7 @@ export type AuditLogUncheckedUpdateInput = {
 
 export type AuditLogCreateManyInput = {
   id?: string
-  userEntraId: string
+  userSub: string
   userEmail: string
   action: $Enums.AuditAction
   entityType: string
@@ -314,7 +314,7 @@ export type AuditLogCreateManyInput = {
 
 export type AuditLogUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
   entityType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -325,7 +325,7 @@ export type AuditLogUpdateManyMutationInput = {
 
 export type AuditLogUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  userEntraId?: Prisma.StringFieldUpdateOperationsInput | string
+  userSub?: Prisma.StringFieldUpdateOperationsInput | string
   userEmail?: Prisma.StringFieldUpdateOperationsInput | string
   action?: Prisma.EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
   entityType?: Prisma.StringFieldUpdateOperationsInput | string
@@ -336,7 +336,7 @@ export type AuditLogUncheckedUpdateManyInput = {
 
 export type AuditLogCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   action?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -347,7 +347,7 @@ export type AuditLogCountOrderByAggregateInput = {
 
 export type AuditLogMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   action?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -357,7 +357,7 @@ export type AuditLogMaxOrderByAggregateInput = {
 
 export type AuditLogMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  userEntraId?: Prisma.SortOrder
+  userSub?: Prisma.SortOrder
   userEmail?: Prisma.SortOrder
   action?: Prisma.SortOrder
   entityType?: Prisma.SortOrder
@@ -373,7 +373,7 @@ export type EnumAuditActionFieldUpdateOperationsInput = {
 
 export type AuditLogSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   action?: boolean
   entityType?: boolean
@@ -384,7 +384,7 @@ export type AuditLogSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
 
 export type AuditLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   action?: boolean
   entityType?: boolean
@@ -395,7 +395,7 @@ export type AuditLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
 
 export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   action?: boolean
   entityType?: boolean
@@ -406,7 +406,7 @@ export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 
 export type AuditLogSelectScalar = {
   id?: boolean
-  userEntraId?: boolean
+  userSub?: boolean
   userEmail?: boolean
   action?: boolean
   entityType?: boolean
@@ -415,14 +415,14 @@ export type AuditLogSelectScalar = {
   createdAt?: boolean
 }
 
-export type AuditLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userEntraId" | "userEmail" | "action" | "entityType" | "entityId" | "details" | "createdAt", ExtArgs["result"]["auditLog"]>
+export type AuditLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userSub" | "userEmail" | "action" | "entityType" | "entityId" | "details" | "createdAt", ExtArgs["result"]["auditLog"]>
 
 export type $AuditLogPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "AuditLog"
   objects: {}
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    userEntraId: string
+    userSub: string
     userEmail: string
     action: $Enums.AuditAction
     entityType: string
@@ -853,7 +853,7 @@ export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends runtime
  */
 export interface AuditLogFieldRefs {
   readonly id: Prisma.FieldRef<"AuditLog", 'String'>
-  readonly userEntraId: Prisma.FieldRef<"AuditLog", 'String'>
+  readonly userSub: Prisma.FieldRef<"AuditLog", 'String'>
   readonly userEmail: Prisma.FieldRef<"AuditLog", 'String'>
   readonly action: Prisma.FieldRef<"AuditLog", 'AuditAction'>
   readonly entityType: Prisma.FieldRef<"AuditLog", 'String'>

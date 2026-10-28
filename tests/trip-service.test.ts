@@ -67,7 +67,7 @@ describe("addPassenger (cas limite 1)", () => {
   });
 
   it("refuse un trajet complet", async () => {
-    const passengers = [1, 2, 3, 4].map((n) => makePassenger({ id: `p${n}`, userEntraId: `user-${n}` }));
+    const passengers = [1, 2, 3, 4].map((n) => makePassenger({ id: `p${n}`, userSub: `user-${n}` }));
     db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip({ passengers }));
     await expect(join(PASSENGER)).rejects.toBeInstanceOf(PermissionError);
     expect(db.passenger.create).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe("addPassenger (cas limite 1)", () => {
     db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip());
     await addByDriver(DRIVER);
     expect(db.passenger.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ userEntraId: PASSENGER, addedBy: "DRIVER" }),
+      data: expect.objectContaining({ userSub: PASSENGER, addedBy: "DRIVER" }),
     });
   });
 
@@ -206,13 +206,13 @@ describe("updateDepartureTime (cas limite 3)", () => {
   });
 
   it("refuse si le conducteur a un autre trajet sur le nouveau créneau", async () => {
-    conflictWhen((where) => where.driverEntraId === DRIVER);
+    conflictWhen((where) => where.driverSub === DRIVER);
     await expect(shift()).rejects.toBeInstanceOf(DriverOverlapError);
     expect(db.trip.update).not.toHaveBeenCalled();
   });
 
   it("refuse si un passager a un autre trajet sur le nouveau créneau", async () => {
-    conflictWhen((where) => JSON.stringify(where.passengers) === JSON.stringify({ some: { userEntraId: PASSENGER } }));
+    conflictWhen((where) => JSON.stringify(where.passengers) === JSON.stringify({ some: { userSub: PASSENGER } }));
     await expect(shift()).rejects.toBeInstanceOf(PassengerOverlapError);
     expect(db.trip.update).not.toHaveBeenCalled();
   });
@@ -244,7 +244,7 @@ describe("updateDepartureTime (cas limite 3)", () => {
 describe("createTrip : passagers (cas limite 1)", () => {
   const input = (passengerIds: string[]): CreateTripInput => ({
     vehicleId: "vehicle-1",
-    driverEntraId: DRIVER,
+    driverSub: DRIVER,
     driverEmail: "d@em-normandie.fr",
     driverDisplayName: "Conducteur",
     type: "ONE_WAY",
@@ -252,7 +252,7 @@ describe("createTrip : passagers (cas limite 1)", () => {
     destinationCampusId: "campus-2",
     departureTime: hoursFromNow(72),
     estimatedArrivalTime: hoursFromNow(74),
-    passengers: passengerIds.map((id) => ({ userEntraId: id, userEmail: `${id}@em-normandie.fr`, userDisplayName: id })),
+    passengers: passengerIds.map((id) => ({ userSub: id, userEmail: `${id}@em-normandie.fr`, userDisplayName: id })),
   });
 
   beforeEach(() => {

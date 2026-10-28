@@ -1,15 +1,16 @@
 # ResaVroom (dépôt EMN-resaVroom)
 
 **ResaVroom** est une application web interne de réservation de véhicules et de covoiturage entre trois
-campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. Elle fonctionne en développement, derrière
-un fournisseur de connexion de développement ; elle n'est pas déployée. Elle se connectera par le **portail
-admission** (G9, contrat portail v1), à l'étape 2a du plan.
+campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. Elle fonctionne en développement et n'est
+pas déployée. On s'y connecte par le **portail admission** (G9, contrat portail v1), branché à l'étape 2a sur le
+poste (client `dev`, `http://localhost:3002`).
 
 - **Next.js 16.2** (App Router) et **React 19**, TypeScript strict : pages, routes API et actions serveur.
 - **Prisma 7.7** avec l'adaptateur Neon (WebSocket) ; **NextAuth v4** (JWT) ; SWR, Sonner, Lucide.
-- **PostgreSQL chez Neon** : une base configurée par `DATABASE_URL`. Base actuelle : projet `neon-cyclamen-river`
-  du compte Anton1P ; projet neuf `resavroom` (`wispy-shadow-66847588`), créé par l'intégration Neon de Vercel,
-  encore vide (D7). Lectures sur ce seul projet ; migration et seed sur accord.
+- **PostgreSQL chez Neon** : une base configurée par `DATABASE_URL`, le projet `resavroom`
+  (`wispy-shadow-66847588`), créé par l'intégration Neon de Vercel (D7), migré (deux migrations) et seedé.
+  L'ancienne base `neon-cyclamen-river` (compte Anton1P) n'est plus utilisée. Lectures sur ce seul projet ;
+  migration et seed sur accord.
 - **Hébergement** : aucun à ce jour (Vercel visé). Dépôt : `github.com/emnormandie76/EMN-resaVroom`.
 
 ## Documents de référence
@@ -35,7 +36,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   v1). L'étape 0 de ce branchement (préparation, sans code) est faite, validée et commitée (2026-10-28) ;
 - **étape 1 faite et validée** (2026-10-28) : Vitest, cas limites 1, 2, 3, 9 et 6 (zod), `src/proxy.ts`,
   projet Neon neuf migré et seedé, `README.md` réécrit ;
-- **ensuite**, dans l'ordre : 2a (connexion par le portail), 2b (annuaire), 3 (polish), 4 (mise en ligne).
+- **étape 2a faite** (2026-10-28), **en attente de validation** : connexion par le portail (fournisseur OIDC
+  `portail`, table `people`, colonnes `*_sub`, 8 h fixes, cookies `resavroom.*`, déconnexion par le portail),
+  décisions D17 à D23, migration `20261028160000_portail_identity` appliquée, essai réel conforme ;
+- **ensuite**, dans l'ordre : 2b (annuaire), 3 (polish), 4 (mise en ligne).
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -62,7 +66,9 @@ L'étape en cours se lit dans le journal du plan (§9).
 8. **Base de données.** Lectures libres ; toute écriture, migration ou suppression exige l'accord du
    propriétaire, à chaque fois. Interdits : `migrate reset`, `db push --force-reset`, `DROP`, `TRUNCATE`,
    `deleteMany` sans filtre, et tout script qui écrit dans la base réelle (l'ancien `tests/admin_delegation.ts`,
-   qui vidait les trajets, est retiré : ne pas le restaurer).
+   qui vidait les trajets, est retiré : ne pas le restaurer). Seule exception accordée à ce jour : la
+   suppression de `admins`, `authorized_services` et de l'ancien type `AuditAction` dans la migration de
+   l'étape 2a (D17, D18), déjà appliquée.
    Une migration se rédige à la main et ne se modifie plus une fois appliquée.
 9. **Sécurité.** Tout accès passe par `requireAuthSession()` / `requireAdminSession()`
    ([src/lib/api-helpers.ts](src/lib/api-helpers.ts)) ; le rôle est relu en base, jamais déduit du jeton. La
@@ -131,16 +137,18 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 `PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
 ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
-`http://localhost:3002`, annuaire fermé, grille vide (détails dans le mémo §3).
+`http://localhost:3002`, annuaire fermé (détails et état de la grille dans le mémo §3). Pour se connecter à
+ResaVroom sur le poste, il faut un rôle dans la grille : le demander au super-admin du portail.
 
 ## Commandes
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | serveur de développement (base de `DATABASE_URL`) ; d'ici l'étape 2a, `npm run dev -- -p 3002` (`NEXTAUTH_URL` est sur 3002) |
-| `npm test` | Vitest : aucun réseau, aucune base (146 tests à la fin de l'étape 1) |
+| `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
+| `npm test` | Vitest : aucun réseau, aucune base (169 tests à la fin de l'étape 2a) |
 | `npx tsc --noEmit` | contrôle des types (0 erreur) |
 | `npm run lint` | ESLint (17 problèmes depuis l'étape 1, tous antérieurs ; corrigés à l'étape 3) |
+| `npx next typegen` | régénère les types de routes de `.next/types` après le retrait d'une route (sinon `tsc` cite l'ancienne) ; `.next/dev/types`, laissé par `next dev`, se régénère au `next dev` suivant ou peut être effacé (cache ignoré par Git) |
 | `npm run build` | build de production |
 | `npx prisma generate` | régénère le client dans `src/generated/prisma/` |
 | `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** ; lit `DATABASE_URL_UNPOOLED` de `.env.local` (D15) ; port 5432, fermé sur le réseau de l'entreprise (mémo §2) |

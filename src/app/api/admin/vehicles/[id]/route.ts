@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     await logAudit({
-      userEntraId: auth.session.user.entraId,
+      userSub: auth.session.user.sub,
       userEmail: auth.session.user.email,
       action,
       entityType: "vehicle",

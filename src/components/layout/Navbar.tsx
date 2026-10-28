@@ -4,15 +4,19 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Car, Map, LayoutDashboard, Settings, LogOut, Menu, X } from "lucide-react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+
+// Déconnexion par le portail (contrat portail v1 §3.8, D23) : un formulaire POST vers la route serveur,
+// qui efface la session puis renvoie vers le portail. signOut() de NextAuth ne préviendrait pas le portail.
+const LOGOUT_ACTION = "/api/auth/logout";
 
 export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Ne pas afficher la navbar sur la page de login
-  if (pathname === "/login") return null;
+  // Ne pas afficher la navbar sur les pages de connexion et de refus
+  if (pathname === "/login" || pathname === "/unauthorized") return null;
 
   const isAdmin = session?.user?.isAdmin;
 
@@ -68,13 +72,11 @@ export function Navbar() {
                   <span className="user-name">{session.user.name}</span>
                 </div>
               )}
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="btn btn-ghost btn-icon"
-                title="Se déconnecter"
-              >
-                <LogOut size={20} />
-              </button>
+              <form action={LOGOUT_ACTION} method="post" style={{ display: "contents" }}>
+                <button type="submit" className="btn btn-ghost btn-icon" title="Se déconnecter">
+                  <LogOut size={20} />
+                </button>
+              </form>
             </div>
 
             {/* Mobile menu button */}
@@ -107,14 +109,16 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="mobile-nav-link text-danger"
-              style={{ color: "var(--color-danger)", background: "transparent", border: "none", width: "100%", textAlign: "left" }}
-            >
-              <LogOut size={20} />
-              <span>Se déconnecter</span>
-            </button>
+            <form action={LOGOUT_ACTION} method="post" style={{ display: "contents" }}>
+              <button
+                type="submit"
+                className="mobile-nav-link text-danger"
+                style={{ color: "var(--color-danger)", background: "transparent", border: "none", width: "100%", textAlign: "left" }}
+              >
+                <LogOut size={20} />
+                <span>Se déconnecter</span>
+              </button>
+            </form>
           </div>
         </div>
       )}

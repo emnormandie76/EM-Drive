@@ -4,11 +4,10 @@ import { Card, CardBody } from "@/components/ui/Card";
 
 export default async function AdminDashboardPage() {
   // Récupérer quelques métriques globales
-  const [totalVehicles, maintenanceVehicles, activeTrips, totalAdmins] = await Promise.all([
+  const [totalVehicles, maintenanceVehicles, activeTrips] = await Promise.all([
     prisma.vehicle.count(),
     prisma.vehicle.count({ where: { status: "MAINTENANCE" } }),
     prisma.trip.count({ where: { status: "SCHEDULED", departureTime: { gte: new Date() } } }),
-    prisma.admin.count(),
   ]);
 
   return (
@@ -39,12 +38,6 @@ export default async function AdminDashboardPage() {
           </CardBody>
         </Card>
 
-        <Card className="text-center">
-          <CardBody>
-            <h3 className="text-lg text-muted">Administrateurs</h3>
-            <p className="text-3xl font-bold" style={{ marginTop: "0.5rem" }}>{totalAdmins}</p>
-          </CardBody>
-        </Card>
       </div>
 
       <Card style={{ marginTop: "2rem" }}>
@@ -52,7 +45,8 @@ export default async function AdminDashboardPage() {
           <h2 className="text-xl font-bold mb-4">Bienvenue dans l&#39;espace d&#39;administration</h2>
           <p className="text-muted">
             Utilisez le menu latéral pour gérer la flotte de véhicules, consulter et annuler des trajets,
-            ou paramétrer l&#39;application (ajout d&#39;admins, temps de buffer, etc.).
+            ou paramétrer l&#39;application (temps de buffer, etc.). Les accès et les rôles se gèrent dans le
+            portail admission.
           </p>
         </CardBody>
       </Card>

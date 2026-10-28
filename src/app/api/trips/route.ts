@@ -99,15 +99,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await parseJsonBody(request, createTripSchema);
-    const userIsAdmin = await isAdmin(auth.session.user.entraId);
+    const userIsAdmin = await isAdmin(auth.session.user.sub);
 
-    const driverEntraId = (userIsAdmin && body.driverEntraId) ? body.driverEntraId : auth.session.user.entraId;
+    const driverSub = (userIsAdmin && body.driverSub) ? body.driverSub : auth.session.user.sub;
     const driverEmail = (userIsAdmin && body.driverEmail) ? body.driverEmail : auth.session.user.email;
     const driverDisplayName = (userIsAdmin && body.driverDisplayName) ? body.driverDisplayName : auth.session.user.name;
 
     const trip = await createTrip({
       vehicleId: body.vehicleId,
-      driverEntraId,
+      driverSub,
       driverEmail,
       driverDisplayName,
       type: body.type,

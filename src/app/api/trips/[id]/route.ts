@@ -36,16 +36,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const userEntraId = auth.session.user.entraId;
-  const userIsAdmin = await isAdmin(userEntraId);
+  const userSub = auth.session.user.sub;
+  const userIsAdmin = await isAdmin(userSub);
 
   // Calculer les permissions pour l'utilisateur connecté
   const permissions = {
-    canDelete: canDeleteTrip(trip, userEntraId, userIsAdmin).allowed,
-    canModifyDeparture: canModifyDepartureTime(trip, userEntraId, userIsAdmin).allowed,
+    canDelete: canDeleteTrip(trip, userSub, userIsAdmin).allowed,
+    canModifyDeparture: canModifyDepartureTime(trip, userSub, userIsAdmin).allowed,
     canJoinAsPassenger: canJoinAsPassenger(
       { ...trip, vehicleSeats: trip.vehicle.seats },
-      userEntraId
+      userSub
     ).allowed,
   };
 
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     displayStatus: getTripDisplayStatus(trip),
     seatsAvailable: trip.vehicle.seats - 1 - trip.passengers.length,
     driver: {
-      entraId: trip.driverEntraId,
+      sub: trip.driverSub,
       email: trip.driverEmail,
       displayName: trip.driverDisplayName,
     },
@@ -74,14 +74,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await parseJsonBody(request, updateTripSchema);
-    const userIsAdmin = await isAdmin(auth.session.user.entraId);
+    const userIsAdmin = await isAdmin(auth.session.user.sub);
 
     // Si c'est un admin et qu'on modifie autre chose que l'heure de départ
     if (userIsAdmin && Object.keys(body).some((key) => !TIME_ONLY_FIELDS.includes(key))) {
       const updated = await updateTripInfo(
         id,
         body,
-        auth.session.user.entraId,
+        auth.session.user.sub,
         auth.session.user.email,
         userIsAdmin
       );
@@ -95,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updated = await updateDepartureTime(
       id,
       body.departureTime,
-      auth.session.user.entraId,
+      auth.session.user.sub,
       auth.session.user.email,
       userIsAdmin
     );
@@ -117,11 +117,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    const userIsAdmin = await isAdmin(auth.session.user.entraId);
+    const userIsAdmin = await isAdmin(auth.session.user.sub);
 
     await cancelTrip(
       id,
-      auth.session.user.entraId,
+      auth.session.user.sub,
       auth.session.user.email,
       userIsAdmin
     );

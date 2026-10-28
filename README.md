@@ -3,9 +3,8 @@
 Application web interne de réservation des véhicules de service et de covoiturage entre les campus du Havre,
 de Caen et de Paris.
 
-> **État au 2026-10-28** : en développement, non déployée. La connexion passe encore par un fournisseur de
-> développement (comptes simulés) ; elle passera par le **portail admission** de l'équipe (OIDC) à l'étape 2a du
-> chantier de mise en production. Suivi du chantier :
+> **État au 2026-10-28** : en développement, non déployée. La connexion passe par le **portail admission** de
+> l'équipe (OIDC), branché sur le poste à l'étape 2a du chantier de mise en production. Suivi du chantier :
 > [docs/features/mise-en-production.md](docs/features/mise-en-production.md).
 
 ## Fonctionnalités
@@ -32,8 +31,13 @@ de Caen et de Paris.
 - Trajets : modification complète et annulation.
 - Paramètres : temps de battement entre deux réservations.
 - Journal d'audit des actions sensibles ; métriques et nettoyage de la base.
-- Administrateurs et liste des services (`/admin/users`) : ces écrans disparaîtront avec le portail, qui
-  gérera seul les accès et les rôles.
+- Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans le portail admission, pas dans ResaVroom.
+
+### Connexion
+
+- Par le portail admission, avec son adresse `@em-normandie.fr` : bouton « Se connecter avec le portail ».
+- ResaVroom est restreinte : seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
+- Une session dure 8 h depuis la connexion ; la déconnexion ferme aussi la session du portail.
 
 ## Pile technique
 
@@ -50,6 +54,8 @@ de Caen et de Paris.
 - Node.js 20 ou plus.
 - Les adresses de connexion à la base Neon de ResaVroom (projet `resavroom`) : à demander au propriétaire du
   projet.
+- L'identifiant et le secret du client `dev` de ResaVroom dans le portail, et un rôle dans la grille de
+  ResaVroom : à demander au propriétaire, qui voit avec le super-admin du portail.
 - Facultatif : une clé [OpenRouteService](https://openrouteservice.org/).
 
 ### Installation
@@ -65,8 +71,8 @@ Renseignez `.env.local`. Le rôle de chaque variable est décrit dans
 - `DATABASE_URL` (connexion pooled) et `DATABASE_URL_UNPOOLED` (connexion directe, pour les migrations) ;
 - `NEXTAUTH_URL` (`http://localhost:3002`) et `NEXTAUTH_SECRET` (une chaîne longue et aléatoire) ;
 - `ORS_API_KEY` (facultative) ;
-- `PORTAIL_ISSUER`, `PORTAIL_CLIENT_ID` et `PORTAIL_CLIENT_SECRET` : le client `dev` du portail, pour la
-  connexion par le portail (étape 2a ; ces noms entreront dans `.env.example` à cette étape).
+- `PORTAIL_ISSUER` (`https://portail-admission.vercel.app/api/auth`), `PORTAIL_CLIENT_ID` et
+  `PORTAIL_CLIENT_SECRET` : le client `dev` du portail.
 
 Ne committez jamais `.env` ni `.env.local`.
 
@@ -88,17 +94,17 @@ npx prisma db seed
 ### Lancer
 
 ```bash
-npm run dev -- -p 3002
+npm run dev
 ```
 
-Ouvrez <http://localhost:3002>. Le port 3002 est celui que le portail connaît pour ResaVroom ; il deviendra le
-port par défaut du script `dev` à l'étape 2a. La page de connexion propose les comptes de développement.
+Ouvrez <http://localhost:3002>. Le port 3002 est fixé dans le script `dev` : c'est celui que le portail connaît
+pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de connexion renvoie vers le portail.
 
 ## Commandes
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | serveur de développement (ajouter `-- -p 3002`, voir plus haut) |
+| `npm run dev` | serveur de développement, sur le port 3002 |
 | `npm test` | tests Vitest, sans réseau ni base de données |
 | `npx tsc --noEmit` | contrôle des types |
 | `npm run lint` | ESLint |
@@ -110,7 +116,8 @@ port par défaut du script `dev` à l'étape 2a. La page de connexion propose le
 
 - Créer un trajet avec passagers depuis l'assistant ne fonctionne pas encore (cas limite 11, prévu à
   l'étape 2b) ; les passagers peuvent rejoindre le trajet une fois créé.
-- La recherche de collègues est simulée (comptes de développement) jusqu'à l'étape 2b.
+- La recherche de collègues est simulée (personnes fictives) jusqu'à l'étape 2b, qui la fera passer par
+  l'annuaire du portail.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 
 ## Documentation

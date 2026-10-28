@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 interface Passenger {
   id: string;
-  userEntraId: string;
+  userSub: string;
   userEmail: string;
   userDisplayName: string;
   addedBy: 'SELF' | 'DRIVER';
@@ -38,7 +38,7 @@ export function PassengerList({
   const [isLoading, setIsLoading] = useState(false);
 
   const seatsAvailable = maxPassengers - passengers.length;
-  const amIPassenger = passengers.find(p => p.userEntraId === currentUserId);
+  const amIPassenger = passengers.find(p => p.userSub === currentUserId);
 
   const handleJoin = async () => {
     setIsLoading(true);
@@ -102,7 +102,7 @@ export function PassengerList({
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0' }}>
           {passengers.map(p => {
-            const canRemove = isAdmin || p.userEntraId === currentUserId || (isDriver && p.addedBy === 'DRIVER');
+            const canRemove = isAdmin || p.userSub === currentUserId || (isDriver && p.addedBy === 'DRIVER');
 
             return (
               <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}>

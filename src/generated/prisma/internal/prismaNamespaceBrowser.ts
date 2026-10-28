@@ -55,8 +55,7 @@ export const ModelName = {
   Vehicle: 'Vehicle',
   Trip: 'Trip',
   Passenger: 'Passenger',
-  AuthorizedService: 'AuthorizedService',
-  Admin: 'Admin',
+  Person: 'Person',
   AppSetting: 'AppSetting',
   AuditLog: 'AuditLog'
 } as const
@@ -105,7 +104,7 @@ export type VehicleScalarFieldEnum = (typeof VehicleScalarFieldEnum)[keyof typeo
 export const TripScalarFieldEnum = {
   id: 'id',
   vehicleId: 'vehicleId',
-  driverEntraId: 'driverEntraId',
+  driverSub: 'driverSub',
   driverEmail: 'driverEmail',
   driverDisplayName: 'driverDisplayName',
   type: 'type',
@@ -131,7 +130,7 @@ export type TripScalarFieldEnum = (typeof TripScalarFieldEnum)[keyof typeof Trip
 export const PassengerScalarFieldEnum = {
   id: 'id',
   tripId: 'tripId',
-  userEntraId: 'userEntraId',
+  userSub: 'userSub',
   userEmail: 'userEmail',
   userDisplayName: 'userDisplayName',
   addedBy: 'addedBy',
@@ -141,23 +140,18 @@ export const PassengerScalarFieldEnum = {
 export type PassengerScalarFieldEnum = (typeof PassengerScalarFieldEnum)[keyof typeof PassengerScalarFieldEnum]
 
 
-export const AuthorizedServiceScalarFieldEnum = {
+export const PersonScalarFieldEnum = {
   id: 'id',
-  serviceName: 'serviceName',
-  createdAt: 'createdAt'
+  sub: 'sub',
+  email: 'email',
+  name: 'name',
+  role: 'role',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
-export type AuthorizedServiceScalarFieldEnum = (typeof AuthorizedServiceScalarFieldEnum)[keyof typeof AuthorizedServiceScalarFieldEnum]
-
-
-export const AdminScalarFieldEnum = {
-  id: 'id',
-  userEntraId: 'userEntraId',
-  userEmail: 'userEmail',
-  createdAt: 'createdAt'
-} as const
-
-export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof AdminScalarFieldEnum]
+export type PersonScalarFieldEnum = (typeof PersonScalarFieldEnum)[keyof typeof PersonScalarFieldEnum]
 
 
 export const AppSettingScalarFieldEnum = {
@@ -171,7 +165,7 @@ export type AppSettingScalarFieldEnum = (typeof AppSettingScalarFieldEnum)[keyof
 
 export const AuditLogScalarFieldEnum = {
   id: 'id',
-  userEntraId: 'userEntraId',
+  userSub: 'userSub',
   userEmail: 'userEmail',
   action: 'action',
   entityType: 'entityType',

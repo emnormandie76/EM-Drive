@@ -1,86 +1,20 @@
-// src/app/(auth)/login/page.tsx — Page de connexion
-"use client";
+// src/app/(auth)/login/page.tsx — Page de connexion : par le portail admission (contrat portail v1 §3.6)
+// Un bouton lance la connexion ; la page ne la relance jamais d'elle-même. Une erreur OIDC revient ici
+// avec ?error=… (pages.error) : message neutre et lien vers le portail, sans boucle.
 
-import { signIn } from "next-auth/react";
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { portalHomeUrl } from "@/lib/portail";
+import { PortalSignInButton } from "./PortalSignInButton";
 
-function LoginForm() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const error = searchParams.get("error");
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const hasError = params.error !== undefined;
+  const callbackUrl = typeof params.callbackUrl === "string" ? params.callbackUrl : "/dashboard";
+  const portalUrl = portalHomeUrl();
 
-  const [email, setEmail] = useState("admin@entreprise.fr");
-  const [password, setPassword] = useState("dev");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    await signIn("dev-credentials", {
-      email,
-      password,
-      callbackUrl,
-    });
-    setLoading(false);
-  };
-
-  return (
-    <>
-      {/* Message d'erreur */}
-      {error && (
-        <div className="login-error">
-          {error === "CredentialsSignin"
-            ? "Email ou mot de passe incorrect."
-            : "Une erreur est survenue lors de la connexion."}
-        </div>
-      )}
-
-      {/* Formulaire */}
-      <form onSubmit={handleSubmit} className="login-form">
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <select
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          >
-            <option value="admin@entreprise.fr">
-              👑 Admin Dev (admin@entreprise.fr)
-            </option>
-            <option value="jean.dupont@entreprise.fr">
-              👤 Jean Dupont (jean.dupont@entreprise.fr)
-            </option>
-            <option value="marie.martin@entreprise.fr">
-              👤 Marie Martin (marie.martin@entreprise.fr)
-            </option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="dev"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="login-button"
-          disabled={loading}
-        >
-          {loading ? "Connexion en cours..." : "Se connecter"}
-        </button>
-      </form>
-    </>
-  );
-}
-
-export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-card">
@@ -91,18 +25,21 @@ export default function LoginPage() {
           <p>Réservation de véhicules inter-campus</p>
         </div>
 
-        {/* Bandeau dev */}
-        <div className="login-dev-banner">
-          <span>🛠️</span>
-          <div>
-            <strong>Mode développement</strong>
-            <p>Connexion simulée — mot de passe : <code>dev</code></p>
+        {/* Message d'erreur neutre : le détail reste dans les journaux du serveur */}
+        {hasError && (
+          <div className="login-error" role="alert">
+            La connexion n&apos;a pas abouti. Vous pouvez réessayer, ou passer par le portail.
           </div>
-        </div>
+        )}
 
-        <Suspense fallback={<div>Chargement...</div>}>
-          <LoginForm />
-        </Suspense>
+        <div className="unauthorized-actions">
+          <PortalSignInButton callbackUrl={callbackUrl} />
+          {portalUrl && (
+            <a href={portalUrl} className="login-link">
+              Ouvrir le portail
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

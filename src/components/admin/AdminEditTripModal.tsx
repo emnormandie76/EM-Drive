@@ -101,9 +101,9 @@ export function AdminEditTripModal({
       setDestinationOtherLng(trip.destinationOtherLng || null);
       setStatus(trip.status || "SCHEDULED");
 
-      if (trip.driverEntraId) {
+      if (trip.driverSub) {
         setDriver({
-          entraId: trip.driverEntraId,
+          sub: trip.driverSub,
           displayName: trip.driverDisplayName || "",
           email: trip.driverEmail || "",
         });
@@ -197,7 +197,7 @@ export function AdminEditTripModal({
     };
 
     if (driver) {
-      payload.driverEntraId = driver.entraId;
+      payload.driverSub = driver.sub;
       payload.driverEmail = driver.email;
       payload.driverDisplayName = driver.displayName;
     }

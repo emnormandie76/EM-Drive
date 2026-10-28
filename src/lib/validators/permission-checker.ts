@@ -13,7 +13,7 @@ export interface PermissionResult {
 }
 
 export interface TripWithPassengers {
-  driverEntraId: string;
+  driverSub: string;
   departureTime: Date;
   passengers: Pick<Passenger, "addedBy">[];
 }
@@ -33,12 +33,12 @@ export interface TripWithPassengers {
  */
 export function canDeleteTrip(
   trip: TripWithPassengers,
-  userEntraId: string,
+  userSub: string,
   userIsAdmin: boolean
 ): PermissionResult {
   if (userIsAdmin) return { allowed: true };
 
-  if (trip.driverEntraId !== userEntraId) {
+  if (trip.driverSub !== userSub) {
     return {
       allowed: false,
       reason: "Seul le conducteur ou un admin peut supprimer ce trajet.",
@@ -73,12 +73,12 @@ export function canDeleteTrip(
  */
 export function canModifyDepartureTime(
   trip: TripWithPassengers,
-  userEntraId: string,
+  userSub: string,
   userIsAdmin: boolean
 ): PermissionResult {
   if (userIsAdmin) return { allowed: true };
 
-  if (trip.driverEntraId !== userEntraId) {
+  if (trip.driverSub !== userSub) {
     return {
       allowed: false,
       reason: "Seul le conducteur ou un admin peut modifier ce trajet.",
@@ -116,7 +116,7 @@ export function canModifyDepartureTime(
  */
 export function canJoinAsPassenger(
   trip: TripWithPassengers & { status: string; vehicleSeats: number },
-  userEntraId: string
+  userSub: string
 ): PermissionResult {
   if (trip.status !== "SCHEDULED") {
     return { allowed: false, reason: "Ce trajet n'est plus disponible." };
@@ -126,7 +126,7 @@ export function canJoinAsPassenger(
     return { allowed: false, reason: "Ce trajet est déjà en cours ou terminé." };
   }
 
-  if (trip.driverEntraId === userEntraId) {
+  if (trip.driverSub === userSub) {
     return {
       allowed: false,
       reason: "Vous êtes le conducteur de ce trajet.",

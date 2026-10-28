@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 async function verifyAdmin() {
     const session = await getSession();
     if (!session?.user) throw new Error("Non authentifié.");
-    const adminStatus = await isAdmin(session.user.entraId);
+    const adminStatus = await isAdmin(session.user.sub);
     if (!adminStatus) throw new Error("Accès administrateur requis.");
     return session;
 }

@@ -3,7 +3,7 @@ import useSWR from "swr";
 import { Input } from "@/components/ui/Input";
 
 export interface UserSuggestion {
-  entraId: string;
+  sub: string;
   displayName: string;
   email: string;
 }

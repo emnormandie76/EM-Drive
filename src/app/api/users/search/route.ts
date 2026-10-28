@@ -1,15 +1,15 @@
 // GET /api/users/search?q=... — Recherche d'utilisateurs
-// En mode dev : retourne les utilisateurs simulés.
-// En production : appelle Microsoft Graph API.
+// SIMULATION gardée jusqu'à l'étape 2b du plan : la recherche passera alors par l'annuaire du portail
+// (contrat portail v1 §3.7), qui rend le vrai sub, le nom et l'adresse des personnes ayant accès.
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession } from "@/lib/api-helpers";
 
-// Utilisateurs simulés pour le développement (même liste que auth.ts)
+// Personnes simulées : leurs sub ne correspondent à personne du portail (étape 2b)
 const DEV_USERS = [
-  { entraId: "TO_BE_CONFIGURED", displayName: "Admin Dev", email: "admin@entreprise.fr" },
-  { entraId: "dev-user-entra-001", displayName: "Jean Dupont", email: "jean.dupont@entreprise.fr" },
-  { entraId: "dev-user-entra-002", displayName: "Marie Martin", email: "marie.martin@entreprise.fr" },
+  { sub: "dev-sub-admin", displayName: "Admin Dev", email: "admin@entreprise.fr" },
+  { sub: "dev-sub-001", displayName: "Jean Dupont", email: "jean.dupont@entreprise.fr" },
+  { sub: "dev-sub-002", displayName: "Marie Martin", email: "marie.martin@entreprise.fr" },
 ];
 
 export async function GET(request: NextRequest) {
@@ -20,12 +20,6 @@ export async function GET(request: NextRequest) {
   if (!q || q.length < 2) {
     return NextResponse.json([]);
   }
-
-  // TODO: Remplacer par un appel Graph API quand les credentials Entra ID seront disponibles
-  // GET https://graph.microsoft.com/v1.0/users
-  //   ?$filter=startswith(displayName,'${q}') or startswith(mail,'${q}')
-  //   &$select=id,displayName,mail
-  //   &$top=5
 
   const results = DEV_USERS.filter(
     (u) =>

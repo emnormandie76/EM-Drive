@@ -10,7 +10,7 @@ export interface DashboardTrip {
     licensePlate: string;
     seats: number;
   };
-  driverEntraId: string;
+  driverSub: string;
   driverEmail: string;
   driverDisplayName: string;
   type: TripType;
@@ -27,7 +27,7 @@ export interface DashboardTrip {
   seatsAvailable: number;
   passengers: Array<{
     id: string;
-    userEntraId: string;
+    userSub: string;
     userEmail: string;
     userDisplayName: string;
     addedBy: "SELF" | "DRIVER";
@@ -63,18 +63,18 @@ export function useUpcomingTrips() {
   };
 }
 
-export function useMyTrips(userEntraId?: string) {
+export function useMyTrips(userSub?: string) {
   // It's better to fetch upcoming, the backend filters if needed or we filter here.
   // Actually the backend GET /api/trips currently fetches all or filtered by campus/vehicle. 
-  // It does not filter by userEntraId yet. Let's fetch upcoming and filter locally for the dashboard, 
+  // It does not filter by userSub yet. Let's fetch upcoming and filter locally for the dashboard, 
   // or just use upcoming trips for the dashboard widget.
   
   const { trips, isLoading, isError, mutate } = useUpcomingTrips();
   
   // Filter locally for the user's trips (driver or passenger)
   const myTrips = trips.filter(trip => 
-    trip.driverEntraId === userEntraId ||
-    trip.passengers.some(p => p.userEntraId === userEntraId)
+    trip.driverSub === userSub ||
+    trip.passengers.some(p => p.userSub === userSub)
   );
 
   return {
