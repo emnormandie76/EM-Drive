@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
@@ -9,8 +8,10 @@ import { Car, Info, Trash2, Edit, ArrowRight, ArrowLeftRight } from 'lucide-reac
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+import type { TripDetailData } from '@/hooks/use-trips';
+import './trips.css';
 
-export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, currentUserId: string, onMutate: () => void }) {
+export function TripDetail({ trip }: { trip: TripDetailData }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -35,8 +36,8 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
       }
       toast.success("Trajet supprimé");
       router.push('/trips');
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur de suppression");
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
@@ -44,8 +45,8 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
 
   return (
     <>
-      <Card style={{ marginBottom: '24px', padding: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <Card className="trip-detail-card">
+        <div className="trip-detail-header">
           <div>
             {trip.status === 'CANCELLED' ? (
               <Badge variant="danger" style={{ marginBottom: '8px' }}>Annulé</Badge>
@@ -69,7 +70,7 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
         </div>
 
         {/* Timeline (Frise chronologique) */}
-        <div style={{ padding: '32px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-md)', marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="trip-timeline">
           {/* Trajet Aller */}
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -78,8 +79,8 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
               <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: trip.type === 'ONE_WAY' ? 'var(--color-success)' : 'var(--color-text-secondary)', border: '3px solid white', zIndex: 1 }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingBottom: '4px', flexGrow: 1 }}>
-              <div style={{ height: '76px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingBottom: '4px', flexGrow: 1, minWidth: 0 }}>
+              <div style={{ minHeight: '76px' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.1rem', marginRight: '12px' }}>{format(departureDate, 'HH:mm')}</span>
                 <span style={{ fontSize: '1.1rem', color: 'var(--color-text)' }}>Départ : {trip.originCampus.name}</span>
               </div>
@@ -99,8 +100,8 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
                 <div style={{ width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', border: '3px solid white', zIndex: 1 }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingBottom: '4px', flexGrow: 1 }}>
-                <div style={{ height: '76px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingBottom: '4px', flexGrow: 1, minWidth: 0 }}>
+                <div style={{ minHeight: '76px' }}>
                   <span style={{ fontWeight: 700, fontSize: '1.1rem', marginRight: '12px' }}>{format(new Date(trip.returnDepartureTime), 'HH:mm')}</span>
                   {format(new Date(trip.returnDepartureTime), 'd MMM yyyy', { locale: fr }) !== format(departureDate, 'd MMM yyyy', { locale: fr }) && (
                     <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-primary)', marginRight: '12px' }}>({format(new Date(trip.returnDepartureTime), 'd MMM', { locale: fr })})</span>
@@ -117,16 +118,16 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
         </div>
 
         {/* Conducteur et Commentaires */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div>
+        <div className="grid-2" style={{ gap: '24px' }}>
+          <div style={{ minWidth: 0 }}>
             <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '8px' }}>Conducteur</h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 600, fontSize: '1.2rem' }}>
+              <div style={{ width: '40px', height: '40px', flexShrink: 0, borderRadius: '50%', backgroundColor: 'var(--color-primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 600, fontSize: '1.2rem' }}>
                 {trip.driverDisplayName.charAt(0)}
               </div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 600 }}>{trip.driverDisplayName}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{trip.driverEmail}</div>
+                <div className="break-words" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{trip.driverEmail}</div>
               </div>
             </div>
           </div>
@@ -145,7 +146,7 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
 
         {/* Actions (Conducteur/Admin) */}
         {trip.status !== 'CANCELLED' && (trip.permissions.canDelete || trip.permissions.canModifyDeparture) && (
-          <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
+          <div className="trip-detail-actions">
              {trip.permissions.canModifyDeparture && (
                <Button variant="secondary" disabled>
                  <Edit size={16} style={{ marginRight: '8px' }} /> Modifier l&apos;heure
@@ -167,7 +168,7 @@ export function TripDetail({ trip, currentUserId, onMutate }: { trip: any, curre
         title="Confirmer la suppression"
       >
         <p style={{ marginBottom: '24px' }}>Êtes-vous sûr de vouloir annuler ce trajet ? Cette action est irréversible.</p>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Annuler</Button>
           <Button variant="danger" onClick={handleDelete} isLoading={isDeleting}>Confirmer l&apos;annulation</Button>
         </div>

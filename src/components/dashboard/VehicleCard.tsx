@@ -70,16 +70,19 @@ export function VehicleCard({ vehicle, hideActions = false }: VehicleCardProps) 
       {!hideActions && (
         <CardFooter>
           <div className="vc-actions">
-            <Link href={`/vehicles/${vehicle.id}/calendar`} className="w-full">
-              <Button variant="secondary" className="w-full">
-                Calendrier
-              </Button>
+            <Link href={`/vehicles/${vehicle.id}/calendar`} className="btn btn-secondary w-full">
+              Calendrier
             </Link>
-            <Link href={`/trips/new?vehicleId=${vehicle.id}&originCampusId=${vehicle.currentCampus.id}`} className="w-full">
-              <Button variant="primary" className="w-full" disabled={vehicle.displayStatus === "maintenance"}>
+            {/* En maintenance, pas de lien : un bouton désactivé dans un lien laisse passer le clic */}
+            {vehicle.displayStatus === "maintenance" ? (
+              <Button variant="primary" className="w-full" disabled>
                 Réserver
               </Button>
-            </Link>
+            ) : (
+              <Link href={`/trips/new?vehicleId=${vehicle.id}&originCampusId=${vehicle.currentCampus.id}`} className="btn btn-primary w-full">
+                Réserver
+              </Link>
+            )}
           </div>
         </CardFooter>
       )}

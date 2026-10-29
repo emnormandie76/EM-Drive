@@ -12,7 +12,8 @@ de Caen et de Paris.
 ### Tableau de bord
 
 - État de la flotte (disponible, en trajet, en maintenance) et position de chaque véhicule par campus.
-- Prochains trajets, rafraîchis toutes les 30 secondes.
+- Vos cinq prochains trajets, comme conducteur ou passager, rafraîchis toutes les 30 secondes.
+- Écrans utilisables sur téléphone, tablette et ordinateur (vérifiés à 375, 768 et 1280 px).
 
 ### Réservation et covoiturage
 
@@ -32,7 +33,8 @@ de Caen et de Paris.
 - Flotte : ajout, modification, mise en maintenance des véhicules.
 - Trajets : modification complète et annulation.
 - Paramètres : temps de battement entre deux réservations.
-- Journal d'audit des actions sensibles ; métriques et nettoyage de la base.
+- Journal d'audit des actions sensibles ; métriques de la base Neon (chargées à la demande) et nettoyage des
+  trajets terminés ou des journaux de plus d'un mois, confirmé en tapant `SUPPRIMER`.
 - Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans le portail admission, pas dans ResaVroom.
 
 ### Connexion
@@ -109,8 +111,8 @@ pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de c
 | `npm run dev` | serveur de développement, sur le port 3002 |
 | `npm test` | tests Vitest, sans réseau ni base de données |
 | `npx tsc --noEmit` | contrôle des types |
-| `npm run lint` | ESLint |
-| `npm run build` | build de production |
+| `npm run lint` | ESLint (0 problème attendu) |
+| `npm run build` | build de production ; sur le poste, lancez-le avec une `DATABASE_URL` factice (voir l'architecture §9) pour qu'il ne puisse pas lire la base partagée |
 | `npm run start` | serveur de production, après le build |
 | `npx prisma studio` | interface sur la base (accord du propriétaire) |
 
@@ -121,6 +123,11 @@ pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de c
   « La recherche de collègues est indisponible… », et l'on ne peut ni ajouter de passager à la création d'un
   trajet ni choisir un autre conducteur. Créer un trajet pour soi, sans passager, marche toujours ; les
   passagers peuvent rejoindre le trajet une fois créé.
+- Aucun mail n'est envoyé (notifications à décider avant la mise en ligne) ; l'interface n'en promet plus.
+- Les covoiturages suggérés pendant une réservation ne sont pas filtrés par destination, et le bouton
+  « Réserver » d'une carte de véhicule ne présélectionne pas ce véhicule. « Modifier l'heure » d'un trajet n'est
+  pas encore disponible.
+- Le nettoyage de la base est définitif.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 
 ## Documentation

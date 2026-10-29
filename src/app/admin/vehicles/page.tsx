@@ -1,33 +1,35 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
 import {
   Car,
   Plus,
-  Settings,
-  AlertTriangle,
   CheckCircle,
   Edit,
   Wrench,
 } from "lucide-react";
-import { Card, CardBody } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/PageState";
+import type { Campus, VehicleWithPosition } from "@/hooks/use-vehicles";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const STATUS_LABELS = { AVAILABLE: "disponible", MAINTENANCE: "en maintenance" } as const;
 
 export default function AdminVehiclesPage() {
   const {
     data: vehicles,
     error,
     mutate,
-  } = useSWR<any[]>("/api/vehicles", fetcher);
+  } = useSWR<VehicleWithPosition[]>("/api/vehicles", fetchJson);
+  // Les campus viennent de leur route, pas des véhicules : sans véhicule, on doit pouvoir ajouter le premier
+  const { data: campuses = [] } = useSWR<Campus[]>("/api/campuses", fetchJson);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleWithPosition | null>(null);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -40,22 +42,6 @@ export default function AdminVehiclesPage() {
   const [defaultCampusId, setDefaultCampusId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialiser les campus à partir des véhicules existants (simplification) ou idéalement fetch /api/campuses (si ça existait)
-  // Comme il n'y a pas d&#39;endpoint GET /api/campuses on peut utiliser ceux disponibles sur les véhicules (ils ont un defaultCampus).
-  const [campuses, setCampuses] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    if (vehicles && vehicles.length > 0 && campuses.length === 0) {
-      const uniqueCampuses = new Map();
-      vehicles.forEach((v) => {
-        if (v.defaultCampus) {
-          uniqueCampuses.set(v.defaultCampus.id, v.defaultCampus);
-        }
-      });
-      setCampuses(Array.from(uniqueCampuses.values()));
-    }
-  }, [vehicles, campuses.length]);
-
   const openNewVehicleModal = () => {
     setEditingVehicle(null);
     setName("");
@@ -65,7 +51,7 @@ export default function AdminVehiclesPage() {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (vehicle: any) => {
+  const openEditModal = (vehicle: VehicleWithPosition) => {
     setEditingVehicle(vehicle);
     setName(vehicle.name);
     setLicensePlate(vehicle.licensePlate);
@@ -74,7 +60,7 @@ export default function AdminVehiclesPage() {
     setIsModalOpen(true);
   };
 
-  const handleToggleMaintenance = async (vehicle: any) => {
+  const handleToggleMaintenance = async (vehicle: VehicleWithPosition) => {
     const newStatus =
       vehicle.status === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
 
@@ -85,12 +71,15 @@ export default function AdminVehiclesPage() {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!res.ok) throw new Error("Erreur lors de la modification du statut.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Impossible de modifier le statut.");
+      }
 
-      toast.success(`Le véhicule a été passé en statut: ${newStatus}`);
+      toast.success(`Le véhicule est désormais ${STATUS_LABELS[newStatus]}.`);
       mutate();
     } catch (err) {
-      toast.error("Impossible de modifier le statut.");
+      toast.error(err instanceof Error ? err.message : "Impossible de modifier le statut.");
     }
   };
 
@@ -118,6 +107,7 @@ export default function AdminVehiclesPage() {
       );
 
       if (!res.ok) {
+        // Le message du serveur, dont celui d'une plaque déjà prise (cas limite 10)
         const data = await res.json();
         throw new Error(data.message || "Erreur serveur.");
       }
@@ -129,18 +119,61 @@ export default function AdminVehiclesPage() {
       );
       setIsModalOpen(false);
       mutate();
-    } catch (err: any) {
-      toast.error(err.message || "Une erreur est survenue.");
+    } catch (err) {
+      toast.error((err instanceof Error && err.message) || "Une erreur est survenue.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (error) return <div>Erreur de chargement des véhicules.</div>;
-  if (!vehicles) return <div>Chargement...</div>;
+  if (error) {
+    return (
+      <ErrorState
+        title="Impossible de charger les véhicules"
+        description={error.message}
+        onRetry={() => mutate()}
+      />
+    );
+  }
+  if (!vehicles) return <LoadingState label="Chargement des véhicules…" />;
 
   const totalPages = Math.ceil(vehicles.length / limit);
   const paginatedVehicles = vehicles.slice((page - 1) * limit, page * limit);
+
+  const pagination = totalPages > 1 && (
+    <div
+      style={{
+        padding: "1rem",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "0.5rem",
+      }}
+    >
+      <span className="text-muted" style={{ fontSize: "0.9rem" }}>
+        Page {page} sur {totalPages} ({vehicles.length} véhicules)
+      </span>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+        >
+          Précédent
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Suivant
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -149,6 +182,8 @@ export default function AdminVehiclesPage() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "1rem",
           marginBottom: "1.5rem",
         }}
       >
@@ -159,41 +194,16 @@ export default function AdminVehiclesPage() {
         </Button>
       </div>
 
+      {vehicles.length === 0 ? (
+        <EmptyState
+          icon={Car}
+          title="Aucun véhicule enregistré"
+          description="Ajoutez le premier véhicule de la flotte."
+        />
+      ) : (
       <Card style={{ padding: "0" }}>
         {/* Pagination TOP */}
-        {totalPages > 1 && (
-          <div
-            style={{
-              padding: "1rem",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderBottom: "1px solid var(--color-border)",
-            }}
-          >
-            <span className="text-muted" style={{ fontSize: "0.9rem" }}>
-              Page {page} sur {totalPages} ({vehicles.length} véhicules)
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Précédent
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Suivant
-              </Button>
-            </div>
-          </div>
-        )}
+        {pagination && <div style={{ borderBottom: "1px solid var(--color-border)" }}>{pagination}</div>}
 
         <div style={{ overflowX: "auto", transform: "rotateX(180deg)" }}>
           <table
@@ -228,7 +238,7 @@ export default function AdminVehiclesPage() {
                   <td style={{ padding: "1rem", fontWeight: "500" }}>
                     {v.name}
                   </td>
-                  <td style={{ padding: "1rem" }}>{v.licensePlate}</td>
+                  <td style={{ padding: "1rem", whiteSpace: "nowrap" }}>{v.licensePlate}</td>
                   <td style={{ padding: "1rem" }}>{v.seats}</td>
                   <td style={{ padding: "1rem" }}>
                     {v.defaultCampus?.name || "-"}
@@ -249,6 +259,7 @@ export default function AdminVehiclesPage() {
                         size="sm"
                         onClick={() => openEditModal(v)}
                         title="Modifier"
+                        aria-label={`Modifier ${v.name}`}
                       >
                         <Edit size={16} />
                       </Button>
@@ -263,6 +274,11 @@ export default function AdminVehiclesPage() {
                             ? "Passer en maintenance"
                             : "Remettre disponible"
                         }
+                        aria-label={
+                          v.status === "AVAILABLE"
+                            ? `Passer ${v.name} en maintenance`
+                            : `Remettre ${v.name} disponible`
+                        }
                       >
                         {v.status === "AVAILABLE" ? (
                           <Wrench size={16} />
@@ -274,59 +290,14 @@ export default function AdminVehiclesPage() {
                   </td>
                 </tr>
               ))}
-              {paginatedVehicles.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{
-                      padding: "2rem",
-                      textAlign: "center",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    Aucun véhicule enregistré.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination BOTTOM */}
-        {totalPages > 1 && (
-          <div
-            style={{
-              padding: "1rem",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderTop: "1px solid var(--color-border)",
-            }}
-          >
-            <span className="text-muted" style={{ fontSize: "0.9rem" }}>
-              Page {page} sur {totalPages} ({vehicles.length} véhicules)
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Précédent
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Suivant
-              </Button>
-            </div>
-          </div>
-        )}
+        {pagination && <div style={{ borderTop: "1px solid var(--color-border)" }}>{pagination}</div>}
       </Card>
+      )}
 
       {isModalOpen && (
         <div
@@ -345,8 +316,8 @@ export default function AdminVehiclesPage() {
           }}
         >
           <div
-            className="modal card"
-            style={{ width: "100%", maxWidth: "500px", padding: "2rem" }}
+            className="card"
+            style={{ width: "100%", maxWidth: "500px", maxHeight: "90vh", overflowY: "auto", padding: "2rem" }}
           >
             <h2 className="text-xl font-bold mb-4">
               {editingVehicle ? "Modifier le véhicule" : "Nouveau véhicule"}
@@ -431,7 +402,7 @@ export default function AdminVehiclesPage() {
                   style={{ width: "100%" }}
                   options={[
                     { value: "", label: "Sélectionner un campus" },
-                    ...campuses.map((c: any) => ({
+                    ...campuses.map((c) => ({
                       value: c.id,
                       label: c.name,
                     })),
@@ -443,6 +414,7 @@ export default function AdminVehiclesPage() {
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
+                  flexWrap: "wrap",
                   gap: "1rem",
                   marginTop: "1rem",
                 }}

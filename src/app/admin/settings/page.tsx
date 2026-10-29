@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,16 +7,22 @@ import { Save, Clock } from "lucide-react";
 import { Card, CardBody, CardTitle, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { ErrorState, LoadingState } from "@/components/ui/PageState";
 import { DatabaseControls } from "@/components/admin/DatabaseControls";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+/** Ligne de app_settings rendue par GET /api/admin/settings. */
+interface AppSettingRow {
+  key: string;
+  value: string;
+}
 
 export default function AdminSettingsPage() {
   const {
     data: settings,
     error,
     mutate,
-  } = useSWR<any[]>("/api/admin/settings", fetcher);
+  } = useSWR<AppSettingRow[]>("/api/admin/settings", fetchJson);
 
   const [bufferMinutes, setBufferMinutes] = useState("30");
   const [isSaving, setIsSaving] = useState(false);
@@ -25,7 +30,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (settings && settings.length > 0) {
       const bufferSetting = settings.find(
-        (s: any) => s.key === "buffer_minutes",
+        (s) => s.key === "buffer_minutes",
       );
       if (bufferSetting) {
         setBufferMinutes(bufferSetting.value);
@@ -45,13 +50,14 @@ export default function AdminSettingsPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Erreur lors de la sauvegarde.");
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "Erreur lors de la sauvegarde.");
       }
 
       toast.success("Paramètres mis à jour avec succès.");
       mutate();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la sauvegarde.");
     } finally {
       setIsSaving(false);
     }
@@ -59,9 +65,13 @@ export default function AdminSettingsPage() {
 
   if (error)
     return (
-      <div className="text-danger">Erreur de chargement des paramètres.</div>
+      <ErrorState
+        title="Impossible de charger les paramètres"
+        description={error.message}
+        onRetry={() => mutate()}
+      />
     );
-  if (!settings) return <div>Chargement...</div>;
+  if (!settings) return <LoadingState label="Chargement des paramètres…" />;
 
   return (
     <div>
@@ -75,11 +85,11 @@ export default function AdminSettingsPage() {
           alignItems: "flex-start",
         }}
       >
-        <div style={{ flex: "1 1 400px", maxWidth: "600px" }}>
+        <div style={{ flex: "1 1 min(400px, 100%)", maxWidth: "600px" }}>
           <DatabaseControls />
         </div>
 
-        <div style={{ flex: "1 1 400px", maxWidth: "600px" }}>
+        <div style={{ flex: "1 1 min(400px, 100%)", maxWidth: "600px" }}>
           <Card style={{ width: "100%" }}>
             <CardHeader>
               <CardTitle

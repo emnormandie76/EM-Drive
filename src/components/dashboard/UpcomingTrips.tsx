@@ -1,14 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/components/dashboard/UpcomingTrips.tsx
 import React from "react";
 import { DashboardTrip } from "@/hooks/use-trips";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Card, CardHeader, CardTitle, CardBody } from "@/components/ui/Card";
+import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { MapPin, Calendar, Users, Car } from "lucide-react";
+import { EmptyState } from "@/components/ui/PageState";
+import { Calendar, Users, Car } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
 import "./dashboard.css";
 
 interface UpcomingTripsProps {
@@ -18,16 +17,17 @@ interface UpcomingTripsProps {
 export function UpcomingTrips({ trips }: UpcomingTripsProps) {
   if (trips.length === 0) {
     return (
-      <Card>
-        <CardBody className="ds-empty-state">
-          <Calendar size={48} className="ds-empty-icon" />
-          <p className="ds-empty-title">Aucun trajet à venir</p>
-          <p className="ds-empty-desc">Vous n&apos;avez pas de réservations prévues.</p>
-          <Link href="/trips/new">
-            <Button variant="primary">Réserver un véhicule</Button>
+      <EmptyState
+        icon={Calendar}
+        title="Aucun trajet à venir"
+        description="Vous n'avez aucun trajet prévu, ni comme conducteur ni comme passager."
+        action={
+          <Link href="/trips/new" className="btn btn-primary">
+            Réserver un véhicule
           </Link>
-        </CardBody>
-      </Card>
+        }
+        compact
+      />
     );
   }
 
@@ -43,7 +43,7 @@ export function UpcomingTrips({ trips }: UpcomingTripsProps) {
               {format(new Date(trip.departureTime), "dd MMM HH:mm", { locale: fr })}
             </div>
           </CardHeader>
-          
+
           <CardBody className="trip-details">
             <div className="trip-route">
               {trip.originCampus.name} → {trip.destinationCampus?.name || trip.destinationOtherLabel}
@@ -59,10 +59,8 @@ export function UpcomingTrips({ trips }: UpcomingTripsProps) {
               </span>
             </div>
             <div className="trip-actions">
-              <Link href={`/trips/${trip.id}`} className="w-full">
-                <Button variant="secondary" className="w-full">
-                  Détails du trajet
-                </Button>
+              <Link href={`/trips/${trip.id}`} className="btn btn-secondary w-full">
+                Détails du trajet
               </Link>
             </div>
           </CardBody>

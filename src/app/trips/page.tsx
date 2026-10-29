@@ -1,33 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import useSWR from 'swr';
+import { SearchX } from 'lucide-react';
 import { TripCard } from '@/components/trips/TripCard';
 import { DatePickerInput } from '@/components/ui/CustomCalendarPicker';
 import { Select } from '@/components/ui/Select';
-import { DashboardTrip } from '@/hooks/use-trips';
+import { EmptyState, ErrorState } from '@/components/ui/PageState';
+import type { Campus } from '@/hooks/use-vehicles';
+import type { TripsResponse } from '@/hooks/use-trips';
+import { fetchJson } from '@/lib/utils/fetch-json';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+// Une carte fait 320 px au plus étroit, sauf sur un écran plus étroit qu'elle
+const CARD_GRID: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
+  gap: '24px',
+};
 
 export default function TripsPage() {
   const [statusFilter, setStatusFilter] = useState('upcoming');
   const [campusFilter, setCampusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
-  const [campuses, setCampuses] = useState<{id: string, name: string}[]>([]);
-
-  useEffect(() => {
-    fetch('/api/campuses')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setCampuses(data);
-        } else {
-          console.error("Campuses response is not an array:", data);
-        }
-      })
-      .catch(err => console.error("Failed to fetch campuses", err));
-  }, []);
+  // Sans campus (erreur de lecture), le filtre ne propose que « Tous les campus »
+  const { data: campuses = [] } = useSWR<Campus[]>('/api/campuses', fetchJson);
 
   // Build query string
   const queryParams = new URLSearchParams();
@@ -35,16 +32,18 @@ export default function TripsPage() {
   if (campusFilter) queryParams.append('originCampusId', campusFilter);
   if (dateFilter) queryParams.append('date', dateFilter);
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR<TripsResponse>(
     `/api/trips?${queryParams.toString()}`,
-    fetcher,
+    fetchJson,
     { revalidateOnFocus: true }
   );
 
-  const trips: DashboardTrip[] = data?.trips || [];
+  const trips = data?.trips ?? [];
+
+  const resetFilters = () => { setStatusFilter('upcoming'); setCampusFilter(''); setDateFilter(''); };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 0' }}>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '8px' }}>
           Rechercher un trajet
@@ -95,29 +94,30 @@ export default function TripsPage() {
 
       {/* Liste des trajets */}
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+        <div style={CARD_GRID} role="status" aria-label="Chargement des trajets">
           {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: '300px', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', animation: 'pulse 1.5s infinite' }} />
+            <div key={i} className="skeleton" style={{ height: '300px' }} />
           ))}
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '48px', color: 'var(--color-danger)' }}>
-          Une erreur est survenue lors du chargement des trajets.
-        </div>
+        <ErrorState
+          title="Impossible de charger les trajets"
+          description={error.message}
+          onRetry={() => mutate()}
+        />
       ) : trips.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '64px', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)' }}>
-          <p style={{ fontSize: '1.2rem', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
-            Aucun trajet ne correspond à vos critères.
-          </p>
-          <button
-            onClick={() => { setStatusFilter('upcoming'); setCampusFilter(''); setDateFilter(''); }}
-            className="btn btn-outline"
-          >
-            Réinitialiser les filtres
-          </button>
-        </div>
+        <EmptyState
+          icon={SearchX}
+          title="Aucun trajet ne correspond à vos critères"
+          description="Changez de statut, de campus ou de date, ou repartez de zéro."
+          action={
+            <button onClick={resetFilters} className="btn btn-outline">
+              Réinitialiser les filtres
+            </button>
+          }
+        />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+        <div style={CARD_GRID}>
           {trips.map(trip => (
             <TripCard key={trip.id} trip={trip} />
           ))}

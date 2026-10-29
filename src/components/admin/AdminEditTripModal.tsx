@@ -11,15 +11,31 @@ import {
 } from "@/components/ui/UserSearchAutocomplete";
 import { DatePickerInput } from "@/components/ui/CustomCalendarPicker";
 import { getDirections } from "@/hooks/use-geo";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+import type { AdminTrip } from "@/hooks/use-trips";
+import type { Campus, VehicleWithPosition } from "@/hooks/use-vehicles";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
 interface AdminEditTripModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  trip: any; // The trip object to edit
+  trip: AdminTrip | null; // The trip object to edit
   onSuccess: () => void;
+}
+
+/** Corps envoyé à PATCH /api/trips/[id] (validé côté serveur par updateTripSchema). */
+interface TripUpdatePayload {
+  vehicleId: string;
+  type: string;
+  originCampusId: string;
+  departureTime: string;
+  estimatedArrivalTime: string;
+  status: string;
+  driverSub?: string;
+  driverEmail?: string;
+  destinationCampusId: string | null;
+  destinationOtherLabel: string | null;
+  returnDepartureTime: string | null;
+  estimatedReturnArrivalTime: string | null;
 }
 
 export function AdminEditTripModal({
@@ -28,8 +44,8 @@ export function AdminEditTripModal({
   trip,
   onSuccess,
 }: AdminEditTripModalProps) {
-  const { data: campuses } = useSWR<any[]>("/api/campuses", fetcher);
-  const { data: vehicles } = useSWR<any[]>("/api/vehicles", fetcher);
+  const { data: campuses } = useSWR<Campus[]>("/api/campuses", fetchJson);
+  const { data: vehicles } = useSWR<VehicleWithPosition[]>("/api/vehicles", fetchJson);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -66,21 +82,21 @@ export function AdminEditTripModal({
       setDestinationCampusId(trip.destinationCampusId || "");
       setDestinationOtherLabel(trip.destinationOtherLabel || "");
 
-      const toLocalDate = (dateStr: string) => {
+      const toLocalDate = (dateStr: string | null) => {
         if (!dateStr) return "";
         const d = new Date(dateStr);
         const tzOffset = d.getTimezoneOffset() * 60000;
         return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10);
       };
 
-      const toLocalTime = (dateStr: string) => {
+      const toLocalTime = (dateStr: string | null) => {
         if (!dateStr) return "";
         const d = new Date(dateStr);
         const tzOffset = d.getTimezoneOffset() * 60000;
         return new Date(d.getTime() - tzOffset).toISOString().slice(11, 16);
       };
 
-      const toLocalDatetime = (dateStr: string) => {
+      const toLocalDatetime = (dateStr: string | null) => {
         if (!dateStr) return "";
         const d = new Date(dateStr);
         const tzOffset = d.getTimezoneOffset() * 60000;
@@ -183,49 +199,33 @@ export function AdminEditTripModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!trip) return;
+
+    if (type !== "ONE_WAY" && (!returnDate || !returnTime || !estimatedReturnArrivalTime)) {
+      toast.error("Veuillez spécifier les dates de retour.");
+      return;
+    }
+
     setIsLoading(true);
 
     const depDateObj = new Date(`${departureDate}T${departureTime}`);
+    const isRoundTrip = type !== "ONE_WAY";
 
-    const payload: any = {
+    const payload: TripUpdatePayload = {
       vehicleId,
       type,
       originCampusId,
       departureTime: depDateObj.toISOString(),
       estimatedArrivalTime: new Date(estimatedArrivalTime).toISOString(),
       status,
+      // Le sub et l'adresse seulement : un nouveau conducteur est relu dans l'annuaire, un conducteur inchangé
+      // garde ses valeurs en base (D24)
+      ...(driver && { driverSub: driver.sub, driverEmail: driver.email }),
+      destinationCampusId: destinationCampusId || null,
+      destinationOtherLabel: destinationCampusId ? null : destinationOtherLabel,
+      returnDepartureTime: isRoundTrip ? new Date(`${returnDate}T${returnTime}`).toISOString() : null,
+      estimatedReturnArrivalTime: isRoundTrip ? new Date(estimatedReturnArrivalTime).toISOString() : null,
     };
-
-    // Le sub et l'adresse seulement : un nouveau conducteur est relu dans l'annuaire, un conducteur inchangé
-    // garde ses valeurs en base (D24)
-    if (driver) {
-      payload.driverSub = driver.sub;
-      payload.driverEmail = driver.email;
-    }
-
-    if (destinationCampusId) {
-      payload.destinationCampusId = destinationCampusId;
-      payload.destinationOtherLabel = null;
-    } else {
-      payload.destinationCampusId = null;
-      payload.destinationOtherLabel = destinationOtherLabel;
-    }
-
-    if (type !== "ONE_WAY") {
-      if (!returnDate || !returnTime || !estimatedReturnArrivalTime) {
-        toast.error("Veuillez spécifier les dates de retour.");
-        setIsLoading(false);
-        return;
-      }
-      const retDateObj = new Date(`${returnDate}T${returnTime}`);
-      payload.returnDepartureTime = retDateObj.toISOString();
-      payload.estimatedReturnArrivalTime = new Date(
-        estimatedReturnArrivalTime,
-      ).toISOString();
-    } else {
-      payload.returnDepartureTime = null;
-      payload.estimatedReturnArrivalTime = null;
-    }
 
     try {
       const res = await fetch(`/api/trips/${trip.id}`, {
@@ -242,8 +242,8 @@ export function AdminEditTripModal({
       toast.success("Trajet modifié avec succès.");
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la modification.");
     } finally {
       setIsLoading(false);
     }
@@ -273,7 +273,7 @@ export function AdminEditTripModal({
                 : ""
             }
             // Un passager du trajet ne peut pas en devenir le conducteur (le serveur le refuse aussi)
-            excludeSubs={trip?.passengers?.map((p: { userSub: string }) => p.userSub)}
+            excludeSubs={trip?.passengers.map((p) => p.userSub)}
             onSelect={(user) => setDriver(user)}
           />
         </div>
@@ -293,7 +293,7 @@ export function AdminEditTripModal({
             onChange={(e) => setVehicleId(e.target.value)}
             options={[
               { value: "", label: "Sélectionner un véhicule" },
-              ...(vehicles || []).map((v: any) => ({
+              ...(vehicles || []).map((v) => ({
                 value: v.id,
                 label: `${v.name} (${v.licensePlate})`,
               })),
@@ -348,8 +348,8 @@ export function AdminEditTripModal({
           />
         </div>
 
-        <div style={{ display: "flex", gap: "1rem" }}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0 1rem" }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <label
               style={{
                 display: "block",
@@ -364,7 +364,7 @@ export function AdminEditTripModal({
               onChange={(e) => setOriginCampusId(e.target.value)}
               options={[
                 { value: "", label: "Sélectionner un campus" },
-                ...(campuses || []).map((c: any) => ({
+                ...(campuses || []).map((c) => ({
                   value: c.id,
                   label: c.name,
                 })),
@@ -373,7 +373,7 @@ export function AdminEditTripModal({
               style={{ width: "100%" }}
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <label
               style={{
                 display: "block",
@@ -391,7 +391,7 @@ export function AdminEditTripModal({
               }}
               options={[
                 { value: "", label: "Autre destination..." },
-                ...(campuses || []).map((c: any) => ({
+                ...(campuses || []).map((c) => ({
                   value: c.id,
                   label: c.name,
                 })),
@@ -434,12 +434,13 @@ export function AdminEditTripModal({
           <div
             style={{
               display: "flex",
-              gap: "1rem",
+              flexWrap: "wrap",
+              gap: "0 1rem",
               width: "100%",
               alignItems: "flex-end",
             }}
           >
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: "140px" }}>
               <DatePickerInput
                 label="Date de départ"
                 value={departureDate}
@@ -447,7 +448,7 @@ export function AdminEditTripModal({
                 minDate={new Date().toISOString().split("T")[0]}
               />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: "140px" }}>
               <Input
                 label="Heure de départ"
                 type="time"
@@ -491,12 +492,13 @@ export function AdminEditTripModal({
             <div
               style={{
                 display: "flex",
-                gap: "1rem",
+                flexWrap: "wrap",
+                gap: "0 1rem",
                 width: "100%",
                 alignItems: "flex-end",
               }}
             >
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: "140px" }}>
                 <DatePickerInput
                   label="Date de retour"
                   value={returnDate}
@@ -506,7 +508,7 @@ export function AdminEditTripModal({
                   }
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: "140px" }}>
                 <Input
                   label="Heure de retour"
                   type="time"

@@ -130,7 +130,8 @@
   text-decoration: none;
 }
 
-@media (max-width: 768px) {
+/* Menu mobile jusqu'à 1023 px : au-delà de 768, les cinq liens, le nom et la déconnexion débordaient */
+@media (max-width: 1023px) {
   .desktop-only {
     display: none !important;
   }

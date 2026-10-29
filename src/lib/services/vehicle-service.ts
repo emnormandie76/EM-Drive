@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/lib/services/vehicle-service.ts — Service de gestion des véhicules
 // Implémente les algorithmes SAD 7.1 (position) et 7.2 (disponibilité)
 
 import { prisma } from "@/lib/prisma";
-import { addMinutes, getBufferMinutes, getTripDisplayStatus } from "@/lib/utils/dates";
-import type { Vehicle, Campus, Trip } from "@/generated/prisma/client";
+import { addMinutes, getBufferMinutes } from "@/lib/utils/dates";
+import type { Vehicle, Campus } from "@/generated/prisma/client";
 
 // ══════════════════════════════════════════════
 // TYPES

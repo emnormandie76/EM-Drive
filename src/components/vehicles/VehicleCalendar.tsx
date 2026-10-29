@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 import React, { useState } from 'react';
 import {
   format, startOfWeek, endOfWeek, eachDayOfInterval,
@@ -19,7 +18,7 @@ interface CalendarTrip {
   destination: string;
 }
 
-export function VehicleCalendar({ vehicleId, trips }: { vehicleId: string, trips: CalendarTrip[] }) {
+export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
   const [view, setView] = useState<'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -227,19 +226,19 @@ export function VehicleCalendar({ vehicleId, trips }: { vehicleId: string, trips
 
   return (
     <Card style={{ padding: '0', overflow: 'hidden' }}>
-      <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, textTransform: 'capitalize', width: '250px' }}>
+      <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--color-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, textTransform: 'capitalize', minWidth: '200px' }}>
             {title}
           </h2>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <Button variant="ghost" size="icon" onClick={handlePrevious}>
+            <Button variant="ghost" size="icon" onClick={handlePrevious} aria-label="Période précédente">
               <ChevronLeft size={20} />
             </Button>
             <Button variant="secondary" size="sm" onClick={handleToday}>
-              Aujourd'hui
+              Aujourd&apos;hui
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleNext}>
+            <Button variant="ghost" size="icon" onClick={handleNext} aria-label="Période suivante">
               <ChevronRight size={20} />
             </Button>
           </div>

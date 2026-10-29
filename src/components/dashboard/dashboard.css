@@ -183,9 +183,6 @@
   width: 100%;
 }
 
-.w-full {
-  width: 100%;
-}
 
 /* Trip Card */
 .trip-card-header {
@@ -256,14 +253,4 @@
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
-}
-
-/* Spin animation */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.icon-spin {
-  animation: spin 1s linear infinite;
 }

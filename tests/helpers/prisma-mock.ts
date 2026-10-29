@@ -9,8 +9,11 @@ export function createPrismaMock() {
       findUniqueOrThrow: vi.fn(),
       findUnique: vi.fn(),
       findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      deleteMany: vi.fn(),
     },
     passenger: {
       findUnique: vi.fn(),
@@ -29,6 +32,7 @@ export function createPrismaMock() {
     },
     auditLog: {
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
     person: {
       findUnique: vi.fn(),

@@ -6,7 +6,8 @@
 > projet Neon neuf `resavroom`, migré et seedé. **Étape 1 faite et validée le 2026-10-28.** **Étape 2a faite et validée le
 > 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). **Étape 2b faite et validée le
 > 2026-10-28** (recherche par l'annuaire, écart 5, cas limite 11 ; essai réel conforme, annuaire refermé).
-> Prochaine : 3.
+> **Étape 3 faite et validée le 2026-10-29** (polish : ESLint à 0, états et pages d'erreur, responsive, build
+> vert ; essai conforme). Prochaine et dernière : 4.
 > Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Les étapes 3 et 4 restent des ébauches. Le détail de chaque étape
 > est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
@@ -51,7 +52,9 @@
   `tests/admin_delegation.ts` ; toute commande destructrice (`migrate reset`, `DROP`, `TRUNCATE`, `deleteMany`
   sans filtre) ; lire ou changer un secret par MCP ; toucher `main` ; écrire dans `../portail` ou appeler un MCP
   sur les ressources du portail (dépôt `emnormandie76/portail-admission`, projets Vercel et Neon
-  `portail-admission`) ; demander ou lire `PORTAIL_CLIENT_SECRET` ; créer un compte de test dans le portail.
+  `portail-admission`) ; demander ou lire `PORTAIL_CLIENT_SECRET` ; créer un compte de test dans le portail ;
+  travailler dans l'administration du portail, même dans la session du propriétaire (G25) : un réglage du portail
+  à changer (annuaire, grille, client) se signale au propriétaire, qui le fait ou le confie à l'agent du portail.
 - **Migrations** : rédigées à la main, jamais modifiées une fois appliquées, appliquées avec l'accord du
   propriétaire (mémo d'exploitation §2).
 
@@ -141,6 +144,7 @@ internes (« piège 1 », « D13 », « règle 4 ») désignent le plan et le `C
 | G22 | portail D26 | **L'annuaire s'ouvre client par client**, au choix du super-admin, quel que soit l'environnement, `dev` compris ; fermé par défaut, et sa fermeture prend effet aussitôt. Risque accepté : le secret d'un client `dev`, sur le poste, lit les noms et adresses des personnes qui ont accès, tant que l'annuaire reste ouvert. |
 | G23 | portail D27 | **Une première connexion lancée depuis une application finit sur l'accueil du portail** : la demande de l'application se perd, la tuile la ramène (connexion silencieuse). Rien à coder dans l'application. |
 | G24 | portail D28 | **Une application pas encore en ligne se branche d'abord avec son seul client `dev`**, restreinte, contre le portail de production ; le client de production est obligatoire avant sa mise en ligne, pas avant. |
+| G25 | portail D29 (2026-10-28, après l'étape 2b) | **L'agent d'une application ne travaille jamais dans l'administration du portail**, même dans la session du propriétaire. Si un réglage du portail doit changer (annuaire, grille, client), il prévient le propriétaire, qui le fait lui-même ou le confie à l'agent du portail. Pour la mise en ligne (étape 4), le client `production`, l'adresse d'accueil définitive et le mode (D16) passent donc par lui. |
 
 ### 2.4. Questions du P-01, tranchées le 2026-10-28
 
@@ -183,6 +187,21 @@ Toutes par le propriétaire, recommandation retenue. Source : contrat portail v1
 | D27 | Choix des passagers dans `StepConfirm` (cas limite 11) | **Par la recherche de l'annuaire**, le conducteur (l'appelant, ou celui que l'admin choisit) et les personnes déjà ajoutées **masqués** des suggestions ; un passager choisi ensuite comme conducteur est retiré de la liste, avec un message. L'écran envoie `{ userSub, userEmail }` par passager (D24). Le serveur refuse quand même en 400 un passager égal au conducteur ou en double. |
 | D28 | Garantir que le module qui détient `PORTAIL_CLIENT_SECRET` n'est jamais importé par un composant client | **`import "server-only"`, sans paquet** : Next 16 le résout lui-même (installation facultative selon sa doc, types fournis par `next`) ; module à part, `src/lib/portail-directory.ts` ; Vitest reçoit un alias vers le module vide de Next. Écarté : un test des importations, sans marqueur. |
 
+### 2.7. Tranchées au début de l'étape 3 (2026-10-28)
+
+Toutes par le propriétaire, recommandation retenue.
+
+| # | Question | Réponse |
+|---|---|---|
+| D5 | ESLint : corriger maintenant ? Que faire des `eslint-disable` qui couvrent un fichier entier ? | **Zéro problème, sans commentaire qui cache.** Les 19 `eslint-disable` de fichier et les 4 de ligne (hors `src/generated/`, qui garde les siens) sont retirés ; chaque `any` devient un vrai type, les variables mortes disparaissent ; `eslint.config.mjs` inchangé. Relevé au départ : 17 problèmes visibles ; sans les commentaires (`--no-inline-config`), 73 hors code généré (47 erreurs, 26 avertissements). Écarté : corriger les seules erreurs visibles. |
+| D30 | Contenu de l'étape | **Ébauche précisée** : ESLint (D5) ; pages Next en français (D33) et états de chargement, vides et d'erreur homogènes dans les écrans ; responsive à 375, 768 et 1280 px ; build vert, avec `/admin` rendue dynamique explicitement (`connection()`) et le build lancé avec une `DATABASE_URL` factice dans son seul processus (`process.env` l'emporte sur `.env.local`), pour qu'il ne puisse pas lire la base partagée ; plus D31 et D32. Écarté : l'ébauche stricte. |
+| D31 | Mentions de mails qui n'existent pas (D6) | **Retirées maintenant** (`StepConfirm`, `/admin/trips` deux fois), remplacées par des phrases vraies ; l'étape 4 en remettra si D6 garde les mails. Écarté : les laisser jusqu'à D6. |
+| D32 | Dettes qui entrent dans l'étape | **Cas 10** (D34). **Cas 8** : une modale où l'on tape un mot remplace `window.confirm`, et le nettoyage des trajets filtre sur leur fin, plus sur leur date de création (défaut relevé au départ : un trajet futur réservé il y a plus d'un mois aurait été supprimé). **« Mes trajets à venir »** filtré côté serveur (le tableau de bord prenait les 5 prochains trajets de tout le monde, puis gardait ceux de l'appelant : faux « aucun trajet » possible). **Outillage** : `NEON_PROJET_ID` et `NEON_API_KEY` nommées dans `.env.example` (piège 8), `@prisma/adapter-pg` désinstallée, `src/app/page.module.css` (inutilisée) retirée, type de retour de `requireAuthSession` en union explicite (comportement inchangé). Restent : cas 12 (écran et écritures en base), `DEP0169` (dans `openid-client`). |
+| D33 | Pages d'erreur, 404 et chargement de Next | **À la racine** : `error.tsx` (sous la mise en page racine, la barre de navigation reste), `global-error.tsx`, `not-found.tsx` et `loading.tsx` dans `src/app/` ; un composant commun pour les états de chargement, vides et d'erreur des écrans. Écarté : un `error.tsx` et un `loading.tsx` par segment. |
+| D34 | Code de réponse du cas 10 (plaque déjà prise) | **409 `LICENSE_PLATE_TAKEN`**, comme les autres conflits, avec un message en français que l'écran affiche. Écarté : 400 `VALIDATION_ERROR`. |
+| D35 | Métriques Neon de `/admin/settings`, chargées dès l'ouverture (appel à quota, règle 7) | **Au clic seulement** : la page s'ouvre sans appel, un bouton lance le chargement. Écarté : le chargement à l'ouverture. |
+| D36 | *Posée en cours d'étape.* Le projet n'a pas Tailwind, mais 56 classes de style Tailwind (`flex`, `gap-4`, `mb-6`, `text-2xl`, `text-muted`, `spinner`…) sont écrites dans les composants et définies nulle part : elles n'ont aucun effet | **Définir celles qui sont employées** dans une section « utilitaires » de `globals.css`, aux valeurs de Tailwind et avec les jetons du projet ; les classes à valeur arbitraire (`bg-[var(--…)]`, `min-h-[50vh]`, `text-[var(--…)]`) deviennent des styles en ligne. Écartés : les remplacer partout (diff bien plus large), installer Tailwind (une dépendance et un outil de build de plus). |
+
 ---
 
 ## 3. État des lieux au départ (2026-10-26)
@@ -223,8 +242,9 @@ Toutes par le propriétaire, recommandation retenue. Source : contrat portail v1
    portail ; aucune clé étrangère vers `people`.
 7. **Le jeton JWT garde `isAdmin` à la connexion, les gardes relisent la base.** Ne pas s'appuyer sur
    `session.user.isAdmin` pour une décision de sécurité (affichage seulement).
-8. **`NEON_PROJET_ID` s'écrit avec « PROJET »** (faute figée dans `actions.ts`), et ni elle ni `NEON_API_KEY` ne
-   sont dans `.env.example`.
+8. **`NEON_PROJET_ID` s'écrit avec « PROJET »** (faute figée dans `actions.ts`). Depuis l'étape 3, elle et
+   `NEON_API_KEY` sont nommées dans `.env.example`, avec cette remarque ; le nom n'a pas changé (renommer obligerait
+   le propriétaire à changer `.env.local`).
 9. **Dépôt en CRLF sous Windows** : un test qui lit un fichier figé peut casser après un checkout en CRLF ; à
    noter ici si cela arrive. Les heredocs du shell avalent des antislashs : écrire les fichiers avec l'outil
    d'écriture.
@@ -265,6 +285,13 @@ Toutes par le propriétaire, recommandation retenue. Source : contrat portail v1
     (écrits par `next dev` ou `next build`) citent encore les routes retirées, et `npx tsc --noEmit` échoue
     (TS2307). `npx next typegen` régénère `.next/types` ; `.next/dev/types` se régénère au `next dev` suivant
     ou s'efface (cache ignoré par Git).
+15. **Dans le Chrome du propriétaire, ne jamais viser un bouton par son seul type** (étape 3). La barre de
+    navigation porte un formulaire `POST /api/auth/logout` dont le bouton `type="submit"` existe dans le DOM même
+    masqué (sous 1024 px) : `querySelector('button[type=submit]')` le trouve en premier. Un script de l'essai l'a
+    cliqué et a déconnecté le propriétaire de ResaVroom (et du portail, par la fin de session). Viser une classe
+    ou un texte dans le conteneur de l'écran (`.wizard-content .search-submit-btn`). Autres constats de l'essai :
+    une fenêtre agrandie ne se redimensionne pas (simuler les largeurs dans un `iframe` de même origine, où les
+    `@media` suivent la largeur du cadre) ; une capture d'écran peut prendre plus de 10 s.
 
 ---
 
@@ -446,15 +473,44 @@ l'essai a été joué par l'agent dans la session du propriétaire (Claude in Ch
 **Docs :** architecture §1, §2.1 (et §2.1 bis, nouveau), §2.4, §3, §4, §4.1, §7, §8, §9 ; mémo §0, §1, §3, §5 ;
 `edgecase.md` (5, 7, 11) ; `CLAUDE.md` ; `README.md`.
 
-### Étape 3 — Polish (ébauche, phase 11 du SAD)
+### Étape 3 — Polish (phase 11 du SAD)
 
-**À trancher en début d'étape :** D5.
+**Tranchées en début d'étape (2026-10-28) :** D5, D30 à D35 (§2.7). Contenu : l'ébauche du 2026-10-26, précisée.
 
-- [ ] Corriger les erreurs ESLint ; `npm run lint` sans erreur.
-- [ ] États de chargement, états vides, pages d'erreur ; responsive (375, 768, 1280 px).
-- [ ] `npm run build` sans erreur. (`README.md` : converti et réécrit à l'étape 1.)
+- [x] ESLint (D5) : `eslint-disable` retirés hors `src/generated/`, `any` remplacés par de vrais types, variables
+      mortes supprimées ; `npm run lint` à 0 problème ; `eslint.config.mjs` inchangé.
+- [x] Pages Next à la racine (D33) : `error.tsx`, `global-error.tsx`, `not-found.tsx`, `loading.tsx`, en français.
+- [x] États de chargement, vides et d'erreur homogènes dans les écrans (composant commun) ; une erreur de l'API
+      ne s'affiche plus comme une liste vide.
+- [x] Responsive à 375, 768 et 1280 px : tableau de bord, trajets, nouveau trajet, détail, calendrier, administration.
+- [x] Utilitaires CSS employés définis dans `globals.css` (D36, posée en cours d'étape).
+- [x] Mentions de mails retirées (D31).
+- [x] Cas 10 (D34) : plaque déjà prise → 409 `LICENSE_PLATE_TAKEN`, tests d'abord vus en échec.
+- [x] Cas 8 (D32) : nettoyage filtré sur la fin du trajet, statut validé, tests d'abord vus en échec ; modale de
+      confirmation où l'on tape un mot.
+- [x] « Mes trajets à venir » (D32) : filtre côté serveur, tests d'abord vus en échec.
+- [x] Métriques Neon au clic (D35).
+- [x] Outillage (D32) : `.env.example` (piège 8), `@prisma/adapter-pg`, `page.module.css`, type de retour de
+      `requireAuthSession`.
+- [x] `npm run build` sans erreur (D30 : `/admin` dynamique, `DATABASE_URL` factice dans le processus du build).
+- [x] Essai avec le propriétaire, connecté lui-même (agent dans son Chrome, à sa demande) : écrans principaux aux
+      trois largeurs, avec leurs états ; message « annuaire indisponible » de la recherche (annuaire fermé) ; build.
+- [x] Validation du propriétaire (2026-10-29).
 
-**Docs :** architecture §3, §6, §9 ; README.
+Résultat : `npm test` 242 verts (15 fichiers) ; `tsc` 0 erreur ; `npm run lint` 0 problème ; `npm run build` sans
+erreur. Aucune migration, aucune écriture en base ; une dépendance retirée (`@prisma/adapter-pg`), aucune ajoutée.
+
+Ajouts en cours d'étape, au-delà des cases (défauts trouvés en polissant, tous dans le périmètre « états,
+responsive, polish ») : filtre du journal d'audit qui n'envoyait pas le bon paramètre (`entity` au lieu de
+`entityType`) et options périmées (administrateurs, services) ; campus du formulaire de véhicule tirés des véhicules
+(flotte vide : aucun campus) ; jetons de couleur employés mais non définis ; `/login` et `/unauthorized` enfermées
+dans le conteneur de 1200 px ; `/trips/new` qui n'importait pas sa feuille ; grilles de cartes qui débordaient à
+375 px ; barre de bureau qui débordait entre 769 et ~950 px (menu mobile jusqu'à 1023) ; `.admin-container` à
+`100vw` (barre horizontale sous Windows) ; bouton « Réserver » désactivé mais cliquable dans son lien ; lien
+« Dashboard » en anglais ; libellés accessibles des boutons d'icônes ; message français pour une coupure réseau.
+
+**Docs :** architecture §3, §4, §6, §7, §8, §9 ; mémo §0, §1, §5 ; cas limites 8 et 10 ; `CLAUDE.md` ; README ;
+ce plan (§2.7, pièges 8 et 15).
 
 ### Étape 4 — Mise en ligne et notifications (ébauche)
 
@@ -466,7 +522,9 @@ l'essai a été joué par l'agent dans la session du propriétaire (Claude in Ch
 - [ ] Auteur des commits déployables sur Vercel Hobby (piège 13).
 - [ ] Avant la mise en ligne, avec le propriétaire et l'agent du portail : client `production` de ResaVroom
       (adresses exactes de production), adresse d'accueil définitive, annuaire sur ce client si besoin, mode au
-      lancement (D16) ; `PORTAIL_*` de production posées par le propriétaire sur Vercel.
+      lancement (D16) ; `PORTAIL_*` de production posées par le propriétaire sur Vercel. Ces réglages du portail
+      sont faits par le propriétaire ou l'agent du portail, jamais par l'agent de ResaVroom (G25) : il fournit les
+      informations et guide.
 - [ ] Écrire la procédure de livraison et la vérification en ligne (mémo §4) ; CI.
 - [ ] Notifications mail si D6 les conserve.
 
@@ -546,3 +604,12 @@ décrit change.
 | 2026-10-28 | 2b | **Annuaire refermé** à 16 h 59, à la demande du propriétaire, par l'agent dans le Chrome du propriétaire (administration du portail, fiche ResaVroom, client « Dev (poste) », « Fermer l'annuaire » ; la page affiche ensuite « Annuaire : fermé »). Rien d'autre touché dans le portail ; aucun MCP sur ses ressources. Vérifié aussitôt depuis la session du propriétaire : deux recherches → 503 `DIRECTORY_UNAVAILABLE` ; journal du serveur : `[ANNUAIRE] Indisponible : annuaire fermé sur ce client (unauthorized_client).`, sans autre donnée. Serveur arrêté par son port après vérification de sa ligne de commande ; onglet du portail fermé. | **Écart** : le plan voulait le super-admin, puis un avertissement au propriétaire ; le propriétaire (connecté au portail avec le menu d'administration) a demandé à l'agent de le faire. À signaler à l'agent du portail (compte rendu). |
 | 2026-10-28 | 2b | **Fin d'étape.** `npm test` 219 verts (11 fichiers) ; `tsc` 0 erreur ; `lint` 17 problèmes, tous antérieurs. Aucune migration, aucune dépendance. Docs : architecture (§1, §2.1, §2.1 bis nouveau, §2.4, §3, §4, §4.1, §7, §8, §9, « contrat portail v1 »), mémo (§0, §1, §3, §5), cas limites (5, 7, 11), `CLAUDE.md`, `README.md`, ce plan (§2.6, étape 2b). Compte rendu pour l'agent du portail préparé. | Rien n'est commité (le commit `0e02221` ne porte que les docs de la 2a). En attente de validation. |
 | 2026-10-28 | 2b | **Étape 2b validée** par le propriétaire, et commitée à sa demande sur `dev-claude` (sans push). | Prochaine étape : 3, sur son feu vert. Le compte rendu pour l'agent du portail est remis au propriétaire. |
+| 2026-10-28 | 2b (suivi du portail) | **Message de l'agent du portail**, transmis par le propriétaire : étape 2b (`aa655a0`) vérifiée en lecture seule, conforme au contrat portail v1 §7. **Nouvelle règle du portail D29**, recopiée en G25 : l'agent d'une application ne travaille jamais dans l'administration du portail, même dans la session du propriétaire. Consignée au §0, au §2.3, à l'étape 4, dans `CLAUDE.md` et le mémo §3. Prompt de départ de l'étape 3 rédigé pour un agent neuf (remis au propriétaire, hors du dépôt). | La fermeture de l'annuaire par l'agent, le 2026-10-28 à 16 h 59, serait contraire à G25 : ne pas recommencer. Ces docs ne sont pas commitées. |
+| 2026-10-28 | 3 | **Départ vérifié.** `dev-claude` sur `aa655a0`, deux commits d'avance sur `origin/dev-claude` (`0e02221`, `aa655a0`) ; arbre non propre, comme prévu par le propriétaire : les docs G25 du suivi ci-dessus (`CLAUDE.md`, ce plan, mémo §3), signalées au propriétaire. `npm test` 219 verts (11 fichiers) ; `npx tsc --noEmit` 0 erreur ; `npm run lint` 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs. Lus : ce plan, l'architecture, le mémo, les cas limites ; guides Next `loading.md`, `error.md`, `not-found.md`, `production-checklist.md`, `connection.md`, `environment-variables.md` (ordre de chargement), `route.md`. Relevé : 19 `eslint-disable` de fichier et 4 de ligne hors code généré ; sans eux, 73 problèmes (47 erreurs, 26 avertissements) ; aucune page `error`, `not-found` ni `loading`. | Session sur Opus 5.5. **Défauts relevés en lisant le code** : « Mes trajets à venir » calculé sur les 5 prochains trajets de tout le monde ; nettoyage des trajets filtré sur leur date de création (un trajet futur réservé il y a plus d'un mois serait supprimé) ; `/admin/settings` appelle l'API Neon dès l'ouverture (règle 7). |
+| 2026-10-28 | 3 | **Décisions de début d'étape** : D5, D30 à D35 (§2.7), toutes les recommandations retenues ; les quatre dettes proposées entrent dans l'étape. | Restent hors de l'étape : cas 12, `DEP0169`. |
+| 2026-10-28 | 3 | **Tests d'abord, vus en échec.** `tests/vehicle-routes.test.ts` (cas 10), `tests/database-cleanup.test.ts` (cas 8 : le filtre reçu par `deleteMany` est évalué sur des trajets types), `tests/trips-list.test.ts` (`mine=true`) ; client Prisma simulé complété (`findMany`, `count`, `deleteMany`). Contre l'ancien code : 9 en échec (500 au lieu de 409 ; trajets futurs visés ; aller-retour jugé sur l'aller ; statut inconnu accepté ; aucun filtre « les miens »), 9 au vert (comportements à garder). Code : `LicensePlateTakenError`, `isUniqueConstraintError` (P2002, vérifié dans le runtime Prisma : l'adaptateur Neon convertit le 23505), `cleanupDatabase` réécrite, `mine` dans `GET /api/trips`, unions explicites dans `api-helpers.ts`. 237 verts. | Aucune garde modifiée ; le type des gardes seul a changé. |
+| 2026-10-28 → 29 | 3 | **ESLint et écrans.** 19 `eslint-disable` de fichier et 4 de ligne retirés ; vrais types (`Prisma.TripWhereInput`, `AuditAction`, `AdminTrip`, `TripDetailData`, `SuggestedTrip`, `NeonMetrics`…). `PageState`, `fetch-json`, pages `error`/`global-error`/`not-found`/`loading`, `connection()` dans `/admin`, mentions de mails, `DatabaseControls` (métriques au clic, modale `SUPPRIMER`), responsive. **Surprise**, d'où **D36** (question posée en cours d'étape, recommandation retenue) : 56 classes de style Tailwind employées et définies nulle part. Autres défauts trouvés en polissant, corrigés (liste à l'étape 3, §5). `npm run lint` 0 problème, 0 aussi avec `--no-inline-config`. | Relevés, **non corrigés** (hors du contenu) : `destinationCampusId` jamais envoyé à `/api/vehicles/availability` (suggestions non filtrées par destination) ; `vehicleId` du bouton « Réserver » ignoré par l'assistant ; « Modifier l'heure » désactivé sans fonction. Consignés au mémo §5 et au README. |
+| 2026-10-29 | 3 | **Build** avec `DATABASE_URL` factice dans son seul processus (D30) : sans erreur ; toutes les routes `/admin` et `/api` dynamiques, seules des pages client sans base pré-rendues ; `tsc` relancé après (piège 14) : 0 erreur. | Jamais rejoué depuis le début du chantier : il passait sans correctif propre au build. |
+| 2026-10-29 | 3 | **Base relue** (SELECT, `wispy-shadow-66847588`) avant l'essai : 1 personne, 1 trajet, 0 passager, 2 lignes d'audit, 3 véhicules. Le trajet d'essai de la 2b est **annulé** (`TRIP_FORCE_DELETED` le 2026-10-28 à 16 h 56, quatre minutes après sa création, trois avant la fermeture de l'annuaire). Signalé au propriétaire ; rien touché. | **Écart au journal de la 2b**, qui dit le trajet laissé en place et « 1 audit ». Mémo §0 corrigé. |
+| 2026-10-29 | 3 | **Essai**, à la demande du propriétaire, par l'agent dans son Chrome (Claude in Chrome), sur `localhost:3002` seulement ; le propriétaire s'est connecté lui-même. Fenêtre agrandie, non redimensionnable : largeurs simulées dans un `iframe` de même origine. (1) Tableau de bord à 375, 768 et 1280 px, sans débordement ; états vide (« Aucun trajet à venir »), chargement (appels `/api` ralentis dans le cadre) et erreur (coupés : « Le serveur ne répond pas… », puis « Réessayer ») ; (2) onze écrans (trajets, nouveau trajet, détail, trajet et page inconnus, calendrier, cinq pages admin) aux trois largeurs : aucun débordement ; 404 et « Trajet introuvable » en français ; métriques Neon non chargées à l'ouverture ; (3) assistant à 375 px jusqu'à l'étape 2, l'appel d'itinéraire coupé dans la page (aucun appel à OpenRouteService), passager « an » → « La recherche de collègues est indisponible : l'annuaire du portail ne répond pas. Réessayez plus tard. » ; journal du serveur : `[ANNUAIRE] Indisponible : annuaire fermé sur ce client (unauthorized_client).`, 503, aucun `POST /api/trips`. Onglet fermé ; serveur arrêté par son port après vérification de sa ligne de commande. Contrôles finaux : 242 tests verts (15 fichiers), `tsc` 0, lint 0, build sans erreur. | **Incident** : un script de l'agent a cliqué le premier `button[type=submit]` du cadre, qui était le bouton (masqué) de déconnexion de la barre : le propriétaire a été déconnecté de ResaVroom et, par la fin de session, probablement du portail. Aucune donnée touchée, rien dans l'administration du portail. Le propriétaire s'est reconnecté lui-même. Piège 15 ajouté. Ajouté pendant l'essai : message français pour une coupure réseau (`fetch-json`, test vu en échec), `/login` pleine fenêtre. | Fin d'étape : en attente de validation. |
+| 2026-10-29 | 3 | **Étape 3 validée** par le propriétaire, commitée et poussée à sa demande sur `dev-claude` (`origin`), avec les docs G25 du suivi du portail restées non commitées depuis le 2026-10-28 (même fichiers) ; le push emporte aussi `0e02221` et `aa655a0`. Prompt de départ de l'étape 4 rédigé pour un agent neuf (remis au propriétaire, hors du dépôt). | Prochaine et dernière étape : 4. |

@@ -1,6 +1,7 @@
 // src/hooks/use-vehicles.ts
 import useSWR from "swr";
 import { VehicleStatus } from "@/generated/prisma/enums";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
 export type VehicleDisplayStatus = "available" | "in_trip" | "maintenance" | "fully_booked";
 
@@ -28,16 +29,10 @@ export interface VehicleWithPosition {
   } | null;
 }
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Erreur serveur");
-  return res.json();
-};
-
 export function useVehicles(options?: { refreshInterval?: number }) {
   const { data, error, isLoading, mutate } = useSWR<VehicleWithPosition[]>(
     "/api/vehicles",
-    fetcher,
+    fetchJson,
     {
       refreshInterval: options?.refreshInterval ?? 30000, // 30s polling by default
     }

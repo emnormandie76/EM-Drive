@@ -1,18 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/app/trips/new/page.tsx
 "use client";
 
 import React, { Suspense } from "react";
 import { TripWizard } from "@/components/trips/TripWizard";
+import { LoadingState } from "@/components/ui/PageState";
 import { useSearchParams } from "next/navigation";
-import { Car } from "lucide-react";
+import "@/components/dashboard/dashboard.css";
 
 function TripWizardWrapper() {
   const searchParams = useSearchParams();
-  const vehicleId = searchParams.get("vehicleId") || undefined;
   const originCampusId = searchParams.get("originCampusId") || undefined;
 
-  return <TripWizard initialVehicleId={vehicleId} initialOriginCampusId={originCampusId} />;
+  return <TripWizard initialOriginCampusId={originCampusId} />;
 }
 
 export default function NewTripPage() {
@@ -26,9 +25,9 @@ export default function NewTripPage() {
       </div>
 
       <section className="dashboard-section">
-        {/* Next.js utilise useSearchParams, il faut l'envelopper dans Suspense sinon 
+        {/* Next.js utilise useSearchParams, il faut l'envelopper dans Suspense sinon
            le composant force le rendu dynamique sur toute la route au moment du build */}
-        <Suspense fallback={<div className="ds-loading"><span className="spinner text-primary text-xl">⏳ Chargement du formulaire...</span></div>}>
+        <Suspense fallback={<LoadingState label="Chargement du formulaire…" />}>
           <TripWizardWrapper />
         </Suspense>
       </section>

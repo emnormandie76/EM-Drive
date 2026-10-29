@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession, handleBusinessError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit-service";
+import { LicensePlateTakenError } from "@/lib/utils/errors";
+import { isUniqueConstraintError } from "@/lib/utils/prisma-errors";
 import { createVehicleSchema, parseJsonBody } from "@/lib/validators/request-schemas";
 
 export async function POST(request: NextRequest) {
@@ -35,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(vehicle, { status: 201 });
   } catch (error) {
-    return handleBusinessError(error);
+    // La plaque est la seule colonne unique écrite ici (cas limite 10)
+    return handleBusinessError(isUniqueConstraintError(error) ? new LicensePlateTakenError() : error);
   }
 }

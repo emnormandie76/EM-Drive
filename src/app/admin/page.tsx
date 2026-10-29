@@ -1,8 +1,13 @@
+// src/app/admin/page.tsx — Vue d'ensemble de l'administration (compteurs lus en base)
 
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Card, CardBody } from "@/components/ui/Card";
 
 export default async function AdminDashboardPage() {
+  // Rendu à la requête, jamais pré-rendu au build : la base réelle est partagée (D30)
+  await connection();
+
   // Récupérer quelques métriques globales
   const [totalVehicles, maintenanceVehicles, activeTrips] = await Promise.all([
     prisma.vehicle.count(),

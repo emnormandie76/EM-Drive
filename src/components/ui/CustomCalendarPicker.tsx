@@ -165,9 +165,8 @@ export function DatePickerInput({
   return (
     <div className="form-field" ref={containerRef} style={{ position: 'relative' }}>
       <label className="form-label">{label}</label>
-      <div 
-        className="input" 
-        style={{ 
+      <div
+        style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer',
           padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)',
           backgroundColor: 'var(--color-surface)',

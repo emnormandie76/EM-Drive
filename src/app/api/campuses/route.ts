@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthSession } from "@/lib/api-helpers";
@@ -13,6 +12,7 @@ export async function GET() {
     });
     return NextResponse.json(campuses);
   } catch (error) {
-    return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
+    console.error("[API] GET /api/campuses error:", error);
+    return NextResponse.json({ error: "INTERNAL_ERROR", message: "Erreur lors de la récupération des campus." }, { status: 500 });
   }
 }

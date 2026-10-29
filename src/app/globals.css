@@ -10,6 +10,7 @@
   --color-primary-hover: hsl(230, 85%, 52%);
   --color-primary-light: hsl(230, 85%, 95%);
   --color-primary-alpha: hsla(230, 85%, 60%, 0.15);
+  --color-primary-dark: hsl(230, 85%, 40%);
 
   --color-secondary: hsl(280, 75%, 60%);
   --color-accent: hsl(340, 80%, 55%);
@@ -27,9 +28,12 @@
   /* Neutrals & Backgrounds (Sleek light mode) */
   --color-background: hsl(225, 20%, 98%);
   --color-surface: #ffffff;
+  --color-surface-hover: hsl(225, 20%, 96%);
+  --color-bg-secondary: var(--color-background);
   --color-text: hsl(225, 30%, 15%);
   --color-text-secondary: hsl(225, 15%, 45%);
   --color-text-tertiary: hsl(225, 10%, 65%);
+  --color-text-muted: var(--color-text-secondary);
   --color-border: hsl(225, 20%, 90%);
   --color-border-hover: hsl(225, 25%, 80%);
 
@@ -101,11 +105,15 @@ a:hover {
 /* LOGIN PAGE                                      */
 /* ══════════════════════════════════════════════ */
 
+/* Pleine fenêtre : la page est rendue dans le conteneur de 1200 px de la mise en page racine
+   (la barre de navigation n'y est pas affichée) */
 .login-container {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 1rem;
   background: linear-gradient(135deg, hsl(220, 70%, 50%) 0%, hsl(260, 60%, 50%) 100%);
 }
@@ -233,26 +241,18 @@ a:hover {
   padding: 0 1.5rem;
 }
 
-/* Admin Layout Breakout - Ignores parent max-width */
-.admin-container {
-  width: 90vw;
-  position: relative;
-  left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
-  padding: 0 1rem;
-}
-@media (max-width: 1600px) {
-  .admin-container {
-   width: 100vw;
+@media (max-width: 480px) {
+  .app-container {
+    padding: 0 1rem;
   }
 }
 
-@media (min-width: 768px) {
-  .admin-container {
-    padding: 0 2rem;
-  }
+/* Admin : plus large que le conteneur de l'application (tables), centré sur lui. Jamais plus large que la
+   fenêtre : 100vw compte la barre de défilement sous Windows, d'où une marge de 1,5rem de chaque côté.
+   Pas de transform ici : il casserait les modales en position: fixed. */
+.admin-container {
+  width: min(1600px, calc(100vw - 3rem));
+  margin-left: calc(50% - min(800px, 50vw - 1.5rem));
 }
 
 /* Admin Responsive Layout */
@@ -321,4 +321,97 @@ a:hover {
 
 .animate-slide-up {
   animation: slideUp var(--transition-normal);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Icône qui tourne (actualisation, chargement) */
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Sablier des boutons en attente */
+.spinner {
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+}
+
+/* ══════════════════════════════════════════════ */
+/* UTILITAIRES (D36)                              */
+/* ══════════════════════════════════════════════ */
+/* Le projet n'a pas Tailwind : seules les classes que les composants emploient sont définies ici,
+   aux valeurs de Tailwind et avec les jetons du projet. N'en ajouter qu'à l'usage. */
+
+.app-main { padding-bottom: 3rem; }
+
+.block { display: block; }
+.w-full { width: 100%; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mr-2 { margin-right: 0.5rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 0.75rem; }
+.p-4 { padding: 1rem; }
+
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.text-center { text-align: center; }
+.break-words { overflow-wrap: break-word; }
+
+.text-muted { color: var(--color-text-secondary); }
+.text-danger { color: var(--color-danger); }
+.text-primary { color: var(--color-primary); }
+.bg-white { background-color: var(--color-surface); }
+
+.border { border: 1px solid var(--color-border); }
+.rounded { border-radius: var(--radius-xs); }
+.rounded-lg { border-radius: var(--radius-sm); }
+
+/* Carte qui se soulève au survol */
+.hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Deux colonnes à partir de 640 px, une seule en dessous */
+.grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .grid-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }

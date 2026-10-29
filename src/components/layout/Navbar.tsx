@@ -21,7 +21,7 @@ export function Navbar() {
   const isAdmin = session?.user?.isAdmin;
 
   const navLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
     { name: "Réserver", href: "/trips/new", icon: Map },
     { name: "Trajets", href: "/trips", icon: Car },
     ...(isAdmin ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
@@ -39,11 +39,11 @@ export function Navbar() {
   return (
     <>
       <nav className="navbar">
-        <div className="navbar-container app-container">
+        <div className="app-container">
           <div className="navbar-content">
             {/* Logo */}
             <Link href="/dashboard" className="navbar-logo">
-              <span className="logo-icon">🚗</span>
+              <span aria-hidden="true">🚗</span>
               <span className="logo-text">ResaVroom</span>
             </Link>
 
@@ -73,7 +73,7 @@ export function Navbar() {
                 </div>
               )}
               <form action={LOGOUT_ACTION} method="post" style={{ display: "contents" }}>
-                <button type="submit" className="btn btn-ghost btn-icon" title="Se déconnecter">
+                <button type="submit" className="btn btn-ghost btn-icon" title="Se déconnecter" aria-label="Se déconnecter">
                   <LogOut size={20} />
                 </button>
               </form>
@@ -83,6 +83,8 @@ export function Navbar() {
             <button
               className="mobile-menu-btn"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>

@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { Users, ChevronRight, Car, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -113,10 +112,8 @@ export function TripCard({ trip }: { trip: DashboardTrip }) {
       </div>
 
       <div style={{ marginTop: '16px' }}>
-        <Link href={`/trips/${trip.id}`} style={{ width: '100%', display: 'block' }}>
-          <Button variant="secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-            Voir le trajet <ChevronRight size={16} />
-          </Button>
+        <Link href={`/trips/${trip.id}`} className="btn btn-secondary" style={{ width: '100%' }}>
+          Voir le trajet <ChevronRight size={16} />
         </Link>
       </div>
     </Card>

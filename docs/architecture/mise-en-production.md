@@ -162,25 +162,39 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 | Chemin | Accès | Fichier | Remarque |
 |---|---|---|---|
 | `/` | connecté | [src/app/page.tsx](../../src/app/page.tsx) | redirige vers `/dashboard` |
-| `/login` | public | [src/app/(auth)/login/page.tsx](../../src/app/%28auth%29/login/page.tsx) | bouton « Se connecter avec le portail » ([PortalSignInButton.tsx](../../src/app/%28auth%29/login/PortalSignInButton.tsx)) ; avec `?error=…`, message neutre et lien vers le portail, sans relancer le flux (§2.1) |
+| `/login` | public | [src/app/(auth)/login/page.tsx](../../src/app/%28auth%29/login/page.tsx) | bouton « Se connecter avec le portail » ([PortalSignInButton.tsx](../../src/app/%28auth%29/login/PortalSignInButton.tsx)) ; avec `?error=…`, message neutre et lien vers le portail, sans relancer le flux (§2.1) ; pleine fenêtre (`.login-container` en `position: fixed`, étape 3) |
 | `/unauthorized` | public | [src/app/(auth)/unauthorized/page.tsx](../../src/app/%28auth%29/unauthorized/page.tsx) | « Connexion refusée » : cible du rappel `signIn` quand le compte ne peut pas être rattaché (§2.1) ; lien vers le portail |
-| `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | flotte (position, statut), prochains trajets ; polling SWR 30 s |
-| `/trips` | connecté | [src/app/trips/page.tsx](../../src/app/trips/page.tsx) | liste filtrable |
+| `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | « Mes trajets à venir » : les cinq prochains trajets de l'appelant, conducteur ou passager, filtrés par le serveur (`GET /api/trips?mine=true`, D32) ; flotte (position, statut) ; polling SWR 30 s ; états de chargement, vide et d'erreur par section |
+| `/trips` | connecté | [src/app/trips/page.tsx](../../src/app/trips/page.tsx) | liste filtrable (statut, campus, date) ; squelettes au chargement, état d'erreur avec « Réessayer », état vide avec « Réinitialiser les filtres » |
 | `/trips/new` | connecté | [src/app/trips/new/page.tsx](../../src/app/trips/new/page.tsx) | assistant `TripWizard` : recherche (`StepSearch`) puis confirmation (`StepConfirm`) ; dans `StepConfirm`, passagers choisis dans l'annuaire (le conducteur et les passagers déjà choisis ne sont pas proposés ; un passager choisi ensuite comme conducteur sort de la liste, D27) et, pour un admin, conducteur choisi dans l'annuaire |
-| `/trips/[id]` | connecté | [src/app/trips/[id]/page.tsx](../../src/app/trips/[id]/page.tsx) | détail, frise, passagers, actions selon `permissions` |
-| `/vehicles/[id]/calendar` | connecté | [src/app/vehicles/[id]/calendar/page.tsx](../../src/app/vehicles/[id]/calendar/page.tsx) | calendrier hebdomadaire et mensuel |
-| `/admin` | admin | [src/app/admin/page.tsx](../../src/app/admin/page.tsx) | compteurs lus directement via Prisma (composant serveur) : véhicules, en maintenance, trajets à venir |
-| `/admin/vehicles` | admin | [src/app/admin/vehicles/page.tsx](../../src/app/admin/vehicles/page.tsx) | ajout, modification, maintenance |
-| `/admin/trips` | admin | [src/app/admin/trips/page.tsx](../../src/app/admin/trips/page.tsx) | liste paginée, filtres, modale `AdminEditTripModal` (conducteur choisi dans l'annuaire, passagers du trajet non proposés) |
-| `/admin/settings` | admin | [src/app/admin/settings/page.tsx](../../src/app/admin/settings/page.tsx) | `buffer_minutes` ; `DatabaseControls` (métriques Neon, nettoyage) |
-| `/admin/audit` | admin | [src/app/admin/audit/page.tsx](../../src/app/admin/audit/page.tsx) | journal paginé, filtres |
+| `/trips/[id]` | connecté | [src/app/trips/[id]/page.tsx](../../src/app/trips/[id]/page.tsx) | détail, frise, passagers, actions selon `permissions` ; 404 → « Trajet introuvable » avec retour à la liste |
+| `/vehicles/[id]/calendar` | connecté | [src/app/vehicles/[id]/calendar/page.tsx](../../src/app/vehicles/[id]/calendar/page.tsx) | calendrier hebdomadaire et mensuel (défilement horizontal interne sous 800 px) ; 404 → « Véhicule introuvable » |
+| `/admin` | admin | [src/app/admin/page.tsx](../../src/app/admin/page.tsx) | compteurs lus directement via Prisma (composant serveur) : véhicules, en maintenance, trajets à venir ; `await connection()` en tête : rendu à la requête, jamais pré-rendu au build (D30) |
+| `/admin/vehicles` | admin | [src/app/admin/vehicles/page.tsx](../../src/app/admin/vehicles/page.tsx) | ajout, modification, maintenance ; campus du formulaire lus dans `/api/campuses` (ils étaient tirés des véhicules : flotte vide, aucun campus) ; une plaque déjà prise affiche le message du 409 (cas limite 10) |
+| `/admin/trips` | admin | [src/app/admin/trips/page.tsx](../../src/app/admin/trips/page.tsx) | liste paginée, filtres, modale `AdminEditTripModal` (conducteur choisi dans l'annuaire, passagers du trajet non proposés) ; annulation forcée sans promesse de mail (D31) |
+| `/admin/settings` | admin | [src/app/admin/settings/page.tsx](../../src/app/admin/settings/page.tsx) | `buffer_minutes` ; `DatabaseControls` : métriques Neon **au clic seulement** (D35), nettoyage derrière une modale où l'on tape `SUPPRIMER` (cas limite 8) |
+| `/admin/audit` | admin | [src/app/admin/audit/page.tsx](../../src/app/admin/audit/page.tsx) | journal paginé, filtre par type d'entité (`entityType` : trajets, véhicules, paramètres, personnes ; le filtre envoyait `entity`, que la route ignorait, corrigé à l'étape 3) |
 
 `/admin/users` (administrateurs et services) et son entrée de menu sont retirés à l'étape 2a : les accès se
 gèrent dans le portail.
 
+**Pages de Next à la racine** (D33, étape 3), en français : [error.tsx](../../src/app/error.tsx) (erreur de rendu
+d'une page, sous la mise en page racine : la barre reste ; « Réessayer » par `unstable_retry`, code `digest`
+affiché), [global-error.tsx](../../src/app/global-error.tsx) (erreur de la mise en page racine elle-même : ses
+propres `<html>` et `<body>`), [not-found.tsx](../../src/app/not-found.tsx) (« Page introuvable » pour toute
+adresse inconnue, une fois connecté ; sans session, le proxy renvoie d'abord vers `/login`),
+[loading.tsx](../../src/app/loading.tsx) (« Chargement de la page… » pendant une navigation).
+
+**États des écrans** (D33) : [PageState.tsx](../../src/components/ui/PageState.tsx) (`LoadingState`, `EmptyState`,
+`ErrorState` avec « Réessayer »), employé par le tableau de bord, les trajets, le détail, le calendrier, l'assistant
+et l'administration. Les écrans lisent les routes par [fetch-json.ts](../../src/lib/utils/fetch-json.ts) : une
+réponse `{ error, message }` en 4xx ou 5xx devient une `FetchError` (message, statut, code) au lieu de passer pour
+des données, et une coupure réseau donne « Le serveur ne répond pas… » (le navigateur ne dit que « Failed to
+fetch »). Avant l'étape 3, une erreur de l'API s'affichait le plus souvent comme une liste vide.
+
 Composants : `src/components/ui/` (Badge, Button, Card, Input, Select, Modal, `CustomCalendarPicker`,
-`UserSearchAutocomplete`), `layout/Navbar` (déconnexion par formulaire `POST /api/auth/logout`), `dashboard/*`,
-`trips/*`, `vehicles/VehicleCalendar`, `admin/*`.
+`UserSearchAutocomplete`, `PageState`), `layout/Navbar` (déconnexion par formulaire `POST /api/auth/logout` ;
+menu mobile jusqu'à 1023 px), `dashboard/*`, `trips/*`, `vehicles/VehicleCalendar`, `admin/*`.
 [`UserSearchAutocomplete`](../../src/components/ui/UserSearchAutocomplete.tsx) interroge `/api/users/search`
 (300 ms après la frappe, deux caractères au moins, SWR sans nouvel essai ni relecture au retour sur l'onglet),
 rend `{ sub, name, email }`, écarte les `sub` de `excludeSubs`, se vide après un choix avec `clearOnSelect`, et
@@ -194,7 +208,8 @@ Hooks SWR : [src/hooks/](../../src/hooks/) (`use-vehicles`, `use-trips`, `use-ge
 
 Toutes les réponses d'erreur ont la forme `{ error: CODE, message }`. Les erreurs métier
 ([src/lib/utils/errors.ts](../../src/lib/utils/errors.ts)) sont converties par `handleBusinessError` : conflits en
-**409** (`VEHICLE_CONFLICT`, `DRIVER_OVERLAP`, `PASSENGER_OVERLAP`, avec `conflictingTripId`), `PERMISSION_DENIED`
+**409** (`VEHICLE_CONFLICT`, `DRIVER_OVERLAP`, `PASSENGER_OVERLAP`, avec `conflictingTripId` ; `LICENSE_PLATE_TAKEN`
+depuis l'étape 3, D34), `PERMISSION_DENIED`
 en **403**, `VALIDATION_ERROR` et `PERSON_NOT_IN_DIRECTORY` en **400**, `DIRECTORY_RATE_LIMITED` en **429**,
 `DIRECTORY_UNAVAILABLE` en **503** (§2.1 bis) ; toute autre erreur donne **500** `INTERNAL_ERROR`.
 
@@ -215,7 +230,7 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/vehicles` | GET | connecté | véhicules avec position et statut d'affichage |
 | `/api/vehicles/[id]` | GET | connecté | |
 | `/api/vehicles/availability` | GET | connecté | véhicules libres + covoiturages suggérés |
-| `/api/trips` | GET | connecté | tous les trajets non annulés, quel que soit l'appelant |
+| `/api/trips` | GET | connecté | tous les trajets non annulés, quel que soit l'appelant ; avec `mine=true`, ceux que l'appelant conduit ou où il voyage, filtrés avant la pagination, l'identité lue dans la session (D32) |
 | `/api/trips` | POST | connecté | l'admin peut choisir le conducteur (`driverSub`, `driverEmail`) ; passagers `{ userSub, userEmail }` ; nom et adresse de chacun lus dans l'annuaire (D24, écart 5 corrigé) ; passagers limités aux places, sans le conducteur ni doublon |
 | `/api/trips/[id]` | GET | connecté | ajoute `permissions` calculées pour l'appelant |
 | `/api/trips/[id]` | PATCH | connecté | non-admin ou corps limité aux horaires/statut : `updateDepartureTime` (`departureTime` requis) ; admin avec d'autres champs : `updateTripInfo`, un nouveau conducteur étant lu dans l'annuaire (D24) et refusé s'il est passager |
@@ -225,8 +240,8 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/geo/autocomplete` | GET | connecté | proxy BAN (communes) |
 | `/api/geo/directions` | GET | connecté | proxy ORS, repli à vol d'oiseau |
 | `/api/users/search` | GET | connecté | annuaire du portail (contrat portail v1 §7, §2.1 bis) : `[{ sub, name, email }]` ; `[]` sous deux caractères ; 503 ou 429 si l'annuaire ne répond pas (D25) |
-| `/api/admin/vehicles` | POST | admin | |
-| `/api/admin/vehicles/[id]` | PATCH | admin | audit `VEHICLE_UPDATED` / `VEHICLE_MAINTENANCE_ON` / `_OFF` |
+| `/api/admin/vehicles` | POST | admin | plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` (cas limite 10, D34) |
+| `/api/admin/vehicles/[id]` | PATCH | admin | audit `VEHICLE_UPDATED` / `VEHICLE_MAINTENANCE_ON` / `_OFF` ; plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` |
 | `/api/admin/settings` | GET, PATCH | admin | audit `SETTINGS_UPDATED` ; seule la clé `buffer_minutes` est acceptée (entier de 0 à 1440) |
 | `/api/admin/trips` | GET | admin | liste paginée (max 100) |
 | `/api/admin/audit` | GET | admin | journal paginé |
@@ -235,8 +250,16 @@ Retirées à l'étape 2a : `/api/auth/check-admin` (route de débogage, D14), `/
 `/api/admin/admins/[id]`, `/api/admin/services`, `/api/admin/services/[id]` (tables supprimées, D10, D17).
 
 Actions serveur ([actions.ts](../../src/app/admin/settings/actions.ts)) : `getNeonMetrics()` (lit l'API Neon avec
-`NEON_PROJET_ID` et `NEON_API_KEY`) et `cleanupDatabase(cible, statut)` (suppression définitive des trajets ou des
-journaux de plus d'un mois, admin seulement).
+`NEON_PROJET_ID` et `NEON_API_KEY` ; appelée au clic seulement depuis l'étape 3, D35) et `cleanupDatabase(cible,
+statut)` (admin seulement) : suppression définitive des **trajets terminés depuis plus d'un mois** (fin = arrivée du
+retour, sinon de l'aller ; jusqu'à l'étape 3, le filtre portait sur la date de création et visait des trajets
+futurs réservés de longue date, cas limite 8), statut `ALL`, `CANCELLED` ou `SCHEDULED` vérifié, ou des journaux
+créés depuis plus d'un mois.
+
+Le type de retour de `requireAuthSession()` et `requireAdminSession()` est une union explicite (`{ error }` ou
+`{ session }`) depuis l'étape 3 : « `"error" in auth` » l'affine, et les routes ne semblent plus pouvoir rendre
+`undefined` (comportement inchangé). Une violation d'unicité Prisma (`P2002`, l'adaptateur Neon y convertit le
+23505 de PostgreSQL) se reconnaît par `isUniqueConstraintError` ([prisma-errors.ts](../../src/lib/utils/prisma-errors.ts)).
 
 ### 4.1. Algorithmes métier
 
@@ -286,9 +309,25 @@ d'administrateur de départ (D21) : le premier administrateur est la personne qu
 ## 6. Styles
 
 - Jetons de conception (couleurs, rayons, ombres, verre dépoli, transitions) : `:root` de
-  [src/app/globals.css](../../src/app/globals.css).
-- Feuilles par domaine, importées par le code qui les utilise : `components/ui/ui.css`,
-  `components/layout/layout.css`, `components/dashboard/dashboard.css`, `components/trips/trips.css`.
+  [src/app/globals.css](../../src/app/globals.css). Ajoutés à l'étape 3, parce que des composants les employaient
+  sans qu'ils existent : `--color-surface-hover`, `--color-bg-secondary`, `--color-text-muted`, `--color-primary-dark`.
+- **Utilitaires** (D36) : le projet n'a pas Tailwind, mais les composants emploient des classes de son style.
+  Jusqu'à l'étape 3, aucune n'était définie (sans effet). La section « UTILITAIRES » de `globals.css` définit
+  celles qui sont employées (`flex`, `gap-4`, `mb-6`, `text-2xl`, `font-bold`, `text-muted`, `grid-2`, `w-full`,
+  `hover-lift`…), aux valeurs de Tailwind et avec les jetons. **N'en ajouter qu'à l'usage** ; pas de classe à valeur
+  arbitraire (`bg-[…]`) : un style en ligne. Animations communes (`spin`, `pulse`, `.icon-spin`, `.spinner`) au même
+  endroit.
+- Feuilles par domaine, importées par le code qui les utilise : `components/ui/ui.css` (dont les états
+  `.state-panel` et le squelette `.skeleton`), `components/layout/layout.css`, `components/dashboard/dashboard.css`,
+  `components/trips/trips.css` (dont le détail d'un trajet). Une page qui emploie les classes d'un domaine importe
+  sa feuille (`/trips/new` ne l'importait pas).
+- **Points de rupture** (étape 3) : 480 px (marges de `.app-container`), 640 px (`.grid-2` passe à deux colonnes ;
+  détail d'un trajet resserré), 768 px (menu latéral de l'administration), 1023 px (menu mobile de la barre),
+  1024 px (`.grid-3`, `.grid-4`). Les grilles de cartes utilisent `minmax(min(320px, 100%), 1fr)`. Vérifié sans
+  défilement horizontal à 375, 768 et 1280 px (essai de fin d'étape 3).
+- `.admin-container` élargit l'administration au-delà des 1200 px de l'application, centré, sans dépasser la
+  fenêtre (`min(1600px, 100vw - 3rem)` : sous Windows, `100vw` compte la barre de défilement) et sans `transform`
+  (il casserait les modales en `position: fixed`).
 - Beaucoup de styles sont aussi écrits en `style={{…}}` dans les composants. Police : Inter
   (`next/font/google`). Interface en français, vouvoiement.
 
@@ -318,15 +357,19 @@ forme est vérifiée.
 | [request-schemas.test.ts](../../tests/request-schemas.test.ts) | schémas zod sur les corps réellement envoyés par l'interface ; cas limite 11 (`sub` exigé, nom plus lu) |
 | [routes-validation.test.ts](../../tests/routes-validation.test.ts) | un corps invalide donne 400, jamais 500, sur cinq routes d'écriture |
 | [proxy.test.ts](../../tests/proxy.test.ts) | emplacement, export et matcher de `src/proxy.ts` ; lecture du cookie `resavroom.session-token` (pas celui par défaut) ; redirection 8 h après la connexion, même si le jeton a été relu |
+| [vehicle-routes.test.ts](../../tests/vehicle-routes.test.ts) | cas limite 10 (D34) : plaque déjà prise en création et en modification → 409 `LICENSE_PLATE_TAKEN`, sans audit ; une autre erreur reste 500 |
+| [database-cleanup.test.ts](../../tests/database-cleanup.test.ts) | cas limite 8 : `cleanupDatabase` évalue son filtre sur des trajets types (futur réservé de longue date jamais visé, aller-retour jugé sur le retour, statut), statut ou cible inconnus refusés, garde admin, journaux |
+| [trips-list.test.ts](../../tests/trips-list.test.ts) | `GET /api/trips?mine=true` : filtre conducteur ou passager avant la limite, identité de la session et jamais de la requête ; sans `mine`, liste inchangée ; 401 |
+| [fetch-json.test.ts](../../tests/fetch-json.test.ts) | lecteur des écrans : réponse d'erreur → `FetchError` (message, statut, code), corps illisible, réseau coupé (message en français) |
 
 L'ancien script `tests/admin_delegation.ts`, qui vidait les trajets de la base réelle, a été retiré (piège 1).
 
-| Commande | Rôle | Résultat relevé le 2026-10-28 (fin d'étape 2b) |
+| Commande | Rôle | Résultat relevé le 2026-10-29 (fin d'étape 3) |
 |---|---|---|
-| `npm test` | Vitest | 11 fichiers, 219 tests, tous verts |
+| `npm test` | Vitest | 15 fichiers, 242 tests, tous verts |
 | `npx tsc --noEmit` | types | 0 erreur |
-| `npm run lint` | ESLint | 17 problèmes (14 erreurs, 3 avertissements), tous antérieurs à l'étape 1 |
-| `npm run build` | compilation de production | non rejoué (étape 3) |
+| `npm run lint` | ESLint | 0 problème, sans aucun `eslint-disable` hors `src/generated/` (D5) ; 0 aussi avec `--no-inline-config` |
+| `npm run build` | compilation de production | sans erreur ; lancé avec une `DATABASE_URL` factice dans son seul processus (D30) ; seules des pages client sans lecture de la base sont pré-rendues, toutes les routes `/admin` et `/api` sont dynamiques |
 
 ---
 
@@ -343,7 +386,7 @@ l'opération) ; annuaire du portail (§2.1 bis) : secret du client dans un modul
 journaux ; l'identité d'une autre personne vient de l'annuaire, jamais du corps de la requête (D24). Pas de CSP
 (`next.config.ts` vide) : la clause `form-action` du contrat §3.2 ne s'applique pas.
 
-**Écarts** (relevé du 2026-10-26, mis à jour aux étapes 1, 2a et 2b ; aucun n'est une décision acceptée, voir
+**Écarts** (relevé du 2026-10-26, mis à jour aux étapes 1, 2a, 2b et 3 ; aucun n'est une décision acceptée, voir
 les cas limites et le plan) :
 
 | # | Écart | Cas limite |
@@ -355,9 +398,9 @@ les cas limites et le plan) :
 | 5 | *Corrigé à l'étape 2a* : le fournisseur de développement et ses comptes sont retirés ; seul le fournisseur `portail` existe | EC 5 |
 | 6 | *Corrigé en partie à l'étape 1* : corps validés par zod (§4). Reste : pas de limitation de débit | EC 6 |
 | 7 | `GET /api/trips` expose à tout utilisateur connecté tous les trajets avec e-mails des conducteurs et passagers ; `/api/users/search` lui rend le nom et l'adresse des personnes qui ont accès (usage prévu par le contrat §7) | EC 7 |
-| 8 | `cleanupDatabase` supprime définitivement ; seule garde : `window.confirm` côté client | EC 8 |
+| 8 | *Corrigé en partie à l'étape 3* : `cleanupDatabase` ne vise plus que des trajets terminés depuis plus d'un mois (il visait la date de création, donc des trajets futurs), statut vérifié ; confirmation par une modale où l'on tape `SUPPRIMER`. Reste : la suppression est définitive, et cette confirmation est côté client (la garde serveur est le rôle admin) | EC 8 |
 | 9 | *Corrigé à l'étape 1* : les deux traces de débogage sont retirées | EC 9 |
-| 10 | Un doublon de plaque de véhicule donne une erreur Prisma convertie en 500 (administrateurs et services ont disparu en 2a) | EC 10 |
+| 10 | *Corrigé à l'étape 3* (D34) : une plaque déjà prise répond 409 `LICENSE_PLATE_TAKEN` avec un message en français, affiché par l'écran | EC 10 |
 | 11 | *Corrigé à l'étape 2b* : les passagers se choisissent dans l'annuaire, avec leur `sub` (D27) ; doublon refusé en 400. Reste : sans annuaire (fermé, en panne), la création avec passagers répond 503 | EC 11 |
 | 12 | Une adresse portée en base par une autre personne (autre `sub`) bloque la connexion, sans écran pour lever le conflit | EC 12 |
 | 13 | Après un retrait d'accès, la session ouverte va à son terme (8 h au plus) et le rôle en base reste celui de la dernière connexion (contrat, G15) | EC 13 |
@@ -370,7 +413,7 @@ les cas limites et le plan) :
 - Scripts `package.json` : `dev` (`next dev -p 3002`, port fixe connu du portail, D12), `build`, `start`,
   `lint`, `test` (`vitest run`). Alias `@/*` → `src/`. `"type": "module"`. Dépendances ajoutées à l'étape 1 :
   `zod` 4, `vitest` 4.1 (Vitest 5 exige `@types/node` 22 ou plus ; le projet est en 20). Retirée à l'étape 2a :
-  `@azure/msal-node` (D14). `@prisma/adapter-pg` reste, sans usage. Aucune dépendance ajoutée à l'étape 2b :
+  `@azure/msal-node` (D14). Retirée à l'étape 3 : `@prisma/adapter-pg`, sans usage (D32). Aucune dépendance ajoutée à l'étape 2b :
   `import "server-only"` est résolu par Next lui-même (sa doc : installation facultative ; types dans
   `next/types/global.d.ts`), et Vitest le remplace par `next/dist/compiled/server-only/empty.js` (D28).
 - `next dev` affiche un avertissement `DEP0169` (`url.parse()`) venu d'`openid-client`, la bibliothèque OIDC de
@@ -379,6 +422,13 @@ les cas limites et le plan) :
   l'étape 1 (D15), il charge `.env.local` puis `.env` et lit `DATABASE_URL_UNPOOLED` (connexion directe). Le
   client runtime est [src/lib/prisma.ts](../../src/lib/prisma.ts) (adaptateur Neon + `ws`, `DATABASE_URL`
   pooled). Les migrations se jouent par la procédure du mémo d'exploitation.
+- **Build** (étape 3) : `npm run build` passe. Avant de le lancer, s'assurer qu'aucune page n'est pré-rendue avec
+  une lecture de la base (la base réelle est partagée) : `/admin`, seul composant serveur qui lit Prisma, appelle
+  `connection()` ; et le lancer avec une `DATABASE_URL` factice dans son seul processus, par exemple
+  `DATABASE_URL="postgresql://build:build@build.invalid:5432/build" npm run build` (`process.env` l'emporte sur
+  `.env.local`) : une lecture de la base échouerait au lieu de toucher la base réelle. Le build écrit `.next/` :
+  `tsc` peut ensuite citer des types périmés (piège 14). Ne pas le lancer pendant que `npm run dev` tourne.
+- ESLint : 0 problème, aucun `eslint-disable` hors du client généré (D5) ; `eslint.config.mjs` inchangé.
 - Aucune intégration continue (`.github/` absent). Hébergement visé : Vercel (aucun projet relevé à ce jour).
 
 ---

@@ -1,5 +1,6 @@
 "use server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { getSession, isAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -11,7 +12,25 @@ async function verifyAdmin() {
     return session;
 }
 
-export async function getNeonMetrics() {
+/** Une consommation du projet Neon rapportée à sa limite. */
+export type UsageMetric = { value: number; limit: number; percent: number };
+
+export type NeonMetrics = {
+    branches: UsageMetric;
+    compute: UsageMetric;
+    storage: UsageMetric;
+    network: UsageMetric;
+};
+
+/** Champs lus dans la réponse de `GET /api/v2/projects/{id}` de l'API Neon. */
+type NeonProject = {
+    owner?: { branches_limit?: number };
+    cpu_used_sec?: number;
+    synthetic_storage_size?: number;
+    data_transfer_bytes?: number;
+};
+
+export async function getNeonMetrics(): Promise<NeonMetrics> {
     await verifyAdmin();
 
     const projectId = process.env.NEON_PROJET_ID;
@@ -26,10 +45,10 @@ export async function getNeonMetrics() {
             headers: { Authorization: `Bearer ${apiKey}` },
             cache: 'no-store'
         });
-        
+
         let branchCount = 0;
         if (branchesRes.ok) {
-            const bData = await branchesRes.json();
+            const bData: { branches?: unknown[] } = await branchesRes.json();
             branchCount = bData.branches?.length || 0;
         }
 
@@ -42,7 +61,7 @@ export async function getNeonMetrics() {
             throw new Error("Impossible de récupérer les informations Neon.");
         }
 
-        const pData = await projRes.json();
+        const pData: { project: NeonProject } = await projRes.json();
         const p = pData.project;
 
         // Limites Free Tier classiques Neon
@@ -67,30 +86,44 @@ export async function getNeonMetrics() {
             network: { value: Number(networkUsed.toFixed(3)), limit: limitNetwork, percent: networkPercent }
         };
 
-    } catch (e: any) {
-        throw new Error(e.message || "Erreur de communication avec l'API Neon.");
+    } catch (e) {
+        throw new Error((e instanceof Error && e.message) || "Erreur de communication avec l'API Neon.");
     }
 }
 
-export async function cleanupDatabase(target: "TRIPS" | "AUDIT_LOGS", tripStatus?: string) {
+export type CleanupTarget = "TRIPS" | "AUDIT_LOGS";
+export type CleanupTripStatus = "ALL" | "CANCELLED" | "SCHEDULED";
+
+const CLEANUP_TRIP_STATUSES: readonly string[] = ["ALL", "CANCELLED", "SCHEDULED"];
+
+/**
+ * Supprime définitivement les données de plus d'un mois (cas limite 8) : les trajets terminés depuis plus
+ * d'un mois (et leurs passagers, par la cascade du schéma), ou les journaux d'audit créés depuis plus d'un mois.
+ */
+export async function cleanupDatabase(target: CleanupTarget, tripStatus: CleanupTripStatus = "ALL"): Promise<number> {
     await verifyAdmin();
 
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     if (target === "TRIPS") {
-        const whereClause: any = {
-            createdAt: { lt: oneMonthAgo }
-        };
-        if (tripStatus && tripStatus !== "ALL") {
-            whereClause.status = tripStatus;
+        if (!CLEANUP_TRIP_STATUSES.includes(tripStatus)) {
+            throw new Error("Statut de trajet invalide.");
         }
-        
-        // Prisma: deleteMany Trips works natively (pas besoin de transaction si on ne gère pas autre chose, les passagers se suppriment via Cascade)
-        // Wait! We should check if Passenger has "onDelete: Cascade" in the Prisma schema.
-        const result = await prisma.trip.deleteMany({
-            where: whereClause
-        });
+
+        // Un trajet se juge sur sa fin (arrivée du retour, sinon de l'aller), jamais sur sa date de création :
+        // un trajet réservé il y a plus d'un mois peut ne pas avoir encore eu lieu
+        const where: Prisma.TripWhereInput = {
+            OR: [
+                { estimatedReturnArrivalTime: { lt: oneMonthAgo } },
+                { estimatedReturnArrivalTime: null, estimatedArrivalTime: { lt: oneMonthAgo } },
+            ],
+        };
+        if (tripStatus !== "ALL") {
+            where.status = tripStatus;
+        }
+
+        const result = await prisma.trip.deleteMany({ where });
         return result.count;
 
     } else if (target === "AUDIT_LOGS") {

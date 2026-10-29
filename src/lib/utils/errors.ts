@@ -69,6 +69,16 @@ export class PassengerOverlapError extends BusinessError {
 }
 
 /**
+ * La plaque d'immatriculation est déjà portée par un autre véhicule (cas limite 10, D34).
+ */
+export class LicensePlateTakenError extends BusinessError {
+  constructor() {
+    super("Cette plaque d'immatriculation est déjà utilisée par un autre véhicule.", "LICENSE_PLATE_TAKEN");
+    this.name = "LicensePlateTakenError";
+  }
+}
+
+/**
  * L'utilisateur n'a pas la permission d'effectuer cette action.
  */
 export class PermissionError extends BusinessError {

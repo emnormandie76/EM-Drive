@@ -1,12 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Database, Trash2, RefreshCw } from "lucide-react";
 import { Card, CardBody, CardTitle, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { getNeonMetrics, cleanupDatabase } from "@/app/admin/settings/actions";
+import {
+  getNeonMetrics,
+  cleanupDatabase,
+  type CleanupTarget,
+  type CleanupTripStatus,
+  type NeonMetrics,
+  type UsageMetric,
+} from "@/app/admin/settings/actions";
+
+/** Mot à taper pour confirmer une suppression définitive (cas limite 8). */
+const CONFIRMATION_WORD = "SUPPRIMER";
+
+const TRIP_STATUS_LABELS: Record<CleanupTripStatus, string> = {
+  ALL: "Tous les statuts",
+  CANCELLED: "Annulés uniquement",
+  SCHEDULED: "Terminés (non annulés)",
+};
 
 function MetricCard({
   title,
@@ -14,10 +32,9 @@ function MetricCard({
   unit,
 }: {
   title: string;
-  data: any;
+  data: UsageMetric;
   unit: string;
 }) {
-  if (!data) return null;
   const isDanger = data.percent >= 80;
 
   return (
@@ -87,49 +104,51 @@ function MetricCard({
 }
 
 export function DatabaseControls() {
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<NeonMetrics | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
-  const [cleaningTarget, setCleaningTarget] = useState<"TRIPS" | "AUDIT_LOGS">(
-    "TRIPS",
-  );
-  const [tripStatus, setTripStatus] = useState<string>("ALL");
+  const [cleaningTarget, setCleaningTarget] = useState<CleanupTarget>("TRIPS");
+  const [tripStatus, setTripStatus] = useState<CleanupTripStatus>("ALL");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
 
+  // Appel à l'API Neon (à quota) : seulement sur demande, jamais à l'ouverture de la page (D35, règle 7)
   const fetchMetrics = async () => {
     setLoadingMetrics(true);
     try {
       const m = await getNeonMetrics();
       setMetrics(m);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Impossible de charger les métriques.");
     } finally {
       setLoadingMetrics(false);
     }
   };
 
-  useEffect(() => {
-    fetchMetrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const openConfirmation = () => {
+    setConfirmation("");
+    setConfirmOpen(true);
+  };
 
   const handleCleanup = async () => {
-    if (
-      !window.confirm(
-        "Êtes-vous sûr de vouloir supprimer ces données (antérieures à 1 mois) ? Cette action est irréversible et supprimera en cascade toutes les données rattachées.",
-      )
-    )
-      return;
+    if (confirmation !== CONFIRMATION_WORD) return;
 
     setIsCleaning(true);
     try {
       const count = await cleanupDatabase(cleaningTarget, tripStatus);
-      toast.success(`${count} enregistrement(s) supprimé(s) avec succès.`);
-    } catch (e: any) {
-      toast.error(e.message);
+      toast.success(`${count} enregistrement(s) supprimé(s).`);
+      setConfirmOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Le nettoyage a échoué.");
     } finally {
       setIsCleaning(false);
     }
   };
+
+  const cleanupDescription =
+    cleaningTarget === "TRIPS"
+      ? `Les trajets terminés depuis plus d'un mois (${TRIP_STATUS_LABELS[tripStatus].toLowerCase()}) et leurs passagers seront supprimés définitivement.`
+      : "Les journaux d'audit enregistrés il y a plus d'un mois seront supprimés définitivement.";
 
   return (
     <Card style={{ width: "100%" }}>
@@ -138,6 +157,8 @@ export function DatabaseControls() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "0.5rem",
         }}
       >
         <CardTitle
@@ -162,27 +183,30 @@ export function DatabaseControls() {
             className={loadingMetrics ? "animate-spin" : ""}
             style={{ marginRight: "8px" }}
           />
-          Actualiser
+          {metrics ? "Actualiser" : "Charger les métriques"}
         </Button>
       </CardHeader>
       <CardBody>
-        {loadingMetrics && !metrics && (
-          <div
+        {!metrics && (
+          <p
+            className="text-muted"
             style={{
               textAlign: "center",
-              padding: "2rem",
-              color: "var(--color-text-secondary)",
+              padding: "1rem",
+              fontSize: "0.9rem",
             }}
           >
-            Chargement des métriques Neon...
-          </div>
+            {loadingMetrics
+              ? "Chargement des métriques Neon..."
+              : "Les métriques Neon ne sont chargées qu'à la demande (appel à l'API Neon)."}
+          </p>
         )}
 
         {metrics && (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
               gap: "1rem",
               marginBottom: "2rem",
             }}
@@ -219,8 +243,8 @@ export function DatabaseControls() {
             className="text-muted"
             style={{ fontSize: "0.9rem", marginBottom: "1rem" }}
           >
-            Supprimez les données obsolètes stockées il y a{" "}
-            <strong>plus de 1 mois</strong> pour libérer de l'espace.
+            Supprimez les trajets terminés depuis <strong>plus d&#39;un mois</strong>, ou les journaux
+            d&#39;audit de plus d&#39;un mois, pour libérer de l&#39;espace.
           </p>
 
           <div
@@ -245,7 +269,7 @@ export function DatabaseControls() {
               <Select
                 value={cleaningTarget}
                 onChange={(e) =>
-                  setCleaningTarget(e.target.value as "TRIPS" | "AUDIT_LOGS")
+                  setCleaningTarget(e.target.value as CleanupTarget)
                 }
                 options={[
                   { value: "TRIPS", label: "Trajets (et réservations)" },
@@ -269,30 +293,53 @@ export function DatabaseControls() {
                 </label>
                 <Select
                   value={tripStatus}
-                  onChange={(e) => setTripStatus(e.target.value)}
-                  options={[
-                    { value: "ALL", label: "Tous les statuts" },
-                    { value: "CANCELLED", label: "Annulés uniquement" },
-                    { value: "SCHEDULED", label: "Planifiés / Terminés" },
-                  ]}
+                  onChange={(e) => setTripStatus(e.target.value as CleanupTripStatus)}
+                  options={Object.entries(TRIP_STATUS_LABELS).map(([value, label]) => ({ value, label }))}
                   style={{ width: "100%" }}
                 />
               </div>
             )}
 
             <div style={{ marginBottom: "1rem" }}>
-              <Button
-                variant="danger"
-                disabled={isCleaning}
-                onClick={handleCleanup}
-              >
+              <Button variant="danger" disabled={isCleaning} onClick={openConfirmation}>
                 <Trash2 size={16} style={{ marginRight: "8px" }} />
-                {isCleaning ? "Suppression..." : "Nettoyer"}
+                Nettoyer
               </Button>
             </div>
           </div>
         </div>
       </CardBody>
+
+      <Modal
+        isOpen={confirmOpen}
+        onClose={() => !isCleaning && setConfirmOpen(false)}
+        title="Confirmer le nettoyage"
+      >
+        <p style={{ marginBottom: "1rem" }}>{cleanupDescription}</p>
+        <p className="text-muted" style={{ fontSize: "0.9rem", marginBottom: "1rem" }}>
+          Cette suppression est irréversible. Pour confirmer, tapez <strong>{CONFIRMATION_WORD}</strong>.
+        </p>
+        <Input
+          value={confirmation}
+          onChange={(e) => setConfirmation(e.target.value)}
+          placeholder={CONFIRMATION_WORD}
+          aria-label="Mot de confirmation"
+          autoComplete="off"
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem", flexWrap: "wrap" }}>
+          <Button variant="secondary" onClick={() => setConfirmOpen(false)} disabled={isCleaning}>
+            Annuler
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleCleanup}
+            disabled={confirmation !== CONFIRMATION_WORD}
+            isLoading={isCleaning}
+          >
+            Supprimer définitivement
+          </Button>
+        </div>
+      </Modal>
     </Card>
   );
 }

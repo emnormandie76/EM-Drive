@@ -1,21 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // src/components/trips/StepSearch.tsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { ErrorState } from "@/components/ui/PageState";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { GeoLocation, getDirections } from "@/hooks/use-geo";
-import { DashboardTrip } from "@/hooks/use-trips";
+import type { Campus } from "@/hooks/use-vehicles";
 import { toast } from "sonner";
-import { Search, Map } from "lucide-react";
+import { Search } from "lucide-react";
 import { DatePickerInput } from "@/components/ui/CustomCalendarPicker";
+import { fetchJson } from "@/lib/utils/fetch-json";
 import "./trips.css";
 
 import useSWR from "swr";
-
-// Un petit helper exporté depuis fetcher.ts ou on peut le definir en inline :
-const localFetcher = (url: string) => fetch(url).then(r => r.json());
 
 export interface TripSearchParams {
   originCampusId: string;
@@ -28,25 +26,41 @@ export interface TripSearchParams {
   isRoundTrip: boolean;
 }
 
-interface AvailableVehicle {
+/** Véhicule libre rendu par GET /api/vehicles/availability. */
+export interface AvailableVehicle {
   id: string;
   name: string;
   licensePlate: string;
   seats: number;
 }
 
+/** Covoiturage proposé par GET /api/vehicles/availability (dates en texte ISO, comme toute réponse JSON). */
+export interface SuggestedTrip {
+  id: string;
+  driverDisplayName: string;
+  departureTime: string;
+  origin: string;
+  destination: string;
+  seatsAvailable: number;
+}
+
+interface AvailabilityResponse {
+  availableVehicles: AvailableVehicle[];
+  suggestedTrips: SuggestedTrip[];
+}
+
 interface StepSearchProps {
   onResults: (
     params: TripSearchParams,
     vehicles: AvailableVehicle[],
-    suggestedTrips: any[]
+    suggestedTrips: SuggestedTrip[]
   ) => void;
   initialParams?: Partial<TripSearchParams>;
 }
 
 export function StepSearch({ onResults, initialParams }: StepSearchProps) {
-  const { data: campuses, error: campusesError } = useSWR<any[]>("/api/campuses", localFetcher);
-  const CAMPUSES = campuses || [];
+  const { data: campuses, error: campusesError, mutate: retryCampuses } = useSWR<Campus[]>("/api/campuses", fetchJson);
+  const CAMPUSES = useMemo(() => campuses ?? [], [campuses]);
 
   const [originCampusId, setOriginCampusId] = useState(
     initialParams?.originCampusId || ""
@@ -171,23 +185,34 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
       const response = await fetch(`/api/vehicles/availability?${queryParams.toString()}`);
       if (!response.ok) throw new Error("Erreur lors de la recherche des véhicules.");
 
-      const data = await response.json();
+      const data: AvailabilityResponse = await response.json();
 
       onResults(params, data.availableVehicles, data.suggestedTrips);
 
-    } catch (error: any) {
-      toast.error(error.message || "Erreur de calcul.");
+    } catch (error) {
+      toast.error((error instanceof Error && error.message) || "Erreur de calcul.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (campusesError) {
+    return (
+      <ErrorState
+        title="Impossible de charger les campus"
+        description={campusesError.message}
+        onRetry={() => retryCampuses()}
+        compact
+      />
+    );
+  }
+
   return (
     <form onSubmit={handleSearch} className="flex flex-col gap-4">
       {!campuses ? (
-        <div className="text-center p-4">Chargement des campus...</div>
+        <div className="text-center p-4 text-muted" role="status">Chargement des campus…</div>
       ) : (
-        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
+        <div className="grid-2">
           <Select
             label="Campus de départ"
             options={CAMPUSES.map(c => ({ value: c.id, label: c.name }))}
@@ -228,7 +253,7 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
         </div>
       )}
 
-      <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className="grid-2">
         <DatePickerInput
           label="Date de départ"
           value={departureDate}
@@ -266,7 +291,7 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
       </div>
 
       {isRoundTrip && (
-        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'var(--color-background)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+        <div className="grid-2" style={{ background: 'var(--color-background)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
           <DatePickerInput
             label="Date de retour"
             value={returnDate}

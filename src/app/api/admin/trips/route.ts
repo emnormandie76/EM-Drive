@@ -1,6 +1,7 @@
 // GET /api/admin/trips — Liste de tous les trajets pour l'administration
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { requireAdminSession } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
@@ -19,8 +20,7 @@ export async function GET(request: NextRequest) {
   const vehicleId = searchParams.get("vehicleId");
   const dateStr = searchParams.get("date");
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {};
+  const where: Prisma.TripWhereInput = {};
 
   if (status) {
     if (status === "CANCELLED") {

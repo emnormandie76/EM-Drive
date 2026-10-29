@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/trips/StepConfirm.tsx
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -26,7 +25,7 @@ interface StepConfirmProps {
   params: TripSearchParams;
   vehicle: StepConfirmVehicle;
   onBack: () => void;
-  onConfirm: (payload: any) => Promise<void>;
+  onConfirm: (payload: unknown) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -42,7 +41,8 @@ export function StepConfirm({
   const [passengers, setPassengers] = useState<UserSuggestion[]>([]);
 
   const { data: session } = useSession();
-  const isAdmin = (session?.user as any)?.isAdmin === true;
+  // Affichage seulement : le serveur relit le rôle en base (règle 9)
+  const isAdmin = session?.user?.isAdmin === true;
   const [isForMe, setIsForMe] = useState(true);
   const [selectedDriver, setSelectedDriver] = useState<UserSuggestion | null>(
     null,
@@ -141,13 +141,7 @@ export function StepConfirm({
             </h3>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-              gap: "1.5rem",
-            }}
-          >
+          <div className="grid-2" style={{ gap: "1.5rem" }}>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "4px" }}
             >
@@ -336,7 +330,7 @@ export function StepConfirm({
                   marginTop: "-1rem",
                 }}
               >
-                Un email lui sera envoyé pour lui notifier sa prise en charge.
+                Le trajet apparaîtra dans ses trajets à venir.
               </p>
             </div>
           )}
@@ -352,7 +346,7 @@ export function StepConfirm({
         />
       </div>
 
-      <div className="p-4 bg-[var(--color-background)] rounded-lg border border-[var(--color-border)]">
+      <div className="p-4 rounded-lg border" style={{ background: "var(--color-background)" }}>
         <h4 className="font-semibold mb-3">
           Passagers ({passengers.length} / {vehicle.seats - 1})
         </h4>
@@ -360,11 +354,12 @@ export function StepConfirm({
         {passengers.map((p, i) => (
           <div
             key={p.sub}
-            className="flex justify-between items-center bg-[var(--color-surface)] p-2 mb-2 rounded border border-[var(--color-border)]"
+            className="flex justify-between items-center gap-2 p-2 mb-2 rounded border"
+            style={{ background: "var(--color-surface)" }}
           >
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div className="font-medium">{p.name}</div>
-              <div className="text-sm text-[var(--color-text-secondary)]">
+              <div className="text-sm break-words" style={{ color: "var(--color-text-secondary)" }}>
                 {p.email}
               </div>
             </div>
@@ -393,7 +388,7 @@ export function StepConfirm({
         )}
       </div>
 
-      <div className="flex justify-between mt-4">
+      <div className="flex justify-between gap-2 mt-4" style={{ flexWrap: "wrap" }}>
         <Button variant="ghost" onClick={onBack} disabled={isLoading}>
           Retour
         </Button>

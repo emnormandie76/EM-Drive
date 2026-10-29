@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuthSession } from "@/lib/api-helpers";
@@ -25,6 +24,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(vehicle);
   } catch (error) {
+    console.error("[API] GET /api/vehicles/[id] error:", error);
     return NextResponse.json({ error: "INTERNAL_ERROR", message: "Erreur serveur" }, { status: 500 });
   }
 }

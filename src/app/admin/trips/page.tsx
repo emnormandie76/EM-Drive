@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useState } from "react";
@@ -7,11 +6,10 @@ import { toast } from "sonner";
 import {
   Trash2,
   AlertTriangle,
-  Search,
-  Filter,
   ArrowRight,
   ArrowLeftRight,
   Edit,
+  SearchX,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -19,9 +17,10 @@ import { Select } from "@/components/ui/Select";
 import { DatePickerInput } from "@/components/ui/CustomCalendarPicker";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/PageState";
 import { AdminEditTripModal } from "@/components/admin/AdminEditTripModal";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import type { AdminTrip, AdminTripsResponse } from "@/hooks/use-trips";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
 export default function AdminTripsPage() {
   const [page, setPage] = useState(1);
@@ -36,14 +35,20 @@ export default function AdminTripsPage() {
   if (dateFilter) searchParams.set("date", dateFilter);
 
   const url = `/api/admin/trips?${searchParams.toString()}`;
-  const { data, error, mutate } = useSWR(url, fetcher);
+  const { data, error, mutate } = useSWR<AdminTripsResponse>(url, fetchJson);
 
   // Etat pour la modale de confirmation
-  const [tripToDelete, setTripToDelete] = useState<any>(null);
+  const [tripToDelete, setTripToDelete] = useState<AdminTrip | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Etat pour la modale d'édition
-  const [tripToEdit, setTripToEdit] = useState<any>(null);
+  const [tripToEdit, setTripToEdit] = useState<AdminTrip | null>(null);
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setDateFilter("");
+    setPage(1);
+  };
 
   const handleDelete = async () => {
     if (!tripToDelete) return;
@@ -59,13 +64,11 @@ export default function AdminTripsPage() {
         throw new Error(d.message || "Erreur lors de la suppression.");
       }
 
-      toast.success(
-        "Le trajet a été annulé avec succès. Les passagers ont été notifiés.",
-      );
+      toast.success("Le trajet a été annulé.");
       setTripToDelete(null);
       mutate();
-    } catch (err: any) {
-      toast.error(err.message || "Une erreur est survenue.");
+    } catch (err) {
+      toast.error((err instanceof Error && err.message) || "Une erreur est survenue.");
     } finally {
       setIsDeleting(false);
     }
@@ -115,11 +118,7 @@ export default function AdminTripsPage() {
           </div>
           <Button
             variant="ghost"
-            onClick={() => {
-              setStatusFilter("all");
-              setDateFilter("");
-              setPage(1);
-            }}
+            onClick={resetFilters}
             title="Réinitialiser les filtres"
             style={{ marginBottom: "1rem" }}
           >
@@ -129,23 +128,26 @@ export default function AdminTripsPage() {
       </Card>
 
       {/* Liste des trajets */}
-      <Card style={{ padding: 0 }}>
-        {error ? (
-          <div
-            style={{
-              padding: "2rem",
-              textAlign: "center",
-              color: "var(--color-danger)",
-            }}
-          >
-            Erreur lors du chargement des trajets.
-          </div>
-        ) : !data ? (
-          <div style={{ padding: "2rem", textAlign: "center" }}>
-            Chargement...
-          </div>
-        ) : (
-          <>
+      {error ? (
+        <ErrorState
+          title="Impossible de charger les trajets"
+          description={error.message}
+          onRetry={() => mutate()}
+        />
+      ) : !data ? (
+        <LoadingState label="Chargement des trajets…" />
+      ) : data.trips.length === 0 ? (
+        <EmptyState
+          icon={SearchX}
+          title="Aucun trajet ne correspond à ces critères"
+          action={
+            <Button variant="secondary" onClick={resetFilters}>
+              Réinitialiser les filtres
+            </Button>
+          }
+        />
+      ) : (
+        <Card style={{ padding: 0 }}>
             {/* Pagination TOP */}
             {data.pagination.totalPages > 1 && (
               <div
@@ -154,6 +156,8 @@ export default function AdminTripsPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "0.5rem",
                   borderBottom: "1px solid var(--color-border)",
                 }}
               >
@@ -209,7 +213,7 @@ export default function AdminTripsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.trips.map((trip: any) => (
+                  {data.trips.map((trip) => (
                     <tr
                       key={trip.id}
                       style={{ borderBottom: "1px solid var(--color-border)" }}
@@ -336,20 +340,6 @@ export default function AdminTripsPage() {
                       </td>
                     </tr>
                   ))}
-                  {data.trips.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        style={{
-                          padding: "2rem",
-                          textAlign: "center",
-                          color: "var(--color-text-muted)",
-                        }}
-                      >
-                        Aucun trajet ne correspond à ces critères.
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -362,6 +352,8 @@ export default function AdminTripsPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "0.5rem",
                   borderTop: "1px solid var(--color-border)",
                 }}
               >
@@ -389,9 +381,8 @@ export default function AdminTripsPage() {
                 </div>
               </div>
             )}
-          </>
-        )}
-      </Card>
+        </Card>
+      )}
 
       {/* Modale de confirmation de suppression */}
       {tripToDelete && (
@@ -444,15 +435,16 @@ export default function AdminTripsPage() {
                   color: "var(--color-text-muted)",
                 }}
               >
-                Cette action est irréversible. Un email sera automatiquement
-                envoyé au conducteur et aux {tripToDelete.passengers.length}{" "}
-                passager(s).
+                Le trajet passera au statut « Annulé » pour son conducteur et
+                ses {tripToDelete.passengers.length} passager(s). Cette action
+                est irréversible.
               </p>
 
               <div
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
+                  flexWrap: "wrap",
                   gap: "1rem",
                 }}
               >

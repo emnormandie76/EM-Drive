@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/lib/services/trip-service.ts — Service CRUD des trajets (SAD 7.4, 7.5)
 // Implémente la création en transaction sérialisée avec vérifications de conflits.
 

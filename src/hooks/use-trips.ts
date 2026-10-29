@@ -1,6 +1,7 @@
 // src/hooks/use-trips.ts
 import useSWR from "swr";
 import { TripType, TripStatus } from "@/generated/prisma/enums";
+import { fetchJson } from "@/lib/utils/fetch-json";
 
 export interface DashboardTrip {
   id: string;
@@ -34,53 +35,61 @@ export interface DashboardTrip {
   }>;
 }
 
-export interface TripsResponse {
-  trips: DashboardTrip[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+/** Réponse de GET /api/trips/[id] : le trajet, son commentaire et les droits calculés pour l'appelant. */
+export interface TripDetailData extends DashboardTrip {
+  comment: string | null;
+  permissions: {
+    canDelete: boolean;
+    canModifyDeparture: boolean;
+    canJoinAsPassenger: boolean;
   };
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
 
-export function useUpcomingTrips() {
+export interface TripsResponse {
+  trips: DashboardTrip[];
+  pagination: Pagination;
+}
+
+/** Trajet de GET /api/admin/trips : la ligne complète, colonnes de référence comprises. */
+export interface AdminTrip extends DashboardTrip {
+  vehicleId: string;
+  originCampusId: string;
+  destinationCampusId: string | null;
+  destinationOtherLat: number | null;
+  destinationOtherLng: number | null;
+  returnCampusId: string | null;
+  comment: string | null;
+}
+
+export interface AdminTripsResponse {
+  trips: AdminTrip[];
+  pagination: Pagination;
+}
+
+/**
+ * Les cinq prochains trajets de l'appelant (conducteur ou passager). Le serveur filtre avant la limite
+ * (`mine=true`) et lit l'identité dans la session (D32).
+ */
+export function useMyTrips() {
   const { data, error, isLoading, mutate } = useSWR<TripsResponse>(
-    "/api/trips?status=upcoming&limit=5",
-    fetcher,
+    "/api/trips?status=upcoming&mine=true&limit=5",
+    fetchJson,
     {
       refreshInterval: 30000,
     }
   );
 
   return {
-    trips: data?.trips || [],
+    myTrips: data?.trips ?? [],
     isLoading,
     isError: error,
     mutate,
-  };
-}
-
-export function useMyTrips(userSub?: string) {
-  // It's better to fetch upcoming, the backend filters if needed or we filter here.
-  // Actually the backend GET /api/trips currently fetches all or filtered by campus/vehicle. 
-  // It does not filter by userSub yet. Let's fetch upcoming and filter locally for the dashboard, 
-  // or just use upcoming trips for the dashboard widget.
-  
-  const { trips, isLoading, isError, mutate } = useUpcomingTrips();
-  
-  // Filter locally for the user's trips (driver or passenger)
-  const myTrips = trips.filter(trip => 
-    trip.driverSub === userSub ||
-    trip.passengers.some(p => p.userSub === userSub)
-  );
-
-  return {
-    myTrips,
-    isLoading,
-    isError,
-    mutate
   };
 }

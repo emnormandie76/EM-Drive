@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Users, UserMinus, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
+import './trips.css';
 
 interface Passenger {
   id: string;
@@ -56,8 +56,8 @@ export function PassengerList({
 
       toast.success('Vous avez rejoint ce trajet');
       onMutate();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'inscription');
     } finally {
       setIsLoading(false);
     }
@@ -77,16 +77,16 @@ export function PassengerList({
 
       toast.success('Passager retiré');
       onMutate();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erreur lors du retrait');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card style={{ padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <Card className="passenger-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
         <h3 style={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Users size={20} /> Passagers
         </h3>

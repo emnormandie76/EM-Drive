@@ -1,13 +1,19 @@
 // src/lib/api-helpers.ts — Helpers partagés pour les API Routes
 
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { getSession, isAdmin } from "@/lib/auth";
 import { BusinessError } from "@/lib/utils/errors";
+
+// Unions explicites : sans elles, TypeScript donne aux deux branches une propriété `error` facultative,
+// « "error" in auth » n'affine plus le type, et chaque route semble pouvoir rendre `undefined`.
+type AuthResult = { error: NextResponse } | { session: Session };
+type AdminResult = { error: NextResponse } | { session: Session; isAdmin: true };
 
 /**
  * Récupère la session authentifiée ou retourne une erreur 401.
  */
-export async function requireAuthSession() {
+export async function requireAuthSession(): Promise<AuthResult> {
   const session = await getSession();
   if (!session?.user) {
     return { error: NextResponse.json({ error: "UNAUTHORIZED", message: "Non authentifié." }, { status: 401 }) };
@@ -18,7 +24,7 @@ export async function requireAuthSession() {
 /**
  * Récupère la session et vérifie que l'utilisateur est admin, ou retourne 403.
  */
-export async function requireAdminSession() {
+export async function requireAdminSession(): Promise<AdminResult> {
   const result = await requireAuthSession();
   if ("error" in result) return result;
 

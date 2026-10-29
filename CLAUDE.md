@@ -42,7 +42,12 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
 - **étape 2b faite et validée** (2026-10-28) : recherche par l'annuaire du portail
   (`src/lib/portail-directory.ts`, `server-only`), identité d'une autre personne lue dans l'annuaire (écart 5),
   passagers choisis dans l'annuaire (cas limite 11), décisions D24 à D28, essai réel conforme, annuaire refermé ;
-- **ensuite**, dans l'ordre : 3 (polish), 4 (mise en ligne).
+- **étape 3 faite et validée** (2026-10-29) : polish. D5, D30 à D36 : ESLint à 0 sans
+  `eslint-disable` ; pages Next en français à la racine (`error`, `global-error`, `not-found`, `loading`) ; états
+  communs (`PageState`, `fetch-json`) ; responsive vérifié à 375, 768 et 1280 px ; utilitaires CSS définis dans
+  `globals.css` (pas de Tailwind) ; mentions de mails retirées ; cas 10 (409), cas 8 (filtre sur la fin des trajets,
+  modale), « mes trajets » filtrés par le serveur, métriques Neon au clic ; build vert (`DATABASE_URL` factice) ;
+- **ensuite** : 4 (mise en ligne et notifications), dernière étape du chantier.
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -137,7 +142,9 @@ voit toute l'organisation : passer toujours `project_id` explicitement. Jamais t
 **Portail admission** (<https://portail-admission.vercel.app>) — fournisseur d'identité de ResaVroom (G9),
 qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP sur ses ressources (dépôt
 `emnormandie76/portail-admission`, projets Vercel et Neon `portail-admission`), demander ou lire
-`PORTAIL_CLIENT_SECRET`, créer un compte de test. Contrat appliqué : contrat portail v1
+`PORTAIL_CLIENT_SECRET`, créer un compte de test, **travailler dans l'administration du portail, même dans la
+session du propriétaire** (D29 du portail, G25) : un réglage du portail à changer (annuaire, grille, client) se
+signale au propriétaire, qui le fait lui-même ou le confie à l'agent du portail. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
 ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
 `http://localhost:3002`, annuaire **fermé** sur le client `dev` (ouvert pour l'étape 2b, refermé le 2026-10-28
@@ -150,11 +157,11 @@ super-admin du portail.
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
-| `npm test` | Vitest : aucun réseau, aucune base, portail imité (219 tests à la fin de l'étape 2b) |
+| `npm test` | Vitest : aucun réseau, aucune base, portail imité (242 tests, 15 fichiers, à la fin de l'étape 3) |
 | `npx tsc --noEmit` | contrôle des types (0 erreur) |
-| `npm run lint` | ESLint (17 problèmes depuis l'étape 1, tous antérieurs ; corrigés à l'étape 3) |
+| `npm run lint` | ESLint : 0 problème depuis l'étape 3 (D5), sans aucun `eslint-disable` hors `src/generated/` ; n'en ajouter aucun |
 | `npx next typegen` | régénère les types de routes de `.next/types` après le retrait d'une route (sinon `tsc` cite l'ancienne) ; `.next/dev/types`, laissé par `next dev`, se régénère au `next dev` suivant ou peut être effacé (cache ignoré par Git) |
-| `npm run build` | build de production |
+| `npm run build` | build de production (vert depuis l'étape 3). Serveur de dev arrêté ; avec une `DATABASE_URL` factice dans son seul processus (`DATABASE_URL="postgresql://build:build@build.invalid:5432/build" npm run build`), pour qu'il ne puisse pas lire la base partagée (D30) ; puis `tsc` (piège 14) |
 | `npx prisma generate` | régénère le client dans `src/generated/prisma/` |
 | `npx prisma migrate dev` / `migrate deploy` | applique une migration — **accord du propriétaire requis** ; lit `DATABASE_URL_UNPOOLED` de `.env.local` (D15) ; port 5432, fermé sur le réseau de l'entreprise (mémo §2) |
 | `npx prisma db seed` | écrit les données de départ — **accord du propriétaire requis** |

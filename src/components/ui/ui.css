@@ -69,6 +69,16 @@
   color: var(--color-text);
 }
 
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary-light);
+}
+
 .btn-sm {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
@@ -144,7 +154,66 @@
 .badge-warning { background: var(--color-warning-bg); color: hsl(35, 90%, 40%); }
 .badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
 .badge-info { background: var(--color-info-bg); color: var(--color-info); }
-.badge-default { background: var(--color-background); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge-default,
+.badge-neutral { background: var(--color-background); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+.badge-outline { background: transparent; color: var(--color-text-secondary); border: 1px solid var(--color-border-hover); }
+
+/* ══════════════════════════════════════════════ */
+/* ÉTATS DES ÉCRANS (PageState.tsx, D33)          */
+/* ══════════════════════════════════════════════ */
+
+.state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.state-panel.state-compact {
+  padding: 1.5rem 1rem;
+}
+
+.state-icon {
+  color: var(--color-text-tertiary);
+  margin-bottom: 0.5rem;
+}
+
+.state-error .state-icon {
+  color: var(--color-danger);
+}
+
+.state-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.state-desc {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  max-width: 36rem;
+}
+
+.state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Squelette pendant un chargement */
+.skeleton {
+  background: var(--color-border);
+  border-radius: var(--radius-lg);
+  animation: pulse 1.5s ease-in-out infinite;
+}
 
 /* ══════════════════════════════════════════════ */
 /* FORMS (Input, Select)                          */

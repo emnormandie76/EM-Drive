@@ -2,6 +2,7 @@
 // POST /api/trips — Création d'un trajet (transaction)
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
 import { isAdmin } from "@/lib/auth";
 import { createTrip } from "@/lib/services/trip-service";
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
   const originCampusId = searchParams.get("originCampusId");
   const vehicleId = searchParams.get("vehicleId");
   const dateStr = searchParams.get("date");
+  const mine = searchParams.get("mine") === "true";
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 100);
   const skip = (page - 1) * limit;
@@ -30,12 +32,18 @@ export async function GET(request: NextRequest) {
   const now = new Date();
 
   // Construire le filtre where
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {
+  const where: Prisma.TripWhereInput = {
     status: { not: "CANCELLED" },
     ...(originCampusId && { originCampusId }),
     ...(vehicleId && { vehicleId }),
   };
+
+  // « Mes trajets » : ceux que l'appelant conduit ou où il voyage, filtrés avant la limite ;
+  // l'identité vient de la session, jamais de la requête
+  if (mine) {
+    const { sub } = auth.session.user;
+    where.OR = [{ driverSub: sub }, { passengers: { some: { userSub: sub } } }];
+  }
 
   if (status === "upcoming") {
     where.departureTime = { gte: now };

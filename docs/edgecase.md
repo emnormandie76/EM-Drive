@@ -2,7 +2,7 @@
 
 > Un cas par entrée, numéroté à vie (jamais renuméroté). État du code concerné :
 > [`architecture/mise-en-production.md`](architecture/mise-en-production.md) §8. Relevé initial du 2026-10-26,
-> mis à jour aux étapes 1, 2a et 2b (2026-10-28) : chaque cas dit si une parade est écrite.
+> mis à jour aux étapes 1, 2a et 2b (2026-10-28) et 3 (2026-10-29) : chaque cas dit si une parade est écrite.
 
 ### Edge Case 1 : Inscription d'un passager sans aucun contrôle de capacité ni d'identité
 - **Contexte :** `POST /api/trips/[id]/passengers`, par n'importe quel utilisateur connecté.
@@ -48,8 +48,8 @@
 
 ### Edge Case 8 : Nettoyage définitif de la base depuis l'interface
 - **Contexte :** `/admin/settings`, action serveur `cleanupDatabase`.
-- **Problème :** supprime sans retour possible tous les trajets (et leurs passagers en cascade) ou journaux de plus d'un mois, selon un filtre de statut. Seule garde en plus du rôle admin : `window.confirm`.
-- **Solution actuelle :** garde admin (`verifyAdmin`).
+- **Problème :** supprime sans retour possible tous les trajets (et leurs passagers en cascade) ou journaux de plus d'un mois, selon un filtre de statut. Seule garde en plus du rôle admin : `window.confirm`. *Relevé à l'étape 3* : le filtre des trajets portait sur leur **date de création**, si bien qu'un trajet réservé il y a plus d'un mois mais pas encore parti était supprimé (« Tous les statuts » ou « Planifiés ») ; le statut arrivait tel quel dans le filtre Prisma.
+- **Solution actuelle :** garde admin (`verifyAdmin`). Corrigé en partie à l'étape 3 (D32) : seuls les trajets **terminés** depuis plus d'un mois sont visés (fin = arrivée du retour, sinon de l'aller) ; statut limité à `ALL`, `CANCELLED`, `SCHEDULED` (« Terminés (non annulés) »), sinon refus sans rien supprimer ; confirmation par une modale où l'on tape `SUPPRIMER`, qui dit ce qui sera supprimé. Tests : `tests/database-cleanup.test.ts` (vus en échec contre l'ancien code). Reste : suppression définitive, confirmation côté client seulement.
 - **Risque accepté :** non formalisé.
 
 ### Edge Case 9 : Identifiants écrits dans les journaux serveur
@@ -61,8 +61,8 @@
 ### Edge Case 10 : Doublon d'administrateur ou de service renvoyé en 500
 - **Contexte :** `POST /api/admin/admins`, `POST /api/admin/services` ; aussi `POST`/`PATCH /api/admin/vehicles` avec une plaque déjà prise (relevé à l'étape 1).
 - **Problème :** la violation d'unicité Prisma n'est pas une `BusinessError` ; `handleBusinessError` la renvoie en 500 `INTERNAL_ERROR` sans message utile.
-- **Solution actuelle :** aucune. `admins` et `services` ont disparu à l'étape 2a (routes et tables supprimées) ; reste le cas des plaques.
-- **Risque accepté :** à décider (impact limité : action d'administrateur seulement).
+- **Solution actuelle :** `admins` et `services` ont disparu à l'étape 2a (routes et tables supprimées). Plaques : corrigé à l'étape 3 (D34) : la violation d'unicité (`P2002`, convertie depuis le 23505 de PostgreSQL par l'adaptateur Neon) devient `LicensePlateTakenError`, 409 `LICENSE_PLATE_TAKEN`, « Cette plaque d'immatriculation est déjà utilisée par un autre véhicule. », que `/admin/vehicles` affiche ; sans audit. Tests : `tests/vehicle-routes.test.ts` (vus en échec : 500).
+- **Risque accepté :** non (corrigé).
 
 ### Edge Case 11 : Création d'un trajet avec passagers impossible depuis l'interface
 - **Contexte :** assistant de création (`StepConfirm`), `POST /api/trips`. Relevé à l'étape 1 (2026-10-28).
