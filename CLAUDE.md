@@ -1,17 +1,21 @@
-# ResaVroom (dépôt EMN-resaVroom)
+# ResaVroom (dépôt EM-Drive, ex-EMN-resaVroom)
 
 **ResaVroom** est une application web interne de réservation de véhicules et de covoiturage entre trois
-campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. Elle fonctionne en développement et n'est
-pas déployée. On s'y connecte par le **portail admission** (G9, contrat portail v1), branché à l'étape 2a sur le
-poste (client `dev`, `http://localhost:3002`).
+campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. **En ligne depuis le 2026-10-29** sur
+<https://em-drive.vercel.app> (étape 4). On s'y connecte par le **portail admission** (G9, contrat portail v1) :
+client `production` en ligne, client `dev` sur le poste (`http://localhost:3002`).
 
 - **Next.js 16.2** (App Router) et **React 19**, TypeScript strict : pages, routes API et actions serveur.
 - **Prisma 7.7** avec l'adaptateur Neon (WebSocket) ; **NextAuth v4** (JWT) ; SWR, Sonner, Lucide.
-- **PostgreSQL chez Neon** : une base configurée par `DATABASE_URL`, le projet `resavroom`
-  (`wispy-shadow-66847588`), créé par l'intégration Neon de Vercel (D7), migré (deux migrations) et seedé.
-  L'ancienne base `neon-cyclamen-river` (compte Anton1P) n'est plus utilisée. Lectures sur ce seul projet ;
-  migration et seed sur accord.
-- **Hébergement** : aucun à ce jour (Vercel visé). Dépôt : `github.com/emnormandie76/EMN-resaVroom`.
+- **PostgreSQL chez Neon** : le projet `resavroom` (`wispy-shadow-66847588`), créé par l'intégration Neon de
+  Vercel (D7), migré (deux migrations) et seedé. **Deux branches** (D40) : `main` sert la **production** (reliée
+  au projet Vercel), `dev` sert le **poste** (`.env.local`). L'ancienne base `neon-cyclamen-river` (compte
+  Anton1P) n'est plus utilisée. Lectures sur ce seul projet ; migration et seed sur accord.
+- **Hébergement** : Vercel, projet `em-drive`, <https://em-drive.vercel.app>, branche de production `main`
+  (avancée par le propriétaire seul, D38), région `fra1`. Livrer, vérifier, revenir en arrière : mémo §4.
+  Dépôt : `github.com/emnormandie76/EM-Drive`, **public** (D51 ; renommé depuis `EMN-resaVroom`, qui redirige) :
+  jamais de secret dans un fichier suivi. L'application s'appellera « EM Drive » : renommage complet hors de ce
+  chantier, sur ordre du propriétaire.
 
 ## Documents de référence
 
@@ -47,7 +51,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   communs (`PageState`, `fetch-json`) ; responsive vérifié à 375, 768 et 1280 px ; utilitaires CSS définis dans
   `globals.css` (pas de Tailwind) ; mentions de mails retirées ; cas 10 (409), cas 8 (filtre sur la fin des trajets,
   modale), « mes trajets » filtrés par le serveur, métriques Neon au clic ; build vert (`DATABASE_URL` factice) ;
-- **ensuite** : 4 (mise en ligne et notifications), dernière étape du chantier.
+- **étape 4 faite, en attente de validation** (2026-10-29) : mise en ligne. D6, D16, D37 à D51 : aucun mail ;
+  mode restreinte ; en-têtes et CSP ; limitation de débit des routes à quota ; `vercel.json` (`fra1`) ; CI GitHub
+  Actions ; branche Neon `dev` pour le poste ; projet Vercel `em-drive` ; client `production` du portail ; essai en
+  ligne avec le propriétaire. Dernière étape du chantier : **chantier terminé à la validation**.
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -109,10 +116,11 @@ Opus. Si la session tourne sur un autre modèle, le signaler à l'utilisateur en
 ## Services externes (MCP)
 
 Configurés dans [.mcp.json](.mcp.json). Périmètre commun : lectures permises, toute écriture sur accord, aucun
-secret. Aucun de ces services n'héberge encore ResaVroom.
+secret. Vercel héberge ResaVroom (projet `em-drive`) ; Neon porte sa base ; GitHub, son dépôt et sa CI.
 
-**Neon** — D7 tranchée le 2026-10-28. **Projet confirmé : `resavroom` (`wispy-shadow-66847588`)**, branche
-`main` (`br-sparkling-snow-bal3lt7i`), dans l'organisation « Vercel: EM-Normandie » (gérée par Vercel). Le MCP
+**Neon** — D7 tranchée le 2026-10-28. **Projet confirmé : `resavroom` (`wispy-shadow-66847588`)**, branches
+`main` (`br-sparkling-snow-bal3lt7i`, **production**) et `dev` (`br-rapid-butterfly-bawwyftk`, le poste, D40) :
+passer `branch_id` explicitement pour lire l'une ou l'autre. Organisation « Vercel: EM-Normandie » (gérée par Vercel). Le MCP
 voit toute l'organisation : passer toujours `project_id` explicitement. Jamais touchés : `portail-admission`
 (`shy-art-03916923`, le portail), `vc-bdd` (`noisy-credit-34683167`), `neon-bisque-pillar`
 (`gentle-thunder-89807010`), et l'ancienne base `neon-cyclamen-river` (compte Anton1P).
@@ -123,7 +131,11 @@ voit toute l'organisation : passer toujours `project_id` explicitement. Jamais t
 | **Avec l'accord du propriétaire, à chaque fois** | `run_sql` / `run_sql_transaction` en écriture, `prepare_database_migration`, `complete_database_migration`, `create_branch`, `reset_from_parent`, `restore_snapshot`, tout `update_*` et `create_*` |
 | **Jamais** | `get_connection_string`, `*_credential`, `reset_postgres_role_password`, `get_realtime_secret`, `rotate_*`, tout `delete_*`, `recover_project` |
 
-**Vercel** — aucun projet ResaVroom. Ne pas toucher `app-vc` ni `les-petits-pronos-de-la-promo`.
+**Vercel** — projet de ResaVroom : **`em-drive`** (`prj_0k8AbhtL2khvOn9YKfoB4a3AhWdn`), créé par le propriétaire
+à l'étape 4 ; offre Hobby (journaux d'exécution gardés une heure : interroger sur 50 min au plus). Équipe
+`em-normandie1` (`team_hWcs8vjorV4Dp3j3YhN7HL1w`), dont le propriétaire a accordé la portée au MCP le 2026-10-29 :
+passer ce `teamId` (les journaux l'exigent). Ne jamais toucher `app-vc`, `les-petits-pronos-de-la-promo` ni
+`portail-admission`.
 
 | | Outils |
 |---|---|
@@ -131,7 +143,7 @@ voit toute l'organisation : passer toujours `project_id` explicitement. Jamais t
 | **Avec l'accord du propriétaire, à chaque fois** | `create_project`, `create_deployment`, `update_project`, domaines, alias, promotion et retour arrière, pare-feu |
 | **Jamais** | `get_project_env`, `filter_project_envs`, `create_project_env`, `edit_project_env`, `get_shared_env_var`, jetons Edge Config, clés KMS, tout ce qui lit ou change un secret |
 
-**GitHub** (dépôt `emnormandie76/EMN-resaVroom`) — jeton lu dans la variable `GITHUB_MCP_PAT`, jamais affiché.
+**GitHub** (dépôt `emnormandie76/EM-Drive`, ex-`EMN-resaVroom`) — jeton lu dans la variable `GITHUB_MCP_PAT`, jamais affiché.
 
 | | Outils |
 |---|---|
@@ -146,18 +158,20 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 session du propriétaire** (D29 du portail, G25) : un réglage du portail à changer (annuaire, grille, client) se
 signale au propriétaire, qui le fait lui-même ou le confie à l'agent du portail. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
-ResaVroom y est déclarée (2026-10-28) : restreinte, rôles `USER` et `ADMIN`, client `dev` seul sur
-`http://localhost:3002`, annuaire **fermé** sur le client `dev` (ouvert pour l'étape 2b, refermé le 2026-10-28
-à 16 h 59 ; le rouvrir revient au super-admin), propriétaire dans la grille en `ADMIN` (détails dans le mémo §3).
-Sans annuaire, la recherche de collègues répond 503 : c'est attendu. Pour se connecter à ResaVroom sur le poste, il faut un rôle dans la grille : le demander au
-super-admin du portail.
+ResaVroom y est déclarée (2026-10-28) : identifiant `resavroom`, nom « ResaVroom » (jusqu'au renommage en
+« EM Drive »), restreinte (D16), rôles `USER` et `ADMIN`, accueil `https://em-drive.vercel.app/` ; client
+**`production`** (2026-10-29 : retour `https://em-drive.vercel.app/api/auth/callback/portail`, déconnexion
+`https://em-drive.vercel.app/login`, **annuaire ouvert**, D48) et client **`dev`** (`http://localhost:3002`,
+annuaire **fermé** : sur le poste, la recherche de collègues répond 503, c'est attendu) ; pas de client
+`recette` ; propriétaire dans la grille en `ADMIN` (détails dans le mémo §3). Pour se connecter, il faut un rôle
+dans la grille : le demander au super-admin du portail.
 
 ## Commandes
 
 | Commande | Rôle |
 |---|---|
-| `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
-| `npm test` | Vitest : aucun réseau, aucune base, portail imité (242 tests, 15 fichiers, à la fin de l'étape 3) |
+| `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL` : la branche Neon `dev`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
+| `npm test` | Vitest : aucun réseau, aucune base, portail imité (273 tests, 19 fichiers, à l'étape 4) ; la CI les rejoue à chaque push de `dev-claude` et `main` |
 | `npx tsc --noEmit` | contrôle des types (0 erreur) |
 | `npm run lint` | ESLint : 0 problème depuis l'étape 3 (D5), sans aucun `eslint-disable` hors `src/generated/` ; n'en ajouter aucun |
 | `npx next typegen` | régénère les types de routes de `.next/types` après le retrait d'une route (sinon `tsc` cite l'ancienne) ; `.next/dev/types`, laissé par `next dev`, se régénère au `next dev` suivant ou peut être effacé (cache ignoré par Git) |

@@ -19,12 +19,16 @@ d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par 
   l'adaptateur Neon (WebSocket, port 443), NextAuth v4 (JWT, fournisseur OIDC), SWR, date-fns, Sonner, Lucide.
 - **Base** : PostgreSQL hébergée chez Neon. Une seule base est configurée par `DATABASE_URL` (voir mémo
   d'exploitation, [`memory/memory-exploitation.md`](../memory/memory-exploitation.md)).
+- **En ligne** depuis le 2026-10-29 (étape 4) : <https://em-drive.vercel.app>, projet Vercel `em-drive`, région
+  `fra1`, base Neon `resavroom` branche `main` ; le poste travaille sur la branche `dev` (mémo §0, §4). Le nom
+  `em-drive` annonce le futur nom de l'application, « EM Drive » (renommage hors de ce chantier).
 - **Connexion** : par le portail admission, fournisseur d'identité OIDC (G9), selon le **contrat portail v1**
-  (`../portail/docs/architecture/contrat-apps.md`, lecture seule), branchée à l'étape 2a avec le seul client
-  `dev` (`http://localhost:3002`).
+  (`../portail/docs/architecture/contrat-apps.md`, lecture seule), branchée à l'étape 2a avec le client `dev`
+  (`http://localhost:3002`), en production à l'étape 4 avec le client `production`.
 - **Recherche de collègues** : par l'annuaire du portail (contrat portail v1 §7), depuis l'étape 2b (§2.1).
-- **Ne fait pas partie du code actuel** : connexion Microsoft Entra ID (abandonnée, G8), envoi de mails
-  (jamais écrit), intégration continue. Les tests automatisés existent depuis l'étape 1 (§7).
+- **Sécurité d'un service exposé** (étape 4) : en-têtes et CSP, limitation de débit des routes à quota (§8.1).
+- **Ne fait pas partie du code actuel** : connexion Microsoft Entra ID (abandonnée, G8), envoi de mails (D6 :
+  aucun). Les tests automatisés existent depuis l'étape 1 (§7), l'intégration continue depuis l'étape 4 (§9).
 
 ---
 
@@ -34,7 +38,7 @@ d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par 
 
 **Contrat appliqué : contrat portail v1** (`../portail/docs/architecture/contrat-apps.md`, v1 précisée le
 2026-10-28), branché à l'étape 2a (G9, D8 à D14, D17 à D23). ResaVroom est déclarée au portail : `resavroom`,
-restreinte, rôles `USER` et `ADMIN`, client `dev` seul (mémo §3).
+restreinte, rôles `USER` et `ADMIN`, clients `dev` et, depuis l'étape 4, `production` (mémo §3).
 
 [src/lib/auth.ts](../../src/lib/auth.ts) déclare un seul fournisseur NextAuth, **`portail`**, de type `oauth` :
 
@@ -44,7 +48,7 @@ restreinte, rôles `USER` et `ADMIN`, client `dev` seul (mémo §3).
 | Flux | code d'autorisation, `checks: ["pkce", "state", "nonce"]` (PKCE S256), `idToken: true` (NextAuth vérifie `iss`, `aud`, `exp`, `nonce` par `openid-client`) |
 | Client | `PORTAIL_CLIENT_ID`, `PORTAIL_CLIENT_SECRET`, `token_endpoint_auth_method: "client_secret_basic"` |
 | Scopes | `openid profile email`, sans `offline_access` |
-| Retour | `http://localhost:3002/api/auth/callback/portail` (adresse exacte déclarée, D12) |
+| Retour | `NEXTAUTH_URL` + `/api/auth/callback/portail`, adresse exacte déclarée : `http://localhost:3002/…` (client `dev`, D12), `https://em-drive.vercel.app/…` (client `production`, D50) |
 | Profil (§3.4) | `profile()` lit `sub` (→ `id`), `email`, `name`, `role` ; `email_verified` est ignoré |
 
 Les rappels de NextAuth (D22) :
@@ -476,7 +480,7 @@ le propriétaire, et le 13 l'est par le portail ; voir les cas limites et le pla
   un nouveau push annule le précédent sur la même branche. Minutes d'Actions à quota (dépôt privé).
 - **Auteur des commits** (piège 13, D39) : configuration locale du dépôt, `emnormandie76
   <335444819+emnormandie76@users.noreply.github.com>`, comme le portail.
-- Hébergement : Vercel, projet `resavroom` (mémo §4).
+- Hébergement : Vercel, projet `em-drive`, `https://em-drive.vercel.app` (D50, mémo §4).
 
 ---
 

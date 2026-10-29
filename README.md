@@ -3,8 +3,9 @@
 Application web interne de réservation des véhicules de service et de covoiturage entre les campus du Havre,
 de Caen et de Paris.
 
-> **État au 2026-10-28** : en développement, non déployée. La connexion passe par le **portail admission** de
-> l'équipe (OIDC), branché sur le poste à l'étape 2a du chantier de mise en production. Suivi du chantier :
+> **En ligne depuis le 2026-10-29 : <https://em-drive.vercel.app>.** La connexion passe par le **portail
+> admission** de l'équipe (OIDC) ; seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
+> L'application deviendra « EM Drive » (renommage à venir). Suivi du chantier de mise en production :
 > [docs/features/mise-en-production.md](docs/features/mise-en-production.md).
 
 ## Fonctionnalités
@@ -22,8 +23,8 @@ de Caen et de Paris.
   les personnes qui ont accès à ResaVroom y figurent.
 - Trois types de trajet : aller simple entre campus, aller-retour entre campus, aller-retour vers une adresse
   libre.
-- Adresses par l'API BAN (api-adresse.data.gouv.fr), durées par OpenRouteService (estimation à vol d'oiseau
-  sans clé).
+- Adresses par l'API BAN (api-adresse.data.gouv.fr, sans clé), durées par OpenRouteService (estimation à vol
+  d'oiseau sans clé).
 - Contrôles côté serveur : pas de double réservation d'un véhicule, pas de chevauchement pour le conducteur ni
   pour les passagers (avec un temps de battement réglable), places du véhicule, règles d'inscription et de
   retrait des passagers.
@@ -43,6 +44,15 @@ de Caen et de Paris.
 - ResaVroom est restreinte : seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
 - Une session dure 8 h depuis la connexion ; la déconnexion ferme aussi la session du portail.
 
+## En ligne
+
+- Adresse : <https://em-drive.vercel.app> (Vercel, projet `em-drive`, région Francfort). Base : Neon, projet
+  `resavroom`, branche `main` ; le poste de développement travaille sur la branche `dev`.
+- Chaque push sur `dev-claude` lance l'intégration continue (tests, lint, build, types) et une Preview, sans
+  connexion. La production se met à jour quand le propriétaire avance `main` sur `dev-claude`.
+- Livrer une version, la vérifier en ligne, revenir en arrière :
+  [docs/memory/memory-exploitation.md](docs/memory/memory-exploitation.md) (§4). Variables de production : §1.1.
+
 ## Pile technique
 
 - [Next.js 16.2](https://nextjs.org/) (App Router, Turbopack), React 19, TypeScript strict
@@ -55,9 +65,9 @@ de Caen et de Paris.
 
 ### Prérequis
 
-- Node.js 20 ou plus.
-- Les adresses de connexion à la base Neon de ResaVroom (projet `resavroom`) : à demander au propriétaire du
-  projet.
+- Node.js 24 (celui de la CI et de Vercel ; 20 ou plus fonctionne).
+- Les adresses de connexion à la branche **`dev`** de la base Neon de ResaVroom (projet `resavroom`), jamais
+  celles de `main`, qui sert la production : à demander au propriétaire du projet.
 - L'identifiant et le secret du client `dev` de ResaVroom dans le portail, et un rôle dans la grille de
   ResaVroom : à demander au propriétaire, qui voit avec le super-admin du portail.
 - Facultatif : une clé [OpenRouteService](https://openrouteservice.org/).
@@ -123,7 +133,12 @@ pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de c
   « La recherche de collègues est indisponible… », et l'on ne peut ni ajouter de passager à la création d'un
   trajet ni choisir un autre conducteur. Créer un trajet pour soi, sans passager, marche toujours ; les
   passagers peuvent rejoindre le trajet une fois créé.
-- Aucun mail n'est envoyé (notifications à décider avant la mise en ligne) ; l'interface n'en promet plus.
+- Aucun mail n'est envoyé (décision du 2026-10-29) ; l'interface n'en promet pas.
+- En production, l'annuaire est ouvert ; sur le poste, il reste fermé (ci-dessus).
+- Les noms et adresses des conducteurs et passagers sont visibles de toute personne connectée : c'est voulu pour
+  le covoiturage (risque accepté).
+- Les recherches de communes, d'itinéraires et de collègues sont limitées par personne (au-delà : « Trop de
+  requêtes… », réessayer une minute plus tard).
 - Les covoiturages suggérés pendant une réservation ne sont pas filtrés par destination, et le bouton
   « Réserver » d'une carte de véhicule ne présélectionne pas ce véhicule. « Modifier l'heure » d'un trajet n'est
   pas encore disponible.
@@ -138,5 +153,5 @@ pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de c
 - [docs/architecture/mise-en-production.md](docs/architecture/mise-en-production.md) : ce que fait le code.
 - [CLAUDE.md](CLAUDE.md) : les règles de travail des agents sur ce dépôt.
 
-Dépôt : `github.com/emnormandie76/EMN-resaVroom`. Branche de travail : `dev-claude` ; `main` n'est pas modifiée
-directement.
+Dépôt (public) : `github.com/emnormandie76/EM-Drive` (ex-`EMN-resaVroom`). Branche de travail : `dev-claude` ;
+`main` est la branche de production, que seul le propriétaire avance. Ne jamais committer de secret.
