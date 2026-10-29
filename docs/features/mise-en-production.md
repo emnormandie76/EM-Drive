@@ -7,8 +7,9 @@
 > 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). **Étape 2b faite et validée le
 > 2026-10-28** (recherche par l'annuaire, écart 5, cas limite 11 ; essai réel conforme, annuaire refermé).
 > **Étape 3 faite et validée le 2026-10-29** (polish : ESLint à 0, états et pages d'erreur, responsive, build
-> vert ; essai conforme). **Étape 4 faite le 2026-10-29, en attente de validation** : ResaVroom est en ligne sur
-> <https://em-drive.vercel.app> (D6, D16, D37 à D51). C'est la dernière : le chantier se termine à sa validation.
+> vert ; essai conforme). **Étape 4 faite et validée le 2026-10-29** : ResaVroom est en ligne sur
+> <https://em-drive.vercel.app> (D6, D16, D37 à D51). **Chantier terminé.** Suite hors chantier : le renommage de
+> l'application en « EM Drive » (D50), confié à un autre agent.
 > Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Le détail de chaque étape est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
 > **Source :** [`SAD.md`](../SAD.md) et [`Cahier des charge.md`](../Cahier%20des%20charge.md) (spécifications
@@ -548,7 +549,7 @@ dans le conteneur de 1200 px ; `/trips/new` qui n'importait pas sa feuille ; gri
 **Docs :** architecture §3, §4, §6, §7, §8, §9 ; mémo §0, §1, §5 ; cas limites 8 et 10 ; `CLAUDE.md` ; README ;
 ce plan (§2.7, pièges 8 et 15).
 
-### Étape 4 — Mise en ligne
+### Étape 4 — Mise en ligne ✅ (2026-10-29)
 
 **Tranchées en début d'étape (2026-10-29) :** D6, D16, D37 à D49 (§2.8). Contenu : l'ébauche du 2026-10-26, plus
 la sécurité d'un service exposé (D37) ; pas de notifications (D6).
@@ -566,14 +567,14 @@ la sécurité d'un service exposé (D37) ; pas de notifications (D6).
 - [x] Le propriétaire avance `main` (D38), crée le projet Vercel (`em-drive`, D41, D50), pose les variables de
       production (liste exacte fournie par l'agent) et relie la base `resavroom` à ce seul projet, pour Production
       seulement.
-- [ ] Déploiement de production `READY` ; essai en ligne avec le propriétaire, connecté lui-même (sept temps).
-      *Temps 1 à 4, 6 et 7 conformes ; temps 5 (Preview sans connexion) à jouer sur la Preview du prochain push.*
+- [x] Déploiement de production `READY` ; essai en ligne avec le propriétaire, connecté lui-même (sept temps,
+      tous conformes ; le 6 sans objet, D6).
 - [x] Procédure de livraison, de vérification en ligne et de retour arrière (mémo §4).
-- [ ] Validation du propriétaire.
+- [x] Validation du propriétaire (2026-10-29).
 
 Résultat : `npm test` 273 verts (19 fichiers) ; `tsc` 0 erreur ; `npm run lint` 0 problème ; `npm run build` sans
-erreur (aussi sans base ni portail, comme une Preview) ; CI verte sur `dev-claude` et `main` ; déploiement de
-production `READY` (`dpl_AeNr9yJNKxE2a36A8ndwGmyjzRA9`, `fra1`). Aucune migration ; une branche Neon créée (`dev`) ;
+erreur (aussi sans base ni portail, comme une Preview) ; CI verte sur `dev-claude` et `main` (trois exécutions) ;
+déploiement de production `READY` (`dpl_2kYTrEtQrJE4eJf9eer6Wo79mWrT`, `fra1`) ; Preview `READY` et fermée. Aucune migration ; une branche Neon créée (`dev`) ;
 aucune écriture de l'agent en base ; aucune dépendance ajoutée.
 
 Écarts au plan : deux commits au lieu d'un (le code avant la mise en ligne, les docs après l'essai) ; projet nommé
@@ -685,3 +686,6 @@ décrit change.
 | 2026-10-29 | 4 | **Essai en ligne, temps 2** : le propriétaire, connecté lui-même en `ADMIN`, a parcouru le tableau de bord, créé un trajet pour lui, ouvert son détail et l'administration, puis supprimé son trajet d'essai dans l'application. **Validé par le propriétaire.** À sa demande, la base n'est pas relue après ce temps. `ORS_API_KEY` n'est pas posée en production : la durée vient de l'estimation de secours (vol d'oiseau × 1,3, 70 km/h), et l'autocomplétion des communes passe par l'API Adresse, publique et sans clé (`BAN_API_URL` a une valeur par défaut). | **Écart à l'essai prévu** : pas de SELECT après le temps 2 (choix du propriétaire). `ORS_API_KEY` laissée au choix du propriétaire (facultative). |
 | 2026-10-29 | 4 | **Essai en ligne, temps 3** : cookies `__Secure-resavroom.session-token` (`Secure`, `HttpOnly`) et `__Host-resavroom.csrf-token`, aucun `next-auth.*` (noms seuls regardés) ; `/api/auth/session` : `expires` 8 h après la connexion, inchangé au rechargement. **Conforme**, selon le propriétaire. Base de production (SELECT) : rôle `ADMIN`, connexion du temps 2 à 10 h 08 UTC (fin de session attendue 18 h 08 UTC), 1 personne, 2 trajets, 4 lignes d'audit (trajet d'essai du temps 2 et sa suppression). Journaux : seul l'avertissement `DEP0169`. | — |
 | 2026-10-29 | 4 | **Essai en ligne, temps 4** : déconnexion depuis la barre → passage par le portail sans confirmation → retour sur `https://em-drive.vercel.app/login` ; `/dashboard` renvoie ensuite vers `/login`. **Validé par le propriétaire.** Journaux : aucune erreur `[AUTH]` (l'adresse de fin de session a été lue dans la découverte). Base de production (SELECT) inchangée : 1 personne, 2 trajets, 0 passager, 4 lignes d'audit, aucun `SIGNIN_REFUSED`. **Temps 6** (notifications) : sans objet, D6. **Temps 7** (journaux, fenêtre de 50 min, la rétention Hobby étant d'une heure) : sur le déploiement en ligne `dpl_AeNr9…`, une seule ligne de niveau erreur, l'avertissement `DEP0169` (dette connue), et quatre avertissements « ORS API key not configured » (attendus sans clé) ; aucune adresse `@em-normandie.fr` ni « token » dans les journaux ; les 24 autres erreurs viennent toutes de l'ancien déploiement sans `NEXTAUTH_SECRET`. | Reste le temps 5 (une Preview n'a pas de connexion) : aucune Preview n'existe encore ; elle naîtra du prochain push sur `dev-claude`. |
+| 2026-10-29 | 4 | **Commit `430a64e`** (docs de fin d'étape, auteur `emnormandie76`), poussé sur `dev-claude` à la demande du propriétaire ; CI n° 3 verte. **Essai en ligne, temps 5** : Preview `dpl_J1Wo9AuP94BH2RfATJWrvCmhTLMG` (`dev-claude`, `fra1`), compilée sans aucune variable, `READY`. Sans session, ses deux adresses (`em-drive-5g88kw7ee-…` et l'adresse fixe `em-drive-git-dev-claude-em-normandie1.vercel.app`) renvoient toutes les routes (`/login`, `/dashboard`, `/api/auth/providers`, `/api/auth/signin/portail`, `/api/trips`) vers la connexion de Vercel (302 `vercel.com/sso-api`) : authentification Vercel des Preview. Le propriétaire, passé par son compte Vercel : « Se connecter avec le portail » ne mène à aucune session. **Conforme.** Journaux de la Preview : `NO_SECRET` seulement (attendu, aucune variable en Preview), sans donnée personnelle. **Déploiement en ligne** : `dpl_2kYTrEtQrJE4eJf9eer6Wo79mWrT` (*Redeploy* du propriétaire vers 10 h 19 UTC, `main` `e75a5d0`, `fra1`, alias `em-drive.vercel.app`) ; seul journal : `DEP0169` ; contrôle sans session refait : en-têtes, 307, 401, fournisseur et adresse de retour conformes. **Les sept temps de l'essai sont faits** (temps 6 sans objet). | Le *Redeploy* de 10 h 19 n'a pas été annoncé à l'agent (après le temps 2) ; relevé en lisant les déploiements. |
+| 2026-10-29 | 4 | **Fin d'étape.** `npm test` 273 verts (19 fichiers) ; `tsc` 0 ; lint 0 ; build sans erreur (code inchangé depuis `e75a5d0` ; la CI l'a rejoué sur `430a64e`). Docs : plan, architecture, mémo, cas limites, `CLAUDE.md`, `README.md` (commit `430a64e`), puis ce journal, la case de l'essai et le déploiement en ligne (non commités). Compte rendu au propriétaire. | En attente de validation ; à la validation, le chantier est terminé, et le propriétaire annonce « étape 4 faite » au portail. |
+| 2026-10-29 | 4 | **Étape 4 validée** par le propriétaire : **chantier « mise en production » terminé.** Prompt de départ du renommage en « EM Drive » rédigé pour un agent neuf (Sonnet, choix du propriétaire ; remis au propriétaire, hors du dépôt). | Le journal de fin d'étape et la validation ne sont pas commités. Le propriétaire annonce « étape 4 faite » au portail. |

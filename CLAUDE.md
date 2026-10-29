@@ -51,10 +51,11 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   communs (`PageState`, `fetch-json`) ; responsive vérifié à 375, 768 et 1280 px ; utilitaires CSS définis dans
   `globals.css` (pas de Tailwind) ; mentions de mails retirées ; cas 10 (409), cas 8 (filtre sur la fin des trajets,
   modale), « mes trajets » filtrés par le serveur, métriques Neon au clic ; build vert (`DATABASE_URL` factice) ;
-- **étape 4 faite, en attente de validation** (2026-10-29) : mise en ligne. D6, D16, D37 à D51 : aucun mail ;
+- **étape 4 faite et validée** (2026-10-29) : mise en ligne. D6, D16, D37 à D51 : aucun mail ;
   mode restreinte ; en-têtes et CSP ; limitation de débit des routes à quota ; `vercel.json` (`fra1`) ; CI GitHub
   Actions ; branche Neon `dev` pour le poste ; projet Vercel `em-drive` ; client `production` du portail ; essai en
-  ligne avec le propriétaire. Dernière étape du chantier : **chantier terminé à la validation**.
+  ligne conforme. **Chantier « mise en production » terminé.**
+- **suite, hors de ce chantier** : renommage de l'application en « EM Drive » (D50), sur ordre du propriétaire.
 
 L'étape en cours se lit dans le journal du plan (§9).
 
