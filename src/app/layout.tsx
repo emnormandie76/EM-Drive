@@ -1,4 +1,4 @@
-// src/app/layout.tsx — Layout racine de l'application ResaVroom
+// src/app/layout.tsx — Layout racine de l'application EM Drive
 
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ResaVroom — Réservation de véhicules",
+  title: "EM Drive — Réservation de véhicules",
   description:
     "Application interne de réservation de véhicules inter-campus et de covoiturage.",
 };

@@ -1,4 +1,4 @@
-// prisma/seed.ts — Données initiales pour ResaVroom
+// prisma/seed.ts — Données initiales pour EM Drive
 
 import { config } from "dotenv";
 // Charger .env.local en priorité, puis .env comme fallback

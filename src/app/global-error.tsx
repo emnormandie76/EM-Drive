@@ -14,12 +14,12 @@ export default function GlobalError({
   return (
     <html lang="fr">
       <body>
-        <title>ResaVroom — Erreur</title>
+        <title>EM Drive — Erreur</title>
         <div className="login-container">
           <div className="login-card" role="alert">
             <div className="login-header">
               <div className="login-logo">🚗</div>
-              <h1>ResaVroom</h1>
+              <h1>EM Drive</h1>
               <p>L&#39;application n&#39;a pas pu s&#39;afficher.</p>
             </div>
             <p style={{ color: "var(--color-text-secondary)", fontSize: "0.9rem", textAlign: "center" }}>

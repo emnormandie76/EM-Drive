@@ -49,8 +49,8 @@ describe("proxy", () => {
   );
 });
 
-describe("proxy : session de ResaVroom (D12, contrat §3.2)", () => {
-  it("lit le cookie renommé de ResaVroom", async () => {
+describe("proxy : session d'EM Drive (D12, D54, contrat §3.2)", () => {
+  it("lit le cookie propre à EM Drive (préfixe resavroom)", async () => {
     expect(await visitDashboard("resavroom.session-token", HOUR)).toBeUndefined();
   });
 

@@ -1,4 +1,4 @@
-// src/lib/auth-session.ts — Durée de session et cookies de ResaVroom (contrat portail v1 §3.2, D12)
+// src/lib/auth-session.ts — Durée de session et cookies d'EM Drive (contrat portail v1 §3.2, D12, D54)
 // Sans Prisma : lu à la fois par la configuration NextAuth (src/lib/auth.ts), le proxy et la déconnexion.
 
 import type { CookiesOptions } from "next-auth";
@@ -6,7 +6,7 @@ import type { CookiesOptions } from "next-auth";
 /** Une session dure 8 h au plus, comptées depuis la connexion et jamais prolongées (contrat §3.2). */
 export const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
 
-/** Préfixe propre à ResaVroom : sur localhost, les cookies valent pour tous les ports (piège 11, D12). */
+/** Préfixe propre à EM Drive (conservé à « resavroom », D54) : sur localhost, les cookies valent pour tous les ports (piège 11, D12). */
 const COOKIE_PREFIX = "resavroom";
 
 export function nowInSeconds(): number {

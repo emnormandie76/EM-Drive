@@ -124,12 +124,12 @@ export class DirectoryRateLimitedError extends BusinessError {
 }
 
 /**
- * La personne choisie par un écran n'est pas (ou plus) dans l'annuaire de ResaVroom (D24).
+ * La personne choisie par un écran n'est pas (ou plus) dans l'annuaire d'EM Drive (D24).
  */
 export class UnknownPersonError extends BusinessError {
   constructor() {
     super(
-      "Cette personne n'a pas (ou plus) accès à ResaVroom : choisissez-la de nouveau dans la recherche.",
+      "Cette personne n'a pas (ou plus) accès à EM Drive : choisissez-la de nouveau dans la recherche.",
       "PERSON_NOT_IN_DIRECTORY",
       undefined,
       400

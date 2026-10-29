@@ -1,4 +1,4 @@
-# Cas limites et parades — ResaVroom
+# Cas limites et parades — EM Drive
 
 > Un cas par entrée, numéroté à vie (jamais renuméroté). État du code concerné :
 > [`architecture/mise-en-production.md`](architecture/mise-en-production.md) §8. Relevé initial du 2026-10-26,
@@ -25,7 +25,7 @@
 ### Edge Case 4 : Liste blanche de services jamais appliquée
 - **Contexte :** connexion d'un utilisateur.
 - **Problème :** la table `authorized_services` est éditable dans l'admin mais aucun code ne la lit pour accepter ou refuser une connexion, contrairement à ce que disait l'ancien README.
-- **Solution actuelle :** corrigé à l'étape 2a (G9, G14, D17) : la table `authorized_services`, ses routes et son écran sont supprimés. Seul le portail décide qui entre : ResaVroom y est déclarée **restreinte**, et une personne hors de sa grille voit le refus du portail, sans que ResaVroom reçoive rien (contrat portail v1 §3.6). Vérifié lors de l'essai réel du 2026-10-28 (refus avant l'attribution du rôle et après son retrait).
+- **Solution actuelle :** corrigé à l'étape 2a (G9, G14, D17) : la table `authorized_services`, ses routes et son écran sont supprimés. Seul le portail décide qui entre : EM Drive y est déclarée **restreinte**, et une personne hors de sa grille voit le refus du portail, sans que EM Drive reçoive rien (contrat portail v1 §3.6). Vérifié lors de l'essai réel du 2026-10-28 (refus avant l'attribution du rôle et après son retrait).
 - **Risque accepté :** non.
 
 ### Edge Case 5 : Fournisseur de connexion de développement
@@ -43,7 +43,7 @@
 ### Edge Case 7 : Tous les trajets, avec e-mails, visibles de tout utilisateur connecté
 - **Contexte :** `GET /api/trips`, `GET /api/trips/[id]`.
 - **Problème :** les e-mails des conducteurs et des passagers sont renvoyés à tout utilisateur authentifié. Depuis l'étape 2b, `/api/users/search` rend aussi à tout utilisateur connecté le nom et l'adresse des personnes qui ont accès à ResaVroom (annuaire du portail, quand il est ouvert) ; c'est l'usage prévu par le contrat portail v1 §7 (chercher un passager), sans le rôle (D26).
-- **Solution actuelle :** aucune, voulue : le covoiturage demande de pouvoir joindre le conducteur et les passagers, et le mode restreint du portail (D16) limite la lecture aux collègues de la grille de ResaVroom.
+- **Solution actuelle :** aucune, voulue : le covoiturage demande de pouvoir joindre le conducteur et les passagers, et le mode restreint du portail (D16) limite la lecture aux collègues de la grille d'EM Drive.
 - **Risque accepté :** **oui**, par le propriétaire, le 2026-10-29 (D45, étape 4).
 
 ### Edge Case 8 : Nettoyage définitif de la base depuis l'interface

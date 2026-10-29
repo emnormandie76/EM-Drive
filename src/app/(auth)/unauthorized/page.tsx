@@ -1,4 +1,4 @@
-// src/app/(auth)/unauthorized/page.tsx — Connexion refusée par ResaVroom (contrat portail v1 §3.2, D20, D22)
+// src/app/(auth)/unauthorized/page.tsx — Connexion refusée par EM Drive (contrat portail v1 §3.2, D20, D22)
 // Cible du rappel signIn quand le compte du portail ne peut pas être rattaché : adresse déjà liée à un
 // autre sub (adresse réattribuée), rôle non déclaré. Le refus d'accès lui-même s'affiche sur le portail.
 
@@ -15,7 +15,7 @@ export default function UnauthorizedPage() {
           <div className="login-logo">🔒</div>
           <h1>Connexion refusée</h1>
           <p>
-            ResaVroom ne peut pas ouvrir de session avec ce compte. Contactez l&apos;administrateur du
+            EM Drive ne peut pas ouvrir de session avec ce compte. Contactez l&apos;administrateur du
             portail.
           </p>
         </div>

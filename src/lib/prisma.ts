@@ -1,4 +1,4 @@
-// src/lib/prisma.ts — Client Prisma singleton pour ResaVroom
+// src/lib/prisma.ts — Client Prisma singleton pour EM Drive
 // Utilise le Neon Serverless Driver (WebSocket, port 443) pour supporter
 // les environnements où le port 5432 est bloqué (réseau entreprise, Vercel Edge).
 

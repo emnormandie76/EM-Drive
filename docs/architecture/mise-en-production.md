@@ -1,4 +1,4 @@
-# ResaVroom — état du code
+# EM Drive — état du code
 
 > Ce que fait le code de la branche `dev-claude` (créée depuis `jules`). Chaque étape du plan
 > [`features/mise-en-production.md`](../features/mise-en-production.md) tient ce document à jour ; les
@@ -9,7 +9,7 @@
 
 ## 1. Ce que c'est
 
-**ResaVroom** est une application web interne de réservation de véhicules et de covoiturage entre trois
+**EM Drive** est une application web interne de réservation de véhicules et de covoiturage entre trois
 campus (Le Havre, Caen, Paris). Un utilisateur crée un trajet (aller simple, aller-retour inter-campus, ou
 aller-retour vers une destination « autre »), choisit un véhicule libre, et d'autres utilisateurs peuvent
 s'inscrire comme passagers. Un administrateur gère la flotte, les trajets, les paramètres et lit un journal
@@ -20,8 +20,7 @@ d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par 
 - **Base** : PostgreSQL hébergée chez Neon. Une seule base est configurée par `DATABASE_URL` (voir mémo
   d'exploitation, [`memory/memory-exploitation.md`](../memory/memory-exploitation.md)).
 - **En ligne** depuis le 2026-10-29 (étape 4) : <https://em-drive.vercel.app>, projet Vercel `em-drive`, région
-  `fra1`, base Neon `resavroom` branche `main` ; le poste travaille sur la branche `dev` (mémo §0, §4). Le nom
-  `em-drive` annonce le futur nom de l'application, « EM Drive » (renommage hors de ce chantier).
+  `fra1`, base Neon `resavroom` branche `main` ; le poste travaille sur la branche `dev` (mémo §0, §4).
 - **Connexion** : par le portail admission, fournisseur d'identité OIDC (G9), selon le **contrat portail v1**
   (`../portail/docs/architecture/contrat-apps.md`, lecture seule), branchée à l'étape 2a avec le client `dev`
   (`http://localhost:3002`), en production à l'étape 4 avec le client `production`.
@@ -37,7 +36,7 @@ d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par 
 ### 2.1. Connexion par le portail (contrat portail v1)
 
 **Contrat appliqué : contrat portail v1** (`../portail/docs/architecture/contrat-apps.md`, v1 précisée le
-2026-10-28), branché à l'étape 2a (G9, D8 à D14, D17 à D23). ResaVroom est déclarée au portail : `resavroom`,
+2026-10-28), branché à l'étape 2a (G9, D8 à D14, D17 à D23). EM Drive est déclarée au portail : `resavroom`,
 restreinte, rôles `USER` et `ADMIN`, clients `dev` et, depuis l'étape 4, `production` (mémo §3).
 
 [src/lib/auth.ts](../../src/lib/auth.ts) déclare un seul fournisseur NextAuth, **`portail`**, de type `oauth` :

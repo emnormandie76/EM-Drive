@@ -21,7 +21,7 @@ export default async function LoginPage({
         {/* Logo / Titre */}
         <div className="login-header">
           <div className="login-logo">🚗</div>
-          <h1>ResaVroom</h1>
+          <h1>EM Drive</h1>
           <p>Réservation de véhicules inter-campus</p>
         </div>
 

@@ -1,6 +1,6 @@
 // src/lib/portail-directory.ts — Annuaire du portail admission (contrat portail v1 §7), côté serveur seulement
 // Jeton client_credentials (scope directory) gardé en mémoire jusqu'à son terme ; recherche des personnes qui ont
-// accès à ResaVroom ; identité d'une personne choisie par un écran (D24). Ce module lit le secret du client : il
+// accès à EM Drive ; identité d'une personne choisie par un écran (D24). Ce module lit le secret du client : il
 // ne doit jamais atteindre le navigateur (D28).
 
 import "server-only";
@@ -14,7 +14,7 @@ import {
   ValidationError,
 } from "./utils/errors";
 
-/** Une personne, réduite à ce dont ResaVroom a besoin (D26 : sans le rôle). */
+/** Une personne, réduite à ce dont EM Drive a besoin (D26 : sans le rôle). */
 export interface PersonIdentity {
   sub: string;
   name: string;
@@ -129,7 +129,7 @@ function callDirectory(url: string, token: string): Promise<Response> {
 }
 
 /**
- * Les personnes qui ont accès à ResaVroom et dont le nom ou l'adresse contient `query` (deux caractères au
+ * Les personnes qui ont accès à EM Drive et dont le nom ou l'adresse contient `query` (deux caractères au
  * moins, sinon aucune, sans appel). Lève DirectoryUnavailableError (503) ou DirectoryRateLimitedError (429).
  */
 export async function searchDirectory(query: string): Promise<PersonIdentity[]> {

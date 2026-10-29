@@ -1,8 +1,9 @@
-# Documentation de ResaVroom
+# Documentation d'EM Drive
 
 | Document | Rôle |
 |---|---|
 | [features/mise-en-production.md](features/mise-en-production.md) | **le plan** : décisions (§2), pièges (§4), étapes (§5), journal (§9) |
+| [features/renommage-em-drive.md](features/renommage-em-drive.md) | **plan de renommage** en « EM Drive » : décisions D52-D57, pièges, cases, journal |
 | [architecture/mise-en-production.md](architecture/mise-en-production.md) | **l'état réel du code** : accès, écrans, routes, tables, sécurité |
 | [memory/memory-exploitation.md](memory/memory-exploitation.md) | exploitation : ce qui est en ligne, variables, base, services externes |
 | [edgecase.md](edgecase.md) | cas limites numérotés et leur parade |

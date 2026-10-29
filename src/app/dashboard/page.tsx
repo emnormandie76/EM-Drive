@@ -32,7 +32,7 @@ export default function DashboardPage() {
       <div className="dashboard-header">
         <div>
           <h1>Tableau de bord</h1>
-          <p>Bienvenue sur ResaVroom, {session?.user?.name || "..."}</p>
+          <p>Bienvenue sur EM Drive, {session?.user?.name || "..."}</p>
         </div>
         <Button variant="ghost" onClick={handleRefresh} title="Actualiser les données" aria-label="Actualiser les données" className="btn-icon">
           <RefreshCw size={20} className={(loadingVehicles || loadingTrips) ? "icon-spin" : ""} />

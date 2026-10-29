@@ -1,6 +1,6 @@
 // src/lib/services/person-service.ts — Rapprochement d'une personne à la connexion (contrat portail v1 §3.2)
 // Appelé par le rappel signIn de NextAuth (D22). Le portail garantit le sub, l'adresse en minuscules
-// et un rôle pris dans la liste déclarée (§3.1) ; ResaVroom refuse quand même ce qu'il ne comprend pas.
+// et un rôle pris dans la liste déclarée (§3.1) ; EM Drive refuse quand même ce qu'il ne comprend pas.
 
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit-service";

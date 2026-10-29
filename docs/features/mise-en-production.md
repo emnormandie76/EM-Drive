@@ -1,4 +1,4 @@
-# Chantier — Mise en production de ResaVroom
+# Chantier — Mise en production (ResaVroom / EM Drive)
 
 > **Statut au 2026-10-28 :** étape 0 faite et validée (commit `1436416`). **D1 tranchée** : la connexion se fait
 > par le **portail admission** (G9 ; prompt guidé P-01 du portail, contrat portail v1). L'étape 0 de ce
@@ -7,9 +7,9 @@
 > 2026-10-28** (connexion par le portail, essai réel conforme ; commit `25a24c0`). **Étape 2b faite et validée le
 > 2026-10-28** (recherche par l'annuaire, écart 5, cas limite 11 ; essai réel conforme, annuaire refermé).
 > **Étape 3 faite et validée le 2026-10-29** (polish : ESLint à 0, états et pages d'erreur, responsive, build
-> vert ; essai conforme). **Étape 4 faite et validée le 2026-10-29** : ResaVroom est en ligne sur
+> vert ; essai conforme). **Étape 4 faite et validée le 2026-10-29** : l'application est en ligne sur
 > <https://em-drive.vercel.app> (D6, D16, D37 à D51). **Chantier terminé.** Suite hors chantier : le renommage de
-> l'application en « EM Drive » (D50), confié à un autre agent.
+> l'application en « EM Drive » (D50), en cours dans [`docs/features/renommage-em-drive.md`](renommage-em-drive.md).
 > Ordre des étapes : 1, 2a, 2b, 3, 4 (D13). Le détail de chaque étape est au §5, son histoire au journal (§9).
 > **Branche de travail :** `dev-claude` (créée depuis `jules`).
 > **Source :** [`SAD.md`](../SAD.md) et [`Cahier des charge.md`](../Cahier%20des%20charge.md) (spécifications

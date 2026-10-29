@@ -1,5 +1,5 @@
 // POST /api/auth/logout — Déconnexion par le portail (contrat portail v1 §3.8, D23)
-// Efface la session de ResaVroom, puis renvoie le navigateur vers end_session_endpoint du portail.
+// Efface la session d'EM Drive, puis renvoie le navigateur vers end_session_endpoint du portail.
 // Sans session, ou si le portail ne répond pas : renvoie vers /login. Appelée par un formulaire de la Navbar.
 
 import { NextRequest, NextResponse } from "next/server";

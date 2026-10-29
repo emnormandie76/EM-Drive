@@ -1,6 +1,6 @@
-# ResaVroom (dépôt EM-Drive, ex-EMN-resaVroom)
+# EM Drive (dépôt EM-Drive, ex-EMN-resaVroom)
 
-**ResaVroom** est une application web interne de réservation de véhicules et de covoiturage entre trois
+**EM Drive** est une application web interne de réservation de véhicules et de covoiturage entre trois
 campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. **En ligne depuis le 2026-10-29** sur
 <https://em-drive.vercel.app> (étape 4). On s'y connecte par le **portail admission** (G9, contrat portail v1) :
 client `production` en ligne, client `dev` sur le poste (`http://localhost:3002`).
@@ -55,7 +55,8 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   mode restreinte ; en-têtes et CSP ; limitation de débit des routes à quota ; `vercel.json` (`fra1`) ; CI GitHub
   Actions ; branche Neon `dev` pour le poste ; projet Vercel `em-drive` ; client `production` du portail ; essai en
   ligne conforme. **Chantier « mise en production » terminé.**
-- **suite, hors de ce chantier** : renommage de l'application en « EM Drive » (D50), sur ordre du propriétaire.
+- **Chantier « renommage EM Drive » en cours** (2026-10-29, [plan](docs/features/renommage-em-drive.md)) : D52
+  à D57 tranchées. L'application s'appelle désormais « EM Drive » dans l'interface et les docs.
 
 L'étape en cours se lit dans le journal du plan (§9).
 
@@ -159,8 +160,8 @@ qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP su
 session du propriétaire** (D29 du portail, G25) : un réglage du portail à changer (annuaire, grille, client) se
 signale au propriétaire, qui le fait lui-même ou le confie à l'agent du portail. Contrat appliqué : contrat portail v1
 (`../portail/docs/architecture/contrat-apps.md`, lecture seule) ; il ne se discute pas dans ce dépôt.
-ResaVroom y est déclarée (2026-10-28) : identifiant `resavroom`, nom « ResaVroom » (jusqu'au renommage en
-« EM Drive »), restreinte (D16), rôles `USER` et `ADMIN`, accueil `https://em-drive.vercel.app/` ; client
+ResaVroom y est déclarée (2026-10-28) : identifiant `resavroom`, nom **« EM Drive »** (renommé le 2026-10-29,
+chantier renommage en cours), restreinte (D16), rôles `USER` et `ADMIN`, accueil `https://em-drive.vercel.app/` ; client
 **`production`** (2026-10-29 : retour `https://em-drive.vercel.app/api/auth/callback/portail`, déconnexion
 `https://em-drive.vercel.app/login`, **annuaire ouvert**, D48) et client **`dev`** (`http://localhost:3002`,
 annuaire **fermé** : sur le poste, la recherche de collègues répond 503, c'est attendu) ; pas de client

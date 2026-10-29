@@ -1,12 +1,11 @@
-# ResaVroom
+# EM Drive
 
 Application web interne de réservation des véhicules de service et de covoiturage entre les campus du Havre,
 de Caen et de Paris.
 
 > **En ligne depuis le 2026-10-29 : <https://em-drive.vercel.app>.** La connexion passe par le **portail
 > admission** de l'équipe (OIDC) ; seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
-> L'application deviendra « EM Drive » (renommage à venir). Suivi du chantier de mise en production :
-> [docs/features/mise-en-production.md](docs/features/mise-en-production.md).
+> Suivi du chantier de mise en production : [docs/features/mise-en-production.md](docs/features/mise-en-production.md).
 
 ## Fonctionnalités
 
@@ -20,7 +19,7 @@ de Caen et de Paris.
 
 - Recherche d'un véhicule libre, ou d'un trajet existant à rejoindre comme passager.
 - Passagers (et, pour un administrateur, le conducteur) choisis dans l'annuaire du portail admission : seules
-  les personnes qui ont accès à ResaVroom y figurent.
+  les personnes qui ont accès à EM Drive y figurent.
 - Trois types de trajet : aller simple entre campus, aller-retour entre campus, aller-retour vers une adresse
   libre.
 - Adresses par l'API BAN (api-adresse.data.gouv.fr, sans clé), durées par OpenRouteService (estimation à vol
@@ -36,12 +35,12 @@ de Caen et de Paris.
 - Paramètres : temps de battement entre deux réservations.
 - Journal d'audit des actions sensibles ; métriques de la base Neon (chargées à la demande) et nettoyage des
   trajets terminés ou des journaux de plus d'un mois, confirmé en tapant `SUPPRIMER`.
-- Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans le portail admission, pas dans ResaVroom.
+- Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans le portail admission, pas dans EM Drive.
 
 ### Connexion
 
 - Par le portail admission, avec son adresse `@em-normandie.fr` : bouton « Se connecter avec le portail ».
-- ResaVroom est restreinte : seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
+- EM Drive est restreinte : seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
 - Une session dure 8 h depuis la connexion ; la déconnexion ferme aussi la session du portail.
 
 ## En ligne
@@ -66,10 +65,9 @@ de Caen et de Paris.
 ### Prérequis
 
 - Node.js 24 (celui de la CI et de Vercel ; 20 ou plus fonctionne).
-- Les adresses de connexion à la branche **`dev`** de la base Neon de ResaVroom (projet `resavroom`), jamais
+- Les adresses de connexion à la branche **`dev`** de la base Neon d'EM Drive (projet Neon `resavroom`), jamais
   celles de `main`, qui sert la production : à demander au propriétaire du projet.
-- L'identifiant et le secret du client `dev` de ResaVroom dans le portail, et un rôle dans la grille de
-  ResaVroom : à demander au propriétaire, qui voit avec le super-admin du portail.
+- L'identifiant et le secret du client `dev` d'EM Drive dans le portail, et un rôle dans la grille d'EM Drive : à demander au propriétaire, qui voit avec le super-admin du portail.
 - Facultatif : une clé [OpenRouteService](https://openrouteservice.org/).
 
 ### Installation
@@ -112,7 +110,7 @@ npm run dev
 ```
 
 Ouvrez <http://localhost:3002>. Le port 3002 est fixé dans le script `dev` : c'est celui que le portail connaît
-pour ResaVroom (ses adresses de retour sont exactes, port compris). La page de connexion renvoie vers le portail.
+pour EM Drive (ses adresses de retour sont exactes, port compris). La page de connexion renvoie vers le portail.
 
 ## Commandes
 

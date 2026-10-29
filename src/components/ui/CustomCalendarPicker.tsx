@@ -84,7 +84,7 @@ export function CustomCalendarPicker({
         {cells.map((d, i) => {
           if (!d) return <div key={`empty-${i}`} />
           
-          // Logique ResaVroom: on ne peut pas réserver dans le passé
+          // Logique EM Drive: on ne peut pas réserver dans le passé
           // Sauf si on est admin, mais pour l'instant: minDate
           const isAvailable = d >= effectiveMinDate;
           const isSelected = selectedDate === d;

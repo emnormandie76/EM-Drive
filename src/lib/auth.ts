@@ -14,7 +14,7 @@ import { portalDiscoveryUrl } from "./portail";
 // FOURNISSEUR OIDC DU PORTAIL
 // ══════════════════════════════════════════════
 
-/** Les champs du jeton d'identité sur lesquels ResaVroom s'appuie (contrat §3.4). */
+/** Les champs du jeton d'identité sur lesquels EM Drive s'appuie (contrat §3.4). */
 interface PortalProfile extends Record<string, unknown> {
   sub: string;
   email: string;
@@ -35,7 +35,7 @@ function portalProvider(): OAuthConfig<PortalProfile> {
     wellKnown: portalDiscoveryUrl(),
     clientId: process.env.PORTAIL_CLIENT_ID,
     clientSecret: process.env.PORTAIL_CLIENT_SECRET,
-    // Pas d'offline_access : le portail le refuse, et ResaVroom ne garde aucun jeton de rafraîchissement
+    // Pas d'offline_access : le portail le refuse, et EM Drive ne garde aucun jeton de rafraîchissement
     authorization: { params: { scope: "openid profile email" } },
     checks: ["pkce", "state", "nonce"],
     idToken: true,

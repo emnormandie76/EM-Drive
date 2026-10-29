@@ -1,5 +1,5 @@
 // GET /api/users/search?q=... — Recherche de collègues dans l'annuaire du portail (contrat portail v1 §7)
-// Rend [{ sub, name, email }] des personnes qui ont accès à ResaVroom (D26) ; [] si q fait moins de deux
+// Rend [{ sub, name, email }] des personnes qui ont accès à EM Drive (D26) ; [] si q fait moins de deux
 // caractères. Annuaire fermé ou muet : 503 DIRECTORY_UNAVAILABLE ; trop de requêtes : 429 (D25). Débit limité
 // par personne avant l'appel à l'annuaire, qui sert toutes les applications du portail (D44) : 429 RATE_LIMITED.
 

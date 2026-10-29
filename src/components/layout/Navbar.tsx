@@ -44,7 +44,7 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/dashboard" className="navbar-logo">
               <span aria-hidden="true">🚗</span>
-              <span className="logo-text">ResaVroom</span>
+              <span className="logo-text">EM Drive</span>
             </Link>
 
             {/* Desktop Navigation */}

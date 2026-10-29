@@ -210,7 +210,7 @@ describe("rapprochement du compte local (contrat §3.2)", () => {
     );
   });
 
-  it("refuse un rôle que ResaVroom n'a pas déclaré, sans rien écrire sur la personne (D20)", async () => {
+  it("refuse un rôle qu'EM Drive n'a pas déclaré, sans rien écrire sur la personne (D20)", async () => {
     expect(await signIn(portalUser({ role: "GESTIONNAIRE" }))).toBe("/unauthorized");
     expect(db.person.findUnique).not.toHaveBeenCalled();
     expect(db.person.update).not.toHaveBeenCalled();
@@ -277,7 +277,7 @@ describe("session de 8 h fixes depuis la connexion (contrat §3.2)", () => {
   });
 });
 
-describe("cookies propres à ResaVroom (D12)", () => {
+describe("cookies propres à EM Drive (D12, D54)", () => {
   it("renomme tous les cookies de NextAuth, en http sur le poste", () => {
     const cookies = authOptions.cookies!;
     expect(cookies.sessionToken!.name).toBe("resavroom.session-token");
