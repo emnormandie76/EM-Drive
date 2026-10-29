@@ -1,7 +1,8 @@
-// GET /api/geo/directions — Proxy vers ORS (durée + distance)
+// GET /api/geo/directions — Proxy vers ORS (durée + distance), débit limité par personne (D44)
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession } from "@/lib/api-helpers";
+import { rateLimit } from "@/lib/rate-limit";
 import { getDirections } from "@/lib/services/geo-service";
 
 export async function GET(request: NextRequest) {
@@ -20,6 +21,9 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+
+  const limited = rateLimit("geoDirections", auth.session.user.sub);
+  if (limited) return limited;
 
   const result = await getDirections(
     { latitude: originLat, longitude: originLng },

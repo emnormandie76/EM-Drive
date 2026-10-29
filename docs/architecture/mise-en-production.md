@@ -237,9 +237,9 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/trips/[id]` | DELETE | connecté + `canDeleteTrip` | annulation logique (`CANCELLED`) |
 | `/api/trips/[id]/passengers` | POST | connecté + règles dans `addPassenger` | `addedBy` = `SELF` (soi-même) ou `DRIVER` (conducteur ou admin ; `userSub` et `userEmail`, passager lu dans l'annuaire, D24) ; `canJoinAsPassenger` appliquée |
 | `/api/trips/[id]/passengers/[passengerId]` | DELETE | connecté + règles dans `removePassenger` | admin ; soi-même ou conducteur pour ses ajouts `DRIVER`, avant le départ |
-| `/api/geo/autocomplete` | GET | connecté | proxy BAN (communes) |
-| `/api/geo/directions` | GET | connecté | proxy ORS, repli à vol d'oiseau |
-| `/api/users/search` | GET | connecté | annuaire du portail (contrat portail v1 §7, §2.1 bis) : `[{ sub, name, email }]` ; `[]` sous deux caractères ; 503 ou 429 si l'annuaire ne répond pas (D25) |
+| `/api/geo/autocomplete` | GET | connecté | proxy BAN (communes) ; 60 requêtes par minute et par personne (D44, §8.1) |
+| `/api/geo/directions` | GET | connecté | proxy ORS, repli à vol d'oiseau ; 20 requêtes par minute et par personne (D44) |
+| `/api/users/search` | GET | connecté | annuaire du portail (contrat portail v1 §7, §2.1 bis) : `[{ sub, name, email }]` ; `[]` sous deux caractères ; 503 ou 429 si l'annuaire ne répond pas (D25) ; 30 recherches par minute et par personne (D44) |
 | `/api/admin/vehicles` | POST | admin | plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` (cas limite 10, D34) |
 | `/api/admin/vehicles/[id]` | PATCH | admin | audit `VEHICLE_UPDATED` / `VEHICLE_MAINTENANCE_ON` / `_OFF` ; plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` |
 | `/api/admin/settings` | GET, PATCH | admin | audit `SETTINGS_UPDATED` ; seule la clé `buffer_minutes` est acceptée (entier de 0 à 1440) |
@@ -250,7 +250,9 @@ Retirées à l'étape 2a : `/api/auth/check-admin` (route de débogage, D14), `/
 `/api/admin/admins/[id]`, `/api/admin/services`, `/api/admin/services/[id]` (tables supprimées, D10, D17).
 
 Actions serveur ([actions.ts](../../src/app/admin/settings/actions.ts)) : `getNeonMetrics()` (lit l'API Neon avec
-`NEON_PROJET_ID` et `NEON_API_KEY` ; appelée au clic seulement depuis l'étape 3, D35) et `cleanupDatabase(cible,
+`NEON_PROJET_ID` et `NEON_API_KEY` ; appelée au clic seulement depuis l'étape 3, D35 ; sans l'une des deux, rend
+`{ configured: false }` et l'écran dit « non configurées », depuis l'étape 4 : la production n'a pas de clé Neon,
+D49, et Next masque en production le message d'une erreur d'action) et `cleanupDatabase(cible,
 statut)` (admin seulement) : suppression définitive des **trajets terminés depuis plus d'un mois** (fin = arrivée du
 retour, sinon de l'aller ; jusqu'à l'étape 3, le filtre portait sur la date de création et visait des trajets
 futurs réservés de longue date, cas limite 8), statut `ALL`, `CANCELLED` ou `SCHEDULED` vérifié, ou des journaux
@@ -361,12 +363,16 @@ forme est vérifiée.
 | [database-cleanup.test.ts](../../tests/database-cleanup.test.ts) | cas limite 8 : `cleanupDatabase` évalue son filtre sur des trajets types (futur réservé de longue date jamais visé, aller-retour jugé sur le retour, statut), statut ou cible inconnus refusés, garde admin, journaux |
 | [trips-list.test.ts](../../tests/trips-list.test.ts) | `GET /api/trips?mine=true` : filtre conducteur ou passager avant la limite, identité de la session et jamais de la requête ; sans `mine`, liste inchangée ; 401 |
 | [fetch-json.test.ts](../../tests/fetch-json.test.ts) | lecteur des écrans : réponse d'erreur → `FetchError` (message, statut, code), corps illisible, réseau coupé (message en français) |
+| [security-headers.test.ts](../../tests/security-headers.test.ts) | D43 : une règle d'en-têtes pour toutes les routes ; nosniff, Referrer-Policy, `X-Frame-Options`, Permissions-Policy, HSTS d'un an au moins, pas de `X-Powered-By` ; CSP directive par directive, aucune source extérieure ni joker, `unsafe-eval` en développement seulement, `form-action` limité à l'application et à l'origine du portail (l'application seule sans émetteur) |
+| [rate-limit.test.ts](../../tests/rate-limit.test.ts) | D44 : sur les trois routes à quota, la limite passe, la suivante reçoit 429 `RATE_LIMITED` avec `Retry-After`, sans appel au service ni donnée de la personne ; fenêtre d'une minute ; compteurs par personne et par route ; sans session, recherche trop courte ou coordonnées invalides : rien n'est compté |
+| [deployment-config.test.ts](../../tests/deployment-config.test.ts) | D46 : `vercel.json` fixe `fra1` et ne porte aucune variable ; D42 : workflow de CI (push de `dev-claude` et `main`, tests, lint, build puis `tsc`, aucun secret, `DATABASE_URL` factice, droits en lecture) ; chaque variable de `.env.example` est lue par le code (D6) |
+| [neon-metrics.test.ts](../../tests/neon-metrics.test.ts) | D49 : sans `NEON_PROJET_ID` ou `NEON_API_KEY`, `getNeonMetrics` rend « non configuré » sans appel à l'API Neon ; garde admin conservée |
 
 L'ancien script `tests/admin_delegation.ts`, qui vidait les trajets de la base réelle, a été retiré (piège 1).
 
-| Commande | Rôle | Résultat relevé le 2026-10-29 (fin d'étape 3) |
+| Commande | Rôle | Résultat relevé le 2026-10-29 (étape 4, avant la mise en ligne) |
 |---|---|---|
-| `npm test` | Vitest | 15 fichiers, 242 tests, tous verts |
+| `npm test` | Vitest | 19 fichiers, 273 tests, tous verts |
 | `npx tsc --noEmit` | types | 0 erreur |
 | `npm run lint` | ESLint | 0 problème, sans aucun `eslint-disable` hors `src/generated/` (D5) ; 0 aussi avec `--no-inline-config` |
 | `npm run build` | compilation de production | sans erreur ; lancé avec une `DATABASE_URL` factice dans son seul processus (D30) ; seules des pages client sans lecture de la base sont pré-rendues, toutes les routes `/admin` et `/api` sont dynamiques |
@@ -383,11 +389,40 @@ adresse réattribuée, rôle relu en base) ; redirection des pages sans session 
 corps des routes d'écriture validés (§4) ; audit des actions sensibles (l'écriture de l'audit ne bloque jamais
 l'opération) ; annuaire du portail (§2.1 bis) : secret du client dans un module `server-only`, envoyé au seul
 `token_endpoint` de l'origine de l'émetteur, jeton en mémoire du serveur, aucun jeton ni nom ni adresse dans les
-journaux ; l'identité d'une autre personne vient de l'annuaire, jamais du corps de la requête (D24). Pas de CSP
-(`next.config.ts` vide) : la clause `form-action` du contrat §3.2 ne s'applique pas.
+journaux ; l'identité d'une autre personne vient de l'annuaire, jamais du corps de la requête (D24) ; en-têtes de
+sécurité et CSP (§8.1, D43) ; limitation de débit des routes qui appellent un service extérieur (§8.1, D44).
 
-**Écarts** (relevé du 2026-10-26, mis à jour aux étapes 1, 2a, 2b et 3 ; aucun n'est une décision acceptée, voir
-les cas limites et le plan) :
+### 8.1. En-têtes, CSP et limitation de débit (étape 4)
+
+**En-têtes** ([next.config.ts](../../next.config.ts), `headers()`, source `/:path*` : toutes les routes, pages et
+API) : `Content-Security-Policy` ci-dessous ; `X-Content-Type-Options: nosniff` ;
+`Referrer-Policy: strict-origin-when-cross-origin` ; `X-Frame-Options: SAMEORIGIN` ;
+`Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()` ;
+`Strict-Transport-Security: max-age=63072000; includeSubDomains` ; `poweredByHeader: false` (pas de `X-Powered-By`).
+
+**CSP sans nonce** (D43 : un nonce rendrait toutes les pages dynamiques) : `default-src 'self'` ;
+`script-src 'self' 'unsafe-inline'` (Next écrit des scripts en ligne ; `'unsafe-eval'` en développement seulement,
+pour React) ; `style-src 'self' 'unsafe-inline'` (styles en ligne des composants) ; `img-src 'self' data: blob:` ;
+`font-src 'self'` (Inter est servie par l'application, `next/font`) ; `connect-src 'self'` (les écrans n'appellent
+que `/api`) ; `object-src 'none'` ; `base-uri 'self'` ; `form-action 'self'` plus **l'origine du portail**, lue
+dans `PORTAIL_ISSUER` au build (contrat §2 : le formulaire de déconnexion redirige vers le portail ; sans émetteur,
+l'application seule) ; `frame-ancestors 'self'` (le cadrage par l'application elle-même sert aux essais de largeur,
+piège 15). Limite assumée : `'unsafe-inline'` laisse passer un script injecté dans la page ; la CSP protège surtout
+du cadrage par un autre site, de l'injection de `<base>` et d'`<object>`, et des envois vers d'autres origines.
+Vérifié sur `next start` (2026-10-29) : en-têtes servis sur `/login` et `/api/trips`.
+
+**Limitation de débit** ([src/lib/rate-limit.ts](../../src/lib/rate-limit.ts), D44, cas limite 6) : fenêtre fixe
+d'une minute, par personne (`sub` de la session) et par route, en mémoire de l'instance, sur les trois routes qui
+appellent un service extérieur à quota : `/api/geo/directions` (OpenRouteService, 20), `/api/geo/autocomplete`
+(BAN, 60), `/api/users/search` (annuaire du portail, 30 ; l'annuaire en permet 120 par minute pour toutes les
+applications). Au-delà : 429 `RATE_LIMITED`, « Trop de requêtes en peu de temps : réessayez dans un instant. »,
+avec `Retry-After`. Ne compte que ce qui appellerait le service : ni une requête sans session (401), ni une
+recherche de moins de deux caractères, ni des coordonnées invalides (400). **Limite assumée** : sur Vercel, chaque
+instance compte de son côté ; les autres routes, gardées par la session et la grille du portail (D16), ne sont
+pas limitées.
+
+**Écarts** (relevé du 2026-10-26, mis à jour aux étapes 1, 2a, 2b, 3 et 4 ; seul le 7 est un risque accepté, par
+le propriétaire, et le 13 l'est par le portail ; voir les cas limites et le plan) :
 
 | # | Écart | Cas limite |
 |---|---|---|
@@ -396,8 +431,8 @@ les cas limites et le plan) :
 | 3 | *Corrigé à l'étape 1* : `updateDepartureTime` revérifie véhicule, conducteur et passagers | EC 3 |
 | 4 | *Corrigé à l'étape 2a* : `authorized_services` est supprimée ; le mode restreint et la grille du portail filtrent la connexion | EC 4 |
 | 5 | *Corrigé à l'étape 2a* : le fournisseur de développement et ses comptes sont retirés ; seul le fournisseur `portail` existe | EC 5 |
-| 6 | *Corrigé en partie à l'étape 1* : corps validés par zod (§4). Reste : pas de limitation de débit | EC 6 |
-| 7 | `GET /api/trips` expose à tout utilisateur connecté tous les trajets avec e-mails des conducteurs et passagers ; `/api/users/search` lui rend le nom et l'adresse des personnes qui ont accès (usage prévu par le contrat §7) | EC 7 |
+| 6 | *Corrigé à l'étape 1* : corps validés par zod (§4). *Corrigé en partie à l'étape 4* (D44) : débit limité sur les trois routes qui appellent un service extérieur (§8.1), par instance | EC 6 |
+| 7 | `GET /api/trips` expose à tout utilisateur connecté tous les trajets avec e-mails des conducteurs et passagers ; `/api/users/search` lui rend le nom et l'adresse des personnes qui ont accès (usage prévu par le contrat §7). **Risque accepté** par le propriétaire à l'étape 4 (D45) | EC 7 |
 | 8 | *Corrigé en partie à l'étape 3* : `cleanupDatabase` ne vise plus que des trajets terminés depuis plus d'un mois (il visait la date de création, donc des trajets futurs), statut vérifié ; confirmation par une modale où l'on tape `SUPPRIMER`. Reste : la suppression est définitive, et cette confirmation est côté client (la garde serveur est le rôle admin) | EC 8 |
 | 9 | *Corrigé à l'étape 1* : les deux traces de débogage sont retirées | EC 9 |
 | 10 | *Corrigé à l'étape 3* (D34) : une plaque déjà prise répond 409 `LICENSE_PLATE_TAKEN` avec un message en français, affiché par l'écran | EC 10 |
@@ -429,7 +464,19 @@ les cas limites et le plan) :
   `.env.local`) : une lecture de la base échouerait au lieu de toucher la base réelle. Le build écrit `.next/` :
   `tsc` peut ensuite citer des types périmés (piège 14). Ne pas le lancer pendant que `npm run dev` tourne.
 - ESLint : 0 problème, aucun `eslint-disable` hors du client généré (D5) ; `eslint.config.mjs` inchangé.
-- Aucune intégration continue (`.github/` absent). Hébergement visé : Vercel (aucun projet relevé à ce jour).
+- **Build sans base ni portail** (Preview, étape 4) : il passe aussi quand `DATABASE_URL`, `PORTAIL_*` et
+  `NEXTAUTH_SECRET` manquent (vérifié en les vidant dans le seul processus du build). Une variable **vide** n'est
+  pas une variable absente : NextAuth lit `NEXTAUTH_URL ?? VERCEL_URL`, et une `NEXTAUTH_URL` vide fait échouer le
+  pré-rendu de `/trips/new` (`Invalid URL`) ; ne jamais poser une variable vide sur Vercel (piège 16).
+- **Configuration de Vercel** ([vercel.json](../../vercel.json), étape 4) : `"regions": ["fra1"]` (D46 : fonctions à
+  Francfort, à côté de la base) ; aucune variable dans ce fichier.
+- **Intégration continue** ([.github/workflows/ci.yml](../../.github/workflows/ci.yml), D42, étape 4) : à chaque push
+  de `dev-claude` et de `main`, sur Node 24 (celui du poste) : `npm ci`, `npm test`, `npm run lint`, `npm run build`
+  puis `npx tsc --noEmit` (piège 14). Aucun secret ; `DATABASE_URL` factice (D30) ; droits du jeton en lecture ;
+  un nouveau push annule le précédent sur la même branche. Minutes d'Actions à quota (dépôt privé).
+- **Auteur des commits** (piège 13, D39) : configuration locale du dépôt, `emnormandie76
+  <335444819+emnormandie76@users.noreply.github.com>`, comme le portail.
+- Hébergement : Vercel, projet `resavroom` (mémo §4).
 
 ---
 

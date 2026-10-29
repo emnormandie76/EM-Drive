@@ -202,6 +202,33 @@ Toutes par le propriétaire, recommandation retenue.
 | D35 | Métriques Neon de `/admin/settings`, chargées dès l'ouverture (appel à quota, règle 7) | **Au clic seulement** : la page s'ouvre sans appel, un bouton lance le chargement. Écarté : le chargement à l'ouverture. |
 | D36 | *Posée en cours d'étape.* Le projet n'a pas Tailwind, mais 56 classes de style Tailwind (`flex`, `gap-4`, `mb-6`, `text-2xl`, `text-muted`, `spinner`…) sont écrites dans les composants et définies nulle part : elles n'ont aucun effet | **Définir celles qui sont employées** dans une section « utilitaires » de `globals.css`, aux valeurs de Tailwind et avec les jetons du projet ; les classes à valeur arbitraire (`bg-[var(--…)]`, `min-h-[50vh]`, `text-[var(--…)]`) deviennent des styles en ligne. Écartés : les remplacer partout (diff bien plus large), installer Tailwind (une dépendance et un outil de build de plus). |
 
+### 2.8. Tranchées au début de l'étape 4 (2026-10-29)
+
+Toutes par le propriétaire, recommandation retenue. Relevé avant les questions (lecture seule) : compte Vercel de
+l'utilisateur `emnormandie76`, offre **Hobby** (une compilation à la fois ; retour arrière limité au déploiement de
+production précédent) ; projets visibles : `app-vc`, `les-petits-pronos-de-la-promo`, `portail-admission` (jamais
+touchés) ; le MCP Vercel n'a pas la portée de l'équipe (`get_team` : 403). Commits du dépôt rattachés au compte
+GitHub `Anton1P`. `main` (code d'avril, fournisseur de développement) est un ancêtre de `dev-claude`. Neon : offre
+gratuite, 10 branches au plus, base à Francfort.
+
+| # | Question | Réponse |
+|---|---|---|
+| D37 | Contenu de l'étape | **L'ébauche, plus la sécurité d'un service exposé** : projet Vercel et variables, auteur des commits, client de production, procédure de livraison, de vérification et de retour arrière, CI ; en-têtes et CSP (D43), limitation de débit (D44), cas 7 (D45). Écartés : l'ébauche seule ; la mise en ligne seule. |
+| D6 | Notifications mail | **Aucun mail au lancement.** Envoyer depuis `@em-normandie.fr` exige des enregistrements DNS (SPF, DKIM) posés par la DSI ; `MAIL_SENDER_ADDRESS` sort de `.env.example` ; les mails restent une évolution hors chantier. Écartés : Resend, SMTP Microsoft 365, Brevo. |
+| D16 | Mode d'accès au portail à la mise en ligne | **Restreinte** : seules les personnes de la grille entrent. Écarté : ouverte avec `USER` par défaut. |
+| D38 | Branche de production | **`main`, avancée par le propriétaire** en avance rapide (`git push origin dev-claude:main`), avant l'import du projet : l'agent ne touche jamais `main`. Une fusion par l'interface de GitHub créerait un commit au nom d'`Anton1P` (piège 13). Les push sur `dev-claude` donnent des Preview sans connexion (G20) ; pas de branche de recette. Écartés : `dev-claude` en production ; une recette avec son client. |
+| D39 | Auteur des commits (piège 13) | **Identité du dépôt**, comme le portail : `user.name` `emnormandie76`, `user.email` `335444819+emnormandie76@users.noreply.github.com`, en configuration locale de ce seul dépôt. Écartés : déployer par la CLI ; passer en Pro. |
+| D40 | Base de production | **Branche Neon `dev` pour le poste** (enfant de `main`, créée sur accord ; le propriétaire y pointe `.env.local`) ; la production garde `main`. Une migration se joue ensuite sur les deux branches. Écarté : la même branche pour le poste et la production. |
+| D41 | Adresse et création du projet | **`https://resavroom.vercel.app`**, projet `resavroom` **importé par le propriétaire** dans le tableau de bord (aucune écriture par le MCP) ; base reliée depuis l'onglet Storage, pour Production seulement. Écartés : création par le MCP ; un domaine de l'école. |
+| D42 | Intégration continue | **GitHub Actions minimale** sur les push de `dev-claude` et `main` : `npm ci`, tests, lint, build avec une `DATABASE_URL` factice, `tsc` ; aucun secret. Écarté : Vercel seul. |
+| D43 | En-têtes et CSP | **En-têtes de sécurité et CSP sans nonce** dans `next.config.ts`, `form-action` ouvert au portail (contrat §2). Écartés : CSP stricte à nonce (toutes les pages dynamiques, proxy à réécrire) ; en-têtes sans CSP. |
+| D44 | Limitation de débit (cas 6) | **En mémoire, par personne et par route, sur les trois routes qui appellent un service extérieur** (ORS, BAN, annuaire) : 429 `RATE_LIMITED`. Limite assumée : chaque instance compte de son côté. Écartés : pare-feu Vercel ; Redis ; rien. |
+| D45 | Cas 7 (noms et adresses visibles de tout connecté) | **Risque accepté** par le propriétaire : le covoiturage demande de joindre conducteur et passagers, et le mode restreint (D16) limite la lecture aux collègues de la grille. Écarté : masquer les adresses. |
+| D46 | Région des fonctions | **`fra1` (Francfort)**, à côté de la base, données traitées dans l'UE, fixée dans `vercel.json`. Écarté : `iad1` par défaut. |
+| D47 | Données de la base de production | **Gardées** : trajet d'essai annulé et ses deux lignes d'audit ; le propriétaire transforme les trois véhicules de démonstration en vraie flotte dans `/admin/vehicles`, en production. Aucune écriture de l'agent. Écartés : effacer la démonstration ; la laisser telle quelle. |
+| D48 | Annuaire sur le client de production | **Ouvert dès la mise en ligne** (par le super-admin, G22) ; celui du client `dev` reste fermé. Écarté : fermé au lancement. |
+| D49 | Métriques Neon en production | **Pas de clé Neon sur Vercel** (une clé d'organisation ouvrirait aussi le portail) ; le bouton dit que les métriques ne sont pas configurées. Écarté : une clé limitée au projet. |
+
 ---
 
 ## 3. État des lieux au départ (2026-10-26)
@@ -292,6 +319,12 @@ Toutes par le propriétaire, recommandation retenue.
     ou un texte dans le conteneur de l'écran (`.wizard-content .search-submit-btn`). Autres constats de l'essai :
     une fenêtre agrandie ne se redimensionne pas (simuler les largeurs dans un `iframe` de même origine, où les
     `@media` suivent la largeur du cadre) ; une capture d'écran peut prendre plus de 10 s.
+16. **Une variable vide n'est pas une variable absente** (étape 4). Next ne remplace pas par `.env.local` une
+    variable déjà posée, même vide (`@next/env`) : c'est ce qui permet de simuler une Preview sans base en vidant
+    les variables dans le seul processus du build. Mais NextAuth lit `NEXTAUTH_URL ?? VERCEL_URL` : une
+    `NEXTAUTH_URL` vide n'est pas remplacée, et le pré-rendu de `/trips/new` échoue (`Invalid URL`). Sur Vercel, ne
+    jamais poser une variable vide ; pour imiter une Preview sur le poste, donner à `NEXTAUTH_URL` une adresse de
+    Preview plutôt que la vider.
 
 ---
 
@@ -512,23 +545,29 @@ dans le conteneur de 1200 px ; `/trips/new` qui n'importait pas sa feuille ; gri
 **Docs :** architecture §3, §4, §6, §7, §8, §9 ; mémo §0, §1, §5 ; cas limites 8 et 10 ; `CLAUDE.md` ; README ;
 ce plan (§2.7, pièges 8 et 15).
 
-### Étape 4 — Mise en ligne et notifications (ébauche)
+### Étape 4 — Mise en ligne
 
-**À trancher en début d'étape :** D6, D16.
+**Tranchées en début d'étape (2026-10-29) :** D6, D16, D37 à D49 (§2.8). Contenu : l'ébauche du 2026-10-26, plus
+la sécurité d'un service exposé (D37) ; pas de notifications (D6).
 
-- [ ] Créer le projet d'hébergement et poser les variables (le propriétaire pose les valeurs, l'agent guide).
-      La base `resavroom` vient de l'intégration Neon de Vercel : la relier au projet Vercel de ResaVroom, et à
-      lui seul (jamais à `app-vc` ni à `les-petits-pronos-de-la-promo`).
-- [ ] Auteur des commits déployables sur Vercel Hobby (piège 13).
-- [ ] Avant la mise en ligne, avec le propriétaire et l'agent du portail : client `production` de ResaVroom
-      (adresses exactes de production), adresse d'accueil définitive, annuaire sur ce client si besoin, mode au
-      lancement (D16) ; `PORTAIL_*` de production posées par le propriétaire sur Vercel. Ces réglages du portail
-      sont faits par le propriétaire ou l'agent du portail, jamais par l'agent de ResaVroom (G25) : il fournit les
-      informations et guide.
-- [ ] Écrire la procédure de livraison et la vérification en ligne (mémo §4) ; CI.
-- [ ] Notifications mail si D6 les conserve.
+- [x] Auteur des commits (D39) : identité `emnormandie76` dans la configuration locale du dépôt.
+- [x] En-têtes de sécurité et CSP (D43), tests d'abord, vus en échec.
+- [x] Limitation de débit des trois routes à quota (D44, cas 6), tests d'abord, vus en échec.
+- [x] Région `fra1` (D46) dans `vercel.json` ; CI GitHub Actions (D42).
+- [x] Métriques Neon « non configurées » sans clé (D49) ; `MAIL_SENDER_ADDRESS` retirée (D6) ; cas 7 consigné
+      comme risque accepté (D45).
+- [ ] Branche Neon `dev` pour le poste (D40), créée sur accord ; `.env.local` repointé par le propriétaire.
+- [ ] Compte rendu pour l'agent du portail (rendez-vous « avant l'étape 4 ») : client `production` (adresses
+      exactes), adresse d'accueil définitive, mode restreinte (D16), annuaire ouvert sur ce client (D48). Réglages
+      faits par le propriétaire ou l'agent du portail, jamais par l'agent de ResaVroom (G25).
+- [ ] Le propriétaire avance `main` (D38), importe le projet `resavroom` (D41), pose les variables de production
+      (liste exacte fournie par l'agent) et relie la base `resavroom` à ce seul projet, pour Production seulement.
+- [ ] Déploiement de production `READY` ; essai en ligne avec le propriétaire, connecté lui-même (sept temps).
+- [ ] Procédure de livraison, de vérification en ligne et de retour arrière (mémo §4).
+- [ ] Validation du propriétaire.
 
-**Docs :** mémo d'exploitation, architecture §1 et §9, CLAUDE.md.
+**Docs :** mémo d'exploitation (§0, §1, §3, §4, §5), architecture §1, §8 et §9, cas limites 6 et 7, CLAUDE.md,
+README.
 
 ---
 
@@ -613,3 +652,8 @@ décrit change.
 | 2026-10-29 | 3 | **Base relue** (SELECT, `wispy-shadow-66847588`) avant l'essai : 1 personne, 1 trajet, 0 passager, 2 lignes d'audit, 3 véhicules. Le trajet d'essai de la 2b est **annulé** (`TRIP_FORCE_DELETED` le 2026-10-28 à 16 h 56, quatre minutes après sa création, trois avant la fermeture de l'annuaire). Signalé au propriétaire ; rien touché. | **Écart au journal de la 2b**, qui dit le trajet laissé en place et « 1 audit ». Mémo §0 corrigé. |
 | 2026-10-29 | 3 | **Essai**, à la demande du propriétaire, par l'agent dans son Chrome (Claude in Chrome), sur `localhost:3002` seulement ; le propriétaire s'est connecté lui-même. Fenêtre agrandie, non redimensionnable : largeurs simulées dans un `iframe` de même origine. (1) Tableau de bord à 375, 768 et 1280 px, sans débordement ; états vide (« Aucun trajet à venir »), chargement (appels `/api` ralentis dans le cadre) et erreur (coupés : « Le serveur ne répond pas… », puis « Réessayer ») ; (2) onze écrans (trajets, nouveau trajet, détail, trajet et page inconnus, calendrier, cinq pages admin) aux trois largeurs : aucun débordement ; 404 et « Trajet introuvable » en français ; métriques Neon non chargées à l'ouverture ; (3) assistant à 375 px jusqu'à l'étape 2, l'appel d'itinéraire coupé dans la page (aucun appel à OpenRouteService), passager « an » → « La recherche de collègues est indisponible : l'annuaire du portail ne répond pas. Réessayez plus tard. » ; journal du serveur : `[ANNUAIRE] Indisponible : annuaire fermé sur ce client (unauthorized_client).`, 503, aucun `POST /api/trips`. Onglet fermé ; serveur arrêté par son port après vérification de sa ligne de commande. Contrôles finaux : 242 tests verts (15 fichiers), `tsc` 0, lint 0, build sans erreur. | **Incident** : un script de l'agent a cliqué le premier `button[type=submit]` du cadre, qui était le bouton (masqué) de déconnexion de la barre : le propriétaire a été déconnecté de ResaVroom et, par la fin de session, probablement du portail. Aucune donnée touchée, rien dans l'administration du portail. Le propriétaire s'est reconnecté lui-même. Piège 15 ajouté. Ajouté pendant l'essai : message français pour une coupure réseau (`fetch-json`, test vu en échec), `/login` pleine fenêtre. | Fin d'étape : en attente de validation. |
 | 2026-10-29 | 3 | **Étape 3 validée** par le propriétaire, commitée et poussée à sa demande sur `dev-claude` (`origin`), avec les docs G25 du suivi du portail restées non commitées depuis le 2026-10-28 (même fichiers) ; le push emporte aussi `0e02221` et `aa655a0`. Prompt de départ de l'étape 4 rédigé pour un agent neuf (remis au propriétaire, hors du dépôt). | Prochaine et dernière étape : 4. |
+| 2026-10-29 | 4 | **Départ vérifié.** `dev-claude` sur `f758905`, égal à `origin/dev-claude`, arbre propre ; `npm test` 242 verts (15 fichiers) ; `npx tsc --noEmit` 0 erreur ; `npm run lint` 0 problème ; `npm run build` (`DATABASE_URL` factice) sans erreur, puis `tsc` 0. Base relue (SELECT) : 1 personne `ADMIN`, 1 trajet annulé, 0 passager, 2 lignes d'audit, 3 véhicules, 3 campus, `buffer_minutes=30`, 2 migrations. Aucun écart au point de départ attendu. Lus : ce plan, l'architecture, le mémo, les cas limites, le contrat portail v1 ; guides Next `deploying-to-platforms.md`, `environment-variables.md`, `production-checklist.md`, `content-security-policy.md`, `headers.md`. | Session sur Opus 5.5. **Relevés** (MCP en lecture) : offre Vercel **Hobby** du compte `emnormandie76` ; le MCP voit aussi `portail-admission` (pas seulement `app-vc` et les petits pronos) et n'a pas la portée de l'équipe (`get_team` 403) ; commits rattachés sur GitHub à `Anton1P` ; `main` porte le code d'avril (fournisseur de développement, cas 5) : un import du projet le déploierait aussitôt ; `https://resavroom.vercel.app` répond `DEPLOYMENT_NOT_FOUND` (nom libre en apparence) ; base à Francfort, fonctions Vercel à Washington par défaut. Les conditions de Vercel réservent Hobby à un usage personnel non commercial : signalé au propriétaire, à qui le jugement revient. |
+| 2026-10-29 | 4 | **Décisions de début d'étape** : D6, D16, D37 à D49 (§2.8), toutes les recommandations retenues ; étape 4 réécrite (§5). | D48 et D49 posées après les trois premières séries, en préparant le compte rendu du portail et la liste des variables. |
+| 2026-10-29 | 4 | **Identité du dépôt** (D39) : `git config --local` `user.name` `emnormandie76`, `user.email` `335444819+emnormandie76@users.noreply.github.com` (relevée dans le journal Git du portail, en lecture). **Tests d'abord, vus en échec** : `tests/security-headers.test.ts` (8), `tests/rate-limit.test.ts` (14), `tests/deployment-config.test.ts` (5), `tests/neon-metrics.test.ts` (4) ; contre l'ancien code, 24 en échec (aucun en-tête ; 200 au lieu de 429 ; `vercel.json`, workflow absents ; `MAIL_SENDER_ADDRESS` lue nulle part ; erreur au lieu de « non configuré »), 7 au vert (comportements à garder : 401 sans session, requêtes non comptées, non-admin refusé). Un test qui passait pour une mauvaise raison (« la réponse 429 ne dit rien de la personne », sans 429) a été resserré. **Code** : `next.config.ts` (en-têtes, CSP, `poweredByHeader`), `src/lib/rate-limit.ts` et trois routes, `vercel.json`, `.github/workflows/ci.yml`, `getNeonMetrics` et `DatabaseControls`, `.env.example`. 273 tests verts (19 fichiers), `tsc` 0, lint 0. | — |
+| 2026-10-29 | 4 | **Builds.** Build normal (`DATABASE_URL` factice) sans erreur, puis `tsc` 0. Build « façon Preview » (base, portail et `NEXTAUTH_SECRET` vidés dans le seul processus) : **échec** au pré-rendu de `/trips/new`, `Invalid URL` sur une chaîne vide ; cause : NextAuth lit `NEXTAUTH_URL ?? VERCEL_URL`, et une `NEXTAUTH_URL` vide n'est pas remplacée (sur Vercel, elle est absente et `VERCEL_URL` existe). Relancé avec une `NEXTAUTH_URL` d'adresse de Preview : sans erreur. `next start` (3002, `DATABASE_URL` factice) : en-têtes et CSP servis sur `/login` et `/api/trips`, `form-action` avec l'origine du portail, pas de `X-Powered-By` ; `/dashboard` → 307 `/login` ; `/api/trips` → 401 ; un seul fournisseur. Serveur arrêté par son port après vérification de sa ligne de commande. | **Surprise** : piège 16 ajouté (une variable vide n'est pas absente). La CSP n'a pas encore été vue dans un navigateur connecté (essai en ligne, ou sur le poste une fois la branche `dev` en place). |
+| 2026-10-29 | 4 | **Branche Neon `dev`** (D40), accord du propriétaire : `create_branch` (MCP Neon) dans `wispy-shadow-66847588`, enfant de `main` ; `dev` = `br-rapid-butterfly-bawwyftk`, point d'accès `ep-morning-water-bae4q8e2` ; relue en SELECT : mêmes comptes que `main`. Compte rendu pour l'agent du portail rédigé (hors du dépôt). Accord du propriétaire pour un commit et un push du code avant l'essai en ligne (la production déploie `main`, avancée sur `dev-claude`). | `.env.local` à repointer par le propriétaire. **Écart** : l'étape aura deux commits (le code avant la mise en ligne, les docs après l'essai), au lieu d'un. |

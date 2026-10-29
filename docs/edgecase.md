@@ -2,7 +2,7 @@
 
 > Un cas par entrée, numéroté à vie (jamais renuméroté). État du code concerné :
 > [`architecture/mise-en-production.md`](architecture/mise-en-production.md) §8. Relevé initial du 2026-10-26,
-> mis à jour aux étapes 1, 2a et 2b (2026-10-28) et 3 (2026-10-29) : chaque cas dit si une parade est écrite.
+> mis à jour aux étapes 1, 2a et 2b (2026-10-28), 3 et 4 (2026-10-29) : chaque cas dit si une parade est écrite.
 
 ### Edge Case 1 : Inscription d'un passager sans aucun contrôle de capacité ni d'identité
 - **Contexte :** `POST /api/trips/[id]/passengers`, par n'importe quel utilisateur connecté.
@@ -37,14 +37,14 @@
 ### Edge Case 6 : Corps de requêtes non validés, aucune limitation de débit
 - **Contexte :** toutes les routes `POST`/`PATCH`.
 - **Problème :** les champs sont lus directement de `request.json()` ; `updateTripInfo` reçoit le corps brut ; `PATCH /api/admin/settings` accepte n'importe quelle clé ; une date invalide donne `Invalid Date` et une erreur 500.
-- **Solution actuelle :** corrigé en partie à l'étape 1 : schémas zod (`src/lib/validators/request-schemas.ts`) sur les routes de trajets, passagers, véhicules et paramètres ; corps invalide → 400. `admins` et `services` ne sont pas validés (ils disparaissent en 2a). Reste : aucune limitation de débit. Tests : `tests/request-schemas.test.ts`, `tests/routes-validation.test.ts`.
-- **Risque accepté :** non.
+- **Solution actuelle :** corrigé en partie à l'étape 1 : schémas zod (`src/lib/validators/request-schemas.ts`) sur les routes de trajets, passagers, véhicules et paramètres ; corps invalide → 400. `admins` et `services` ne sont pas validés (ils disparaissent en 2a). Tests : `tests/request-schemas.test.ts`, `tests/routes-validation.test.ts`. Limitation de débit à l'étape 4 (D44) : `src/lib/rate-limit.ts`, fenêtre d'une minute par personne et par route, sur les trois routes qui appellent un service extérieur à quota (`/api/geo/directions` 20, `/api/geo/autocomplete` 60, `/api/users/search` 30) ; au-delà, 429 `RATE_LIMITED` avec `Retry-After`. Tests : `tests/rate-limit.test.ts` (vus en échec : 200 au lieu de 429). Reste : compteurs propres à chaque instance de Vercel (protection partielle) ; les autres routes, gardées par la session et la grille du portail, ne sont pas limitées.
+- **Risque accepté :** non (protection partielle assumée, D44).
 
 ### Edge Case 7 : Tous les trajets, avec e-mails, visibles de tout utilisateur connecté
 - **Contexte :** `GET /api/trips`, `GET /api/trips/[id]`.
 - **Problème :** les e-mails des conducteurs et des passagers sont renvoyés à tout utilisateur authentifié. Depuis l'étape 2b, `/api/users/search` rend aussi à tout utilisateur connecté le nom et l'adresse des personnes qui ont accès à ResaVroom (annuaire du portail, quand il est ouvert) ; c'est l'usage prévu par le contrat portail v1 §7 (chercher un passager), sans le rôle (D26).
-- **Solution actuelle :** aucune. Peut être voulu par le métier (covoiturage) : à confirmer par le propriétaire.
-- **Risque accepté :** à décider.
+- **Solution actuelle :** aucune, voulue : le covoiturage demande de pouvoir joindre le conducteur et les passagers, et le mode restreint du portail (D16) limite la lecture aux collègues de la grille de ResaVroom.
+- **Risque accepté :** **oui**, par le propriétaire, le 2026-10-29 (D45, étape 4).
 
 ### Edge Case 8 : Nettoyage définitif de la base depuis l'interface
 - **Contexte :** `/admin/settings`, action serveur `cleanupDatabase`.

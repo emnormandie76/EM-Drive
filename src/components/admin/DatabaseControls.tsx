@@ -117,6 +117,10 @@ export function DatabaseControls() {
     setLoadingMetrics(true);
     try {
       const m = await getNeonMetrics();
+      if ("configured" in m) {
+        toast.info("Métriques Neon non configurées sur cet environnement : consultez la console Neon.");
+        return;
+      }
       setMetrics(m);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Impossible de charger les métriques.");

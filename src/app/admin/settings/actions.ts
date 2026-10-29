@@ -30,14 +30,18 @@ type NeonProject = {
     data_transfer_bytes?: number;
 };
 
-export async function getNeonMetrics(): Promise<NeonMetrics> {
+/** Sans NEON_PROJET_ID ou NEON_API_KEY (la production n'a pas de clé Neon, D49). */
+export type NeonMetricsUnconfigured = { configured: false };
+
+export async function getNeonMetrics(): Promise<NeonMetrics | NeonMetricsUnconfigured> {
     await verifyAdmin();
 
     const projectId = process.env.NEON_PROJET_ID;
     const apiKey = process.env.NEON_API_KEY;
 
+    // Une réponse plutôt qu'une erreur : en production, Next masque le message d'une erreur d'action serveur
     if (!projectId || !apiKey) {
-        throw new Error("Variables d'environnement NEON_PROJET_ID ou NEON_API_KEY manquantes");
+        return { configured: false };
     }
 
     try {
