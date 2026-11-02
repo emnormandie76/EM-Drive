@@ -9,8 +9,11 @@ import Link from 'next/link';
 import type { TripsResponse } from '@/hooks/use-trips';
 import type { VehicleWithPosition } from '@/hooks/use-vehicles';
 import { FetchError, fetchJson } from '@/lib/utils/fetch-json';
+import { Badge } from '@/components/ui/Badge';
+import { formatPeriod, UNAVAILABILITY_LABELS, type UnavailabilityItem } from '@/lib/utils/unavailability';
 
-type VehicleData = Pick<VehicleWithPosition, 'id' | 'name' | 'licensePlate'>;
+// Les périodes d'indisponibilité (motif et dates ; le commentaire seulement pour un admin, D67) viennent avec le véhicule
+type VehicleData = Pick<VehicleWithPosition, 'id' | 'name' | 'licensePlate'> & { unavailabilities?: UnavailabilityItem[] };
 
 export default function VehicleCalendarPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -55,6 +58,7 @@ export default function VehicleCalendarPage({ params }: { params: Promise<{ id: 
   }
 
   const trips = tripsData?.trips ?? [];
+  const unavailabilities = vehicleData.unavailabilities ?? [];
 
   // Format trips for the calendar component
   const calendarTrips = trips.map((t) => ({
@@ -85,7 +89,19 @@ export default function VehicleCalendarPage({ params }: { params: Promise<{ id: 
         )}
       </div>
 
-      <VehicleCalendar trips={calendarTrips} />
+      {unavailabilities.length > 0 && (
+        <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }} aria-label="Indisponibilités du véhicule">
+          {unavailabilities.map((u) => (
+            <li key={u.id} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <Badge variant={u.reason === 'MAINTENANCE' ? 'danger' : 'warning'}>{UNAVAILABILITY_LABELS[u.reason]}</Badge>
+              <span>{formatPeriod(u.startsAt, u.endsAt)}</span>
+              {u.comment && <span style={{ color: 'var(--color-text-secondary)' }}>— {u.comment}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <VehicleCalendar trips={calendarTrips} unavailabilities={unavailabilities} />
     </div>
   );
 }

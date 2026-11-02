@@ -10,20 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { DatePickerInput } from "@/components/ui/CustomCalendarPicker";
 import type { TripDetailData } from "@/hooks/use-trips";
-
-/** Date (AAAA-MM-JJ) et heure (HH:MM) locales d'un instant, pour les champs du formulaire. */
-function toLocalFields(iso: string) {
-  const d = new Date(iso);
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString();
-  return { date: local.slice(0, 10), time: local.slice(11, 16) };
-}
-
-/** Instant saisi dans les champs (heure locale du navigateur) ; null si incomplet. */
-function fromLocalFields(date: string, time: string): Date | null {
-  if (!date || !time) return null;
-  const value = new Date(`${date}T${time}`);
-  return isNaN(value.getTime()) ? null : value;
-}
+import { fromLocalFields, toLocalFields } from "@/lib/utils/local-datetime";
 
 const durationMs = (from: string, to: string) => new Date(to).getTime() - new Date(from).getTime();
 const formatLocal = (date: Date) => format(date, "EEEE d MMMM 'à' HH:mm", { locale: fr });

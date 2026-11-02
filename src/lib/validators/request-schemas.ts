@@ -111,17 +111,63 @@ export const addPassengerSchema = z
 // VÉHICULES ET PARAMÈTRES
 // ══════════════════════════════════════════════
 
+/**
+ * Le statut d'un véhicule n'existe plus (D59) : un écran resté ouvert qui l'enverrait doit recevoir un refus
+ * clair, pas un succès sans effet.
+ */
+const removedStatus = z
+  .never({ error: "Le statut d'un véhicule n'existe plus : déclarez une indisponibilité datée." })
+  .optional();
+
 /** POST /api/admin/vehicles. Places conducteur compris : 2 à 9 (permis B). */
 export const createVehicleSchema = z.object({
   name: displayName,
   licensePlate: z.string().trim().min(1).max(20),
   seats: z.coerce.number().int().min(2).max(9),
   defaultCampusId: id,
-  status: z.enum(["AVAILABLE", "MAINTENANCE"]).optional(),
+  status: removedStatus,
 });
 
 /** PATCH /api/admin/vehicles/[id] */
 export const updateVehicleSchema = createVehicleSchema.partial();
+
+// ══════════════════════════════════════════════
+// INDISPONIBILITÉS (D58, D59, D68)
+// ══════════════════════════════════════════════
+
+const unavailabilityReason = z.enum(["CAR_BOOKING", "MAINTENANCE"]);
+const unavailabilityComment = z.string().max(1000).nullable().optional();
+
+/**
+ * POST /api/admin/vehicles/[id]/unavailabilities. La fin est facultative pour une maintenance (panne de durée
+ * inconnue), obligatoire pour une réservation Car Booking, et suit toujours le début.
+ */
+export const createUnavailabilitySchema = z
+  .object({
+    reason: unavailabilityReason,
+    startsAt: dateTime,
+    endsAt: dateTime.nullable().optional(),
+    comment: unavailabilityComment,
+  })
+  .refine((period) => period.reason !== "CAR_BOOKING" || period.endsAt, {
+    message: "Une réservation Car Booking a une date de fin.",
+    path: ["endsAt"],
+  })
+  .refine((period) => !period.endsAt || period.endsAt > period.startsAt, {
+    message: "La fin doit suivre le début.",
+    path: ["endsAt"],
+  });
+
+/**
+ * PATCH /api/admin/unavailabilities/[id] : champs facultatifs. Les règles ci-dessus portent sur la période
+ * fusionnée (l'existante plus ce corps) : le service les revérifie.
+ */
+export const updateUnavailabilitySchema = z.object({
+  reason: unavailabilityReason.optional(),
+  startsAt: dateTime.optional(),
+  endsAt: dateTime.nullable().optional(),
+  comment: unavailabilityComment,
+});
 
 /** PATCH /api/admin/settings : seule la clé buffer_minutes existe ; valeur en minutes (0 à 1440). */
 export const updateSettingSchema = z.object({

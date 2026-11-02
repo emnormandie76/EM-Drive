@@ -23,8 +23,20 @@ export function createPrismaMock() {
     vehicle: {
       findUniqueOrThrow: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+    },
+    vehicleUnavailability: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    campus: {
+      findUniqueOrThrow: vi.fn(),
     },
     appSetting: {
       findUnique: vi.fn(),
@@ -49,7 +61,16 @@ export type PrismaMock = ReturnType<typeof createPrismaMock>;
 
 /** Remet toutes les méthodes à zéro ; la transaction rappelle le callback avec le client. */
 export function resetPrismaMock(mock: PrismaMock) {
-  for (const model of [mock.trip, mock.passenger, mock.vehicle, mock.appSetting, mock.auditLog, mock.person]) {
+  for (const model of [
+    mock.trip,
+    mock.passenger,
+    mock.vehicle,
+    mock.vehicleUnavailability,
+    mock.campus,
+    mock.appSetting,
+    mock.auditLog,
+    mock.person,
+  ]) {
     for (const fn of Object.values(model)) fn.mockReset();
   }
   mock.$transaction.mockReset();

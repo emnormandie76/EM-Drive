@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
         name: body.name,
         licensePlate: body.licensePlate,
         seats: body.seats,
-        status: body.status ?? "AVAILABLE",
         defaultCampusId: body.defaultCampusId,
       },
     });

@@ -1,9 +1,9 @@
 // src/hooks/use-vehicles.ts
 import useSWR from "swr";
-import { VehicleStatus } from "@/generated/prisma/enums";
 import { fetchJson } from "@/lib/utils/fetch-json";
+import type { UnavailabilityReasonName } from "@/lib/utils/unavailability";
 
-export type VehicleDisplayStatus = "available" | "in_trip" | "maintenance" | "fully_booked";
+export type VehicleDisplayStatus = "available" | "in_trip" | "maintenance" | "car_booking" | "fully_booked";
 
 export interface Campus {
   id: string;
@@ -17,11 +17,12 @@ export interface VehicleWithPosition {
   name: string;
   licensePlate: string;
   seats: number;
-  status: VehicleStatus;
   defaultCampusId: string;
   defaultCampus: Campus;
   currentCampus: Campus;
   displayStatus: VehicleDisplayStatus;
+  /** La période d'indisponibilité en cours (motif et dates, jamais le commentaire, D67) ; null si aucune. */
+  currentUnavailability: { reason: UnavailabilityReasonName; startsAt: string; endsAt: string | null } | null;
   nextTrip: {
     id: string;
     departureTime: string;

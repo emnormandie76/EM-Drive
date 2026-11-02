@@ -50,10 +50,20 @@ export type Campus = Prisma.CampusModel
 /**
  * Model Vehicle
  * Les véhicules de la flotte.
- * `status` : AVAILABLE (normal) ou MAINTENANCE (bloqué par un admin).
+ * `status` : OBSOLÈTE (D59). La disponibilité vient des périodes de `VehicleUnavailability` ; la colonne reste
+ * en base le temps d'une livraison (le code en ligne la lit encore) et sera retirée à l'étape 3.
  * `defaultCampusId` : campus de rattachement initial du véhicule.
  */
 export type Vehicle = Prisma.VehicleModel
+/**
+ * Model VehicleUnavailability
+ * Une période où un véhicule ne peut pas partir : réservation Car Booking ou maintenance (D58).
+ * Occupe `[startsAt, endsAt)` ; `endsAt` absent = sans limite (panne de durée inconnue, maintenance seulement :
+ * la fin est obligatoire pour CAR_BOOKING, D59). Un trajet occupe `[départ, fin + buffer)` : deux créneaux qui se
+ * touchent ne sont pas en conflit. N'a aucun effet sur la position du véhicule (D66).
+ * `createdBySub` / `createdByEmail` : copies de l'admin auteur (piège 6), visibles des seuls admins (D67).
+ */
+export type VehicleUnavailability = Prisma.VehicleUnavailabilityModel
 /**
  * Model Trip
  * Un trajet (réservation).

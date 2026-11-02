@@ -6,19 +6,18 @@ import { toast } from "sonner";
 import {
   Car,
   Plus,
-  CheckCircle,
+  CalendarClock,
   Edit,
-  Wrench,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/PageState";
+import { VehicleUnavailabilitiesModal } from "@/components/admin/VehicleUnavailabilitiesModal";
+import { VehicleStatusBadge } from "@/components/vehicles/VehicleStatusBadge";
 import type { Campus, VehicleWithPosition } from "@/hooks/use-vehicles";
 import { fetchJson } from "@/lib/utils/fetch-json";
-
-const STATUS_LABELS = { AVAILABLE: "disponible", MAINTENANCE: "en maintenance" } as const;
 
 export default function AdminVehiclesPage() {
   const {
@@ -30,6 +29,8 @@ export default function AdminVehiclesPage() {
   const { data: campuses = [] } = useSWR<Campus[]>("/api/campuses", fetchJson);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehicleWithPosition | null>(null);
+  // Le véhicule dont on gère les périodes d'indisponibilité (D58) ; remplace l'ancien interrupteur de maintenance
+  const [unavailabilityVehicle, setUnavailabilityVehicle] = useState<VehicleWithPosition | null>(null);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -58,29 +59,6 @@ export default function AdminVehiclesPage() {
     setSeats(vehicle.seats);
     setDefaultCampusId(vehicle.defaultCampusId);
     setIsModalOpen(true);
-  };
-
-  const handleToggleMaintenance = async (vehicle: VehicleWithPosition) => {
-    const newStatus =
-      vehicle.status === "AVAILABLE" ? "MAINTENANCE" : "AVAILABLE";
-
-    try {
-      const res = await fetch(`/api/admin/vehicles/${vehicle.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "Impossible de modifier le statut.");
-      }
-
-      toast.success(`Le véhicule est désormais ${STATUS_LABELS[newStatus]}.`);
-      mutate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Impossible de modifier le statut.");
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -244,13 +222,7 @@ export default function AdminVehiclesPage() {
                     {v.defaultCampus?.name || "-"}
                   </td>
                   <td style={{ padding: "1rem" }}>
-                    <span
-                      className={`badge ${v.status === "AVAILABLE" ? "badge-success" : "badge-danger"}`}
-                    >
-                      {v.status === "AVAILABLE"
-                        ? "Disponible"
-                        : "En Maintenance"}
-                    </span>
+                    <VehicleStatusBadge status={v.displayStatus} />
                   </td>
                   <td style={{ padding: "1rem" }}>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -264,27 +236,14 @@ export default function AdminVehiclesPage() {
                         <Edit size={16} />
                       </Button>
                       <Button
-                        variant={
-                          v.status === "AVAILABLE" ? "secondary" : "primary"
-                        }
+                        variant="secondary"
                         size="sm"
-                        onClick={() => handleToggleMaintenance(v)}
-                        title={
-                          v.status === "AVAILABLE"
-                            ? "Passer en maintenance"
-                            : "Remettre disponible"
-                        }
-                        aria-label={
-                          v.status === "AVAILABLE"
-                            ? `Passer ${v.name} en maintenance`
-                            : `Remettre ${v.name} disponible`
-                        }
+                        onClick={() => setUnavailabilityVehicle(v)}
+                        title="Maintenance et réservations Car Booking"
+                        aria-label={`Indisponibilités de ${v.name}`}
                       >
-                        {v.status === "AVAILABLE" ? (
-                          <Wrench size={16} />
-                        ) : (
-                          <CheckCircle size={16} />
-                        )}
+                        <CalendarClock size={16} />
+                        Indisponibilités
                       </Button>
                     </div>
                   </td>
@@ -297,6 +256,14 @@ export default function AdminVehiclesPage() {
         {/* Pagination BOTTOM */}
         {pagination && <div style={{ borderTop: "1px solid var(--color-border)" }}>{pagination}</div>}
       </Card>
+      )}
+
+      {unavailabilityVehicle && (
+        <VehicleUnavailabilitiesModal
+          vehicle={unavailabilityVehicle}
+          onClose={() => setUnavailabilityVehicle(null)}
+          onChanged={() => mutate()}
+        />
       )}
 
       {isModalOpen && (

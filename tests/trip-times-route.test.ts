@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession, isAdmin } from "@/lib/auth";
 import { PATCH as updateTripRoute } from "@/app/api/trips/[id]/route";
 import { resetPrismaMock, type PrismaMock } from "./helpers/prisma-mock";
-import { DRIVER, makeTrip, makeVehicle } from "./helpers/fixtures";
+import { DRIVER, makeTrip, makeUnavailability, makeVehicle } from "./helpers/fixtures";
 
 const db = prisma as unknown as PrismaMock;
 const tripParams = { params: Promise.resolve({ id: "trip-1" }) };
@@ -37,6 +37,7 @@ beforeEach(() => {
   vi.mocked(isAdmin).mockResolvedValue(false);
   db.trip.findFirst.mockResolvedValue(null);
   db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle());
+  db.vehicleUnavailability.findFirst.mockResolvedValue(null);
   db.appSetting.findUnique.mockResolvedValue(null);
   db.trip.update.mockImplementation(async ({ data }: { data: object }) => ({ id: "trip-1", ...data }));
 });
@@ -69,9 +70,9 @@ describe("PATCH /api/trips/[id] : horaires", () => {
     expect(db.trip.update).not.toHaveBeenCalled();
   });
 
-  it("refuse en 409 un véhicule en maintenance (D62)", async () => {
+  it("refuse en 409 un véhicule en maintenance sur le nouveau créneau (D62, D59)", async () => {
     db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip());
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    db.vehicleUnavailability.findFirst.mockResolvedValue(makeUnavailability({ endsAt: null }));
     const response = await patch({ departureTime: at(96).toISOString() });
     expect(response?.status).toBe(409);
     expect(await response?.json()).toMatchObject({ error: "VEHICLE_UNAVAILABLE" });

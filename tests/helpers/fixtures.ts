@@ -29,13 +29,32 @@ export function makePassenger(overrides: Partial<PassengerFixture> = {}): Passen
   };
 }
 
-/** Un véhicule de 5 places, disponible, rattaché au campus de départ des trajets de test. */
+/**
+ * Un véhicule de 5 places, rattaché au campus de départ des trajets de test. Il n'a plus de statut : sa
+ * disponibilité vient de ses périodes d'indisponibilité (D58, D59).
+ */
 export function makeVehicle(overrides: Record<string, unknown> = {}) {
   return {
     id: "vehicle-1",
     seats: 5,
-    status: "AVAILABLE" as const,
     defaultCampusId: "campus-1",
+    ...overrides,
+  };
+}
+
+/** Une période d'indisponibilité du véhicule `vehicle-1` ; sans fin par défaut, comme une panne de durée inconnue. */
+export function makeUnavailability(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "unavailability-1",
+    vehicleId: "vehicle-1",
+    reason: "MAINTENANCE" as "MAINTENANCE" | "CAR_BOOKING",
+    startsAt: new Date("2030-01-01T10:00:00.000Z"),
+    endsAt: null as Date | null,
+    comment: null as string | null,
+    createdBySub: "admin-id",
+    createdByEmail: "admin@em-normandie.fr",
+    createdAt: new Date("2029-12-01T09:00:00.000Z"),
+    updatedAt: new Date("2029-12-01T09:00:00.000Z"),
     ...overrides,
   };
 }

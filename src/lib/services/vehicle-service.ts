@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { addMinutes, getBufferMinutes } from "@/lib/utils/dates";
 import { VehicleNotAtCampusError, VehicleUnavailableError } from "@/lib/utils/errors";
-import type { Vehicle, Campus } from "@/generated/prisma/client";
+import type { Vehicle, Campus, UnavailabilityReason } from "@/generated/prisma/client";
 
 // ══════════════════════════════════════════════
 // TYPES
@@ -13,9 +13,19 @@ import type { Vehicle, Campus } from "@/generated/prisma/client";
 // Type pour le client transactionnel Prisma
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
+/** Période d'indisponibilité telle que tout utilisateur la voit : motif et dates, jamais le commentaire (D67). */
+export interface UnavailabilityPeriod {
+  reason: UnavailabilityReason;
+  startsAt: Date;
+  /** Absente : sans limite (maintenance dont la fin est inconnue). */
+  endsAt: Date | null;
+}
+
 export interface VehicleWithPosition extends Vehicle {
   currentCampus: Campus;
-  displayStatus: "available" | "in_trip" | "maintenance" | "fully_booked";
+  displayStatus: "available" | "in_trip" | "maintenance" | "car_booking" | "fully_booked";
+  /** La période d'indisponibilité en cours, la maintenance avant Car Booking (D69) ; null si aucune. */
+  currentUnavailability: UnavailabilityPeriod | null;
   nextTrip: {
     id: string;
     departureTime: Date;
@@ -117,26 +127,30 @@ export async function getVehiclePosition(
   }
 }
 
+/** Libellé du refus d'un créneau, selon le motif de la période qui le couvre (D58). */
+const UNAVAILABLE_MESSAGES: Record<UnavailabilityReason, string> = {
+  MAINTENANCE: "Ce véhicule est en maintenance sur ce créneau : il ne peut pas être réservé.",
+  CAR_BOOKING: "Ce véhicule est réservé sur Car Booking sur ce créneau : il ne peut pas être réservé.",
+};
+
 /**
  * Vérifie, dans la transaction de l'écriture, que le véhicule peut partir de `originCampusId` à `departureTime`
- * (D62) : il n'est pas en maintenance, et il sera à ce campus à cette heure. La recherche le vérifiait seule :
- * une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou ailleurs.
- * `excludeTripId` écarte le trajet qu'on modifie.
+ * et rouler jusqu'à `endTimeWithBuffer` (D62) : aucune période d'indisponibilité ne couvre le créneau entier
+ * `[départ, fin + buffer)`, et il sera à ce campus à cette heure. C'est le point unique qui dit si un véhicule
+ * peut partir (D62) : la recherche, la création, le changement d'horaire et la modification admin le suivent.
+ * La colonne `vehicles.status` n'est plus lue (D59). `excludeTripId` écarte le trajet qu'on modifie.
  */
 export async function assertVehicleBookable(
   vehicleId: string,
   originCampusId: string,
   departureTime: Date,
+  endTimeWithBuffer: Date,
   tx?: TransactionClient,
   excludeTripId?: string
 ): Promise<void> {
-  const db = tx ?? prisma;
-  const vehicle = await db.vehicle.findUniqueOrThrow({
-    where: { id: vehicleId },
-    select: { status: true },
-  });
-  if (vehicle.status === "MAINTENANCE") {
-    throw new VehicleUnavailableError();
+  const unavailability = await findVehicleUnavailability(vehicleId, departureTime, endTimeWithBuffer, tx);
+  if (unavailability) {
+    throw new VehicleUnavailableError(UNAVAILABLE_MESSAGES[unavailability.reason]);
   }
 
   const campusId = await getVehiclePosition(vehicleId, departureTime, tx, excludeTripId);
@@ -198,10 +212,34 @@ export async function findVehicleConflict(
 }
 
 /**
+ * Cherche une période d'indisponibilité du véhicule qui chevauche le créneau `[start, end)`, `end` étant la fin du
+ * trajet plus le buffer. Une période occupe `[début, fin)`, et sans fin elle n'a pas de limite : il y a conflit
+ * si début < `end` et fin > `start`. Deux créneaux qui se touchent ne sont pas en conflit (piège 4, comme
+ * `findVehicleConflict`). Seul lecteur des périodes pour les décisions de réservation (D58).
+ */
+export async function findVehicleUnavailability(
+  vehicleId: string,
+  start: Date,
+  end: Date,
+  tx?: TransactionClient
+): Promise<{ id: string; reason: UnavailabilityReason; startsAt: Date; endsAt: Date | null } | null> {
+  const db = tx ?? prisma;
+  return await db.vehicleUnavailability.findFirst({
+    where: {
+      vehicleId,
+      startsAt: { lt: end },
+      OR: [{ endsAt: null }, { endsAt: { gt: start } }],
+    },
+    orderBy: { startsAt: "asc" },
+    select: { id: true, reason: true, startsAt: true, endsAt: true },
+  });
+}
+
+/**
  * Retourne la liste des véhicules disponibles pour le créneau demandé.
  *
  * Un véhicule est disponible si :
- * 1. Il n'est PAS en maintenance
+ * 1. Aucune période d'indisponibilité (maintenance, Car Booking) ne couvre le créneau (buffer inclus), D59
  * 2. Il SERA au campus de départ à l'heure de départ
  * 3. Il n'a PAS de trajet qui chevauche le créneau (buffer inclus)
  */
@@ -214,13 +252,15 @@ export async function getAvailableVehicles(
     bufferMinutes
   );
 
-  const vehicles = await prisma.vehicle.findMany({
-    where: { status: "AVAILABLE" },
-  });
+  const vehicles = await prisma.vehicle.findMany();
 
   const available: AvailableVehicle[] = [];
 
   for (const vehicle of vehicles) {
+    // Les mêmes périodes que celles que `assertVehicleBookable` revérifiera à l'écriture
+    const unavailability = await findVehicleUnavailability(vehicle.id, query.departureTime, endTimeWithBuffer);
+    if (unavailability) continue;
+
     // Vérifier la position à l'heure de départ
     const positionCampusId = await getVehiclePosition(vehicle.id, query.departureTime);
     if (positionCampusId !== query.originCampusId) continue;
@@ -303,8 +343,22 @@ export async function getAllVehiclesWithPositions(): Promise<VehicleWithPosition
   const now = new Date();
   const result: VehicleWithPosition[] = [];
 
+  // Périodes en cours, de tous les véhicules, en une requête ; sans commentaire ni auteur (D67)
+  const currentPeriods = await prisma.vehicleUnavailability.findMany({
+    where: { startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] },
+    orderBy: { startsAt: "asc" },
+    select: { vehicleId: true, reason: true, startsAt: true, endsAt: true },
+  });
+
   for (const vehicle of vehicles) {
-    // Position actuelle
+    // La maintenance l'emporte sur Car Booking quand les deux couvrent l'instant (D69)
+    const mine = currentPeriods.filter((period) => period.vehicleId === vehicle.id);
+    const current = mine.find((period) => period.reason === "MAINTENANCE") ?? mine[0];
+    const currentUnavailability: UnavailabilityPeriod | null = current
+      ? { reason: current.reason, startsAt: current.startsAt, endsAt: current.endsAt }
+      : null;
+
+    // Position actuelle (une indisponibilité ne la déplace pas, D66)
     const currentCampus = await getVehicleCurrentCampus(vehicle.id);
 
     // Prochain trajet
@@ -336,8 +390,10 @@ export async function getAllVehiclesWithPositions(): Promise<VehicleWithPosition
 
     // Calcul du displayStatus
     let displayStatus: VehicleWithPosition["displayStatus"];
-    if (vehicle.status === "MAINTENANCE") {
+    if (currentUnavailability?.reason === "MAINTENANCE") {
       displayStatus = "maintenance";
+    } else if (currentUnavailability?.reason === "CAR_BOOKING") {
+      displayStatus = "car_booking";
     } else if (currentTrip) {
       displayStatus = "in_trip";
     } else {
@@ -348,6 +404,7 @@ export async function getAllVehiclesWithPositions(): Promise<VehicleWithPosition
       ...vehicle,
       currentCampus,
       displayStatus,
+      currentUnavailability,
       nextTrip: nextTrip
         ? {
             id: nextTrip.id,

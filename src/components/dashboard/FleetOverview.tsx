@@ -15,7 +15,8 @@ export function FleetOverview({ vehicles }: FleetOverviewProps) {
       total: vehicles.length,
       available: vehicles.filter((v) => v.displayStatus === "available").length,
       inTrip: vehicles.filter((v) => v.displayStatus === "in_trip" || v.displayStatus === "fully_booked").length,
-      maintenance: vehicles.filter((v) => v.displayStatus === "maintenance").length,
+      // Maintenance et réservations Car Booking, regroupées (D69)
+      unavailable: vehicles.filter((v) => v.displayStatus === "maintenance" || v.displayStatus === "car_booking").length,
     };
   }, [vehicles]);
 
@@ -63,8 +64,8 @@ export function FleetOverview({ vehicles }: FleetOverviewProps) {
             <Wrench size={24} />
           </div>
           <div>
-            <p className="stat-label">En Maintenance</p>
-            <p className="stat-value">{stats.maintenance}</p>
+            <p className="stat-label">Indisponibles</p>
+            <p className="stat-value">{stats.unavailable}</p>
           </div>
         </CardBody>
       </Card>

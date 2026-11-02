@@ -8,6 +8,57 @@ import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import {
+  formatPeriod, layoutUnavailabilityBars, UNAVAILABILITY_LABELS,
+  type BarSegment, type UnavailabilityItem, type UnavailabilityReasonName
+} from '@/lib/utils/unavailability';
+
+/** Couleurs d'une période d'indisponibilité, distinctes de celles des trajets (D58). */
+const UNAVAILABILITY_COLORS: Record<UnavailabilityReasonName, { background: string; border: string; text: string }> = {
+  MAINTENANCE: { background: 'var(--color-danger-bg)', border: 'var(--color-danger)', text: 'var(--color-danger)' },
+  CAR_BOOKING: { background: 'var(--color-warning-bg)', border: 'var(--color-warning)', text: 'var(--color-text)' },
+};
+
+/** Un bandeau continu pour une période de plusieurs jours : libellé une fois, flèche s'il déborde de la rangée (D71). */
+function UnavailabilityBar({ segment, height }: { segment: BarSegment; height: number }) {
+  const { item, startCol, endCol, lane, continuesBefore, continuesAfter } = segment;
+  const colors = UNAVAILABILITY_COLORS[item.reason];
+  const label = UNAVAILABILITY_LABELS[item.reason];
+
+  return (
+    <div
+      data-unavailability={item.reason}
+      title={`${label} — ${formatPeriod(item.startsAt, item.endsAt)}${item.comment ? ` — ${item.comment}` : ''}`}
+      style={{
+        gridColumn: `${startCol + 1} / ${endCol + 2}`,
+        gridRow: lane + 1,
+        height: `${height}px`,
+        boxSizing: 'border-box',
+        margin: '0 2px',
+        padding: '0 6px',
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: colors.background,
+        borderLeft: continuesBefore ? 'none' : `4px solid ${colors.border}`,
+        borderRight: continuesAfter ? 'none' : undefined,
+        borderRadius: `${continuesBefore ? 0 : 4}px ${continuesAfter ? 0 : 4}px ${continuesAfter ? 0 : 4}px ${continuesBefore ? 0 : 4}px`,
+        color: colors.text,
+        fontSize: '0.75rem',
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}
+    >
+      {continuesBefore && '◀ '}{label}{continuesAfter && ' ▶'}
+    </div>
+  );
+}
+
+/** Hauteur d'un bandeau et écart entre deux voies, en pixels. */
+const WEEK_BAR_HEIGHT = 22;
+const MONTH_BAR_HEIGHT = 18;
+const BAR_GAP = 2;
 
 interface CalendarTrip {
   id: string;
@@ -18,7 +69,7 @@ interface CalendarTrip {
   destination: string;
 }
 
-export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
+export function VehicleCalendar({ trips, unavailabilities = [] }: { trips: CalendarTrip[]; unavailabilities?: UnavailabilityItem[] }) {
   const [view, setView] = useState<'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -52,7 +103,21 @@ export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
     // Hours from 6 AM to 10 PM
     const hours = Array.from({ length: 17 }, (_, i) => i + 6);
 
+    // Les indisponibilités : un bandeau continu par période, au-dessus des colonnes de jours (D71)
+    const { segments, lanes } = layoutUnavailabilityBars(days, unavailabilities);
+
     return (
+      <div>
+        {lanes > 0 && (
+          <div style={{ display: 'flex', borderTop: '1px solid var(--color-border)', borderLeft: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
+            <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid var(--color-border)' }}></div>
+            <div style={{ flexGrow: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: `${BAR_GAP}px`, padding: '4px 0' }}>
+              {segments.map(segment => (
+                <UnavailabilityBar key={segment.item.id} segment={segment} height={WEEK_BAR_HEIGHT} />
+              ))}
+            </div>
+          </div>
+        )}
       <div style={{ display: 'flex', borderTop: '1px solid var(--color-border)', borderLeft: '1px solid var(--color-border)' }}>
         {/* Time column */}
         <div style={{ width: '60px', flexShrink: 0, borderRight: '1px solid var(--color-border)' }}>
@@ -140,6 +205,7 @@ export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
           })}
         </div>
       </div>
+      </div>
     );
   };
 
@@ -147,6 +213,7 @@ export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
     const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
     const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start, end });
+    const weeks = Array.from({ length: days.length / 7 }, (_, i) => days.slice(i * 7, i * 7 + 7));
 
     return (
       <div style={{ borderTop: '1px solid var(--color-border)', borderLeft: '1px solid var(--color-border)' }}>
@@ -159,63 +226,80 @@ export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
           ))}
         </div>
 
-        {/* Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-          {days.map(day => {
-            const isCurrentMonth = isSameMonth(day, currentDate);
-            const isToday = isSameDay(day, new Date());
-            const dayTrips = getDayTrips(day);
+        {/* Une rangée par semaine : les indisponibilités y courent en un bandeau continu (D71) */}
+        {weeks.map(weekDays => {
+          const { segments, lanes } = layoutUnavailabilityBars(weekDays, unavailabilities);
 
-            return (
-              <div
-                key={day.toString()}
-                style={{
-                  minHeight: '100px',
-                  padding: '4px',
-                  borderRight: '1px solid var(--color-border)',
-                  borderBottom: '1px solid var(--color-border)',
-                  backgroundColor: isCurrentMonth ? 'transparent' : 'var(--color-surface-hover)'
-                }}
-              >
-                <div style={{
-                  display: 'flex', justifyContent: 'center', alignItems: 'center',
-                  width: '24px', height: '24px', borderRadius: '50%', margin: '0 auto 4px auto',
-                  backgroundColor: isToday ? 'var(--color-primary)' : 'transparent',
-                  color: isToday ? 'white' : (isCurrentMonth ? 'var(--color-text)' : 'var(--color-text-tertiary)'),
-                  fontWeight: isToday ? 700 : 500,
-                  fontSize: '0.85rem'
-                }}>
-                  {format(day, 'd')}
-                </div>
+          return (
+            <div key={weekDays[0].toString()} style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {weekDays.map(day => {
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isToday = isSameDay(day, new Date());
+                const dayTrips = getDayTrips(day);
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {dayTrips.slice(0, 3).map(trip => (
-                    <div
-                      key={trip.id}
-                      style={{
-                        backgroundColor: 'var(--color-primary-light)',
-                        color: 'var(--color-primary)',
-                        fontSize: '0.7rem',
-                        padding: '2px 4px',
-                        borderRadius: '2px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}
-                    >
-                      {format(new Date(trip.departureTime), 'HH:mm')} {trip.destination}
+                return (
+                  <div
+                    key={day.toString()}
+                    style={{
+                      minHeight: '100px',
+                      padding: '4px',
+                      borderRight: '1px solid var(--color-border)',
+                      borderBottom: '1px solid var(--color-border)',
+                      backgroundColor: isCurrentMonth ? 'transparent' : 'var(--color-surface-hover)'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex', justifyContent: 'center', alignItems: 'center',
+                      width: '24px', height: '24px', borderRadius: '50%', margin: '0 auto 4px auto',
+                      backgroundColor: isToday ? 'var(--color-primary)' : 'transparent',
+                      color: isToday ? 'white' : (isCurrentMonth ? 'var(--color-text)' : 'var(--color-text-tertiary)'),
+                      fontWeight: isToday ? 700 : 500,
+                      fontSize: '0.85rem'
+                    }}>
+                      {format(day, 'd')}
                     </div>
+
+                    {/* Laisse la place des bandeaux, posés par-dessus, sous le numéro du jour */}
+                    {lanes > 0 && <div style={{ height: `${lanes * (MONTH_BAR_HEIGHT + BAR_GAP)}px` }} />}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {dayTrips.slice(0, 3).map(trip => (
+                        <div
+                          key={trip.id}
+                          style={{
+                            backgroundColor: 'var(--color-primary-light)',
+                            color: 'var(--color-primary)',
+                            fontSize: '0.7rem',
+                            padding: '2px 4px',
+                            borderRadius: '2px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {format(new Date(trip.departureTime), 'HH:mm')} {trip.destination}
+                        </div>
+                      ))}
+                      {dayTrips.length > 3 && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', textAlign: 'center', marginTop: '2px' }}>
+                          +{dayTrips.length - 3} autres
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {lanes > 0 && (
+                <div style={{ position: 'absolute', top: '36px', left: 0, right: 0, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: `${BAR_GAP}px` }}>
+                  {segments.map(segment => (
+                    <UnavailabilityBar key={segment.item.id} segment={segment} height={MONTH_BAR_HEIGHT} />
                   ))}
-                  {dayTrips.length > 3 && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', textAlign: 'center', marginTop: '2px' }}>
-                      +{dayTrips.length - 3} autres
-                    </div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -270,6 +354,13 @@ export function VehicleCalendar({ trips }: { trips: CalendarTrip[] }) {
             Mois
           </button>
         </div>
+      </div>
+
+      <div style={{ padding: '8px 24px', display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-border)' }}>
+        <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', marginRight: '6px', backgroundColor: 'var(--color-primary)' }} />Trajet</span>
+        {(Object.keys(UNAVAILABILITY_LABELS) as UnavailabilityReasonName[]).map(reason => (
+          <span key={reason}><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', marginRight: '6px', backgroundColor: UNAVAILABILITY_COLORS[reason].border }} />{UNAVAILABILITY_LABELS[reason]}</span>
+        ))}
       </div>
 
       <div style={{ overflowX: 'auto' }}>

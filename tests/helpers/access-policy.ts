@@ -26,4 +26,7 @@ export const ACCESS_POLICY: Record<string, Record<string, Guard>> = {
   "admin/audit": { GET: "admin" },
   "admin/vehicles": { POST: "admin" },
   "admin/vehicles/[id]": { PATCH: "admin" },
+  // Étape 2 du chantier « indisponibilités et corrections » (D58, D68)
+  "admin/vehicles/[id]/unavailabilities": { GET: "admin", POST: "admin" },
+  "admin/unavailabilities/[id]": { PATCH: "admin", DELETE: "admin" },
 };

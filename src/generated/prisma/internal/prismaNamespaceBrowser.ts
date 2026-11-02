@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   Campus: 'Campus',
   Vehicle: 'Vehicle',
+  VehicleUnavailability: 'VehicleUnavailability',
   Trip: 'Trip',
   Passenger: 'Passenger',
   Person: 'Person',
@@ -99,6 +100,22 @@ export const VehicleScalarFieldEnum = {
 } as const
 
 export type VehicleScalarFieldEnum = (typeof VehicleScalarFieldEnum)[keyof typeof VehicleScalarFieldEnum]
+
+
+export const VehicleUnavailabilityScalarFieldEnum = {
+  id: 'id',
+  vehicleId: 'vehicleId',
+  reason: 'reason',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  comment: 'comment',
+  createdBySub: 'createdBySub',
+  createdByEmail: 'createdByEmail',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VehicleUnavailabilityScalarFieldEnum = (typeof VehicleUnavailabilityScalarFieldEnum)[keyof typeof VehicleUnavailabilityScalarFieldEnum]
 
 
 export const TripScalarFieldEnum = {

@@ -10,6 +10,7 @@
  */
 export type * from './models/Campus'
 export type * from './models/Vehicle'
+export type * from './models/VehicleUnavailability'
 export type * from './models/Trip'
 export type * from './models/Passenger'
 export type * from './models/Person'

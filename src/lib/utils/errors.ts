@@ -69,12 +69,78 @@ export class PassengerOverlapError extends BusinessError {
 }
 
 /**
- * Le véhicule ne peut pas être réservé : il est en maintenance (D62).
+ * Le véhicule ne peut pas être réservé sur ce créneau : une période d'indisponibilité le couvre, maintenance
+ * ou réservation Car Booking (D58, D62).
  */
 export class VehicleUnavailableError extends BusinessError {
-  constructor(message = "Ce véhicule est en maintenance : il ne peut pas être réservé.") {
+  constructor(message = "Ce véhicule est indisponible sur ce créneau : il ne peut pas être réservé.") {
     super(message, "VEHICLE_UNAVAILABLE");
     this.name = "VehicleUnavailableError";
+  }
+}
+
+/** Un trajet réservé qui empêche de déclarer une indisponibilité, tel que l'écran l'affiche (D60). */
+export interface ConflictingTripSummary {
+  id: string;
+  departureTime: Date;
+  /** Arrivée du trajet : celle du retour pour un aller-retour. */
+  endTime: Date;
+  driverDisplayName: string;
+  origin: string;
+  destination: string;
+}
+
+/**
+ * Des trajets sont déjà réservés sur la période d'indisponibilité demandée (D60) : l'admin les déplace ou les
+ * annule d'abord. Le corps de la réponse porte la liste.
+ */
+export class UnavailabilityTripsConflictError extends BusinessError {
+  constructor(public conflictingTrips: ConflictingTripSummary[]) {
+    super(
+      "Des trajets sont déjà réservés sur cette période : déplacez-les ou annulez-les d'abord.",
+      "UNAVAILABILITY_TRIPS_CONFLICT"
+    );
+    this.name = "UnavailabilityTripsConflictError";
+  }
+
+  toJSON() {
+    return { ...super.toJSON(), conflictingTrips: this.conflictingTrips };
+  }
+}
+
+/** Une période d'indisponibilité en cause dans un chevauchement : motif et dates seulement (D67). */
+export interface OverlappingPeriodSummary {
+  id: string;
+  reason: "CAR_BOOKING" | "MAINTENANCE";
+  startsAt: Date;
+  endsAt: Date | null;
+}
+
+/**
+ * Le véhicule a déjà une indisponibilité qui chevauche la période demandée (D70) : deux périodes d'un même
+ * véhicule ne se recouvrent pas, quels que soient leurs motifs. Le corps de la réponse porte la liste.
+ */
+export class UnavailabilityOverlapError extends BusinessError {
+  constructor(public overlappingPeriods: OverlappingPeriodSummary[]) {
+    super(
+      "Ce véhicule a déjà une indisponibilité sur cette période : modifiez-la ou retirez-la d'abord.",
+      "UNAVAILABILITY_OVERLAP"
+    );
+    this.name = "UnavailabilityOverlapError";
+  }
+
+  toJSON() {
+    return { ...super.toJSON(), overlappingPeriods: this.overlappingPeriods };
+  }
+}
+
+/**
+ * La ressource demandée n'existe pas (véhicule ou période d'indisponibilité inconnus).
+ */
+export class NotFoundError extends BusinessError {
+  constructor(message: string) {
+    super(message, "NOT_FOUND", undefined, 404);
+    this.name = "NotFoundError";
   }
 }
 

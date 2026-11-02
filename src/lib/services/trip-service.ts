@@ -107,7 +107,7 @@ export async function findPersonConflict(
  *
  * Étapes :
  * 0. Vérifier les passagers : places du véhicule, conducteur absent de la liste
- * 1. Re-vérifier la disponibilité du véhicule (race condition), sa maintenance et son campus (D62)
+ * 1. Re-vérifier la disponibilité du véhicule (race condition), ses périodes d'indisponibilité et son campus (D62)
  * 2. Vérifier le chevauchement du conducteur
  * 3. Vérifier le chevauchement de chaque passager
  * 4. Créer le trajet + les passagers
@@ -157,8 +157,8 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
         );
       }
 
-      // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
-      await assertVehicleBookable(input.vehicleId, input.originCampusId, input.departureTime, tx);
+      // ── VÉRIF 1 bis : Véhicule hors indisponibilité (maintenance, Car Booking) et au campus de départ (D62) ──
+      await assertVehicleBookable(input.vehicleId, input.originCampusId, input.departureTime, endTimeWithBuffer, tx);
 
       // ── VÉRIF 2 : Conducteur pas de chevauchement ──
       const driverConflict = await findPersonConflict(
@@ -379,8 +379,8 @@ export async function updateTripTimes(
         );
       }
 
-      // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
-      await assertVehicleBookable(trip.vehicleId, trip.originCampusId, newDepartureTime, tx, tripId);
+      // ── VÉRIF 1 bis : Véhicule hors indisponibilité (maintenance, Car Booking) et au campus de départ (D62) ──
+      await assertVehicleBookable(trip.vehicleId, trip.originCampusId, newDepartureTime, newEndTimeWithBuffer, tx, tripId);
 
       // ── VÉRIF 2 : Conducteur libre ──
       const driverConflict = await findPersonConflict(
@@ -484,12 +484,16 @@ export async function updateTripInfo(
   const newVehicleId = data.vehicleId || trip.vehicleId;
   const newDriverSub = data.driverSub || trip.driverSub;
   const newOriginCampusId = data.originCampusId || trip.originCampusId;
-  // D62 : un trajet prévu dont le véhicule, le campus de départ ou le départ change se revérifie ; le reste
-  // (commentaire, conducteur, annulation) laisse le véhicule où il est
+  // D62 : un trajet prévu dont le véhicule, le campus de départ ou le créneau (départ ou fin) change se revérifie,
+  // périodes d'indisponibilité comprises (D58) ; le reste (commentaire, conducteur, annulation) laisse le
+  // véhicule où il est
+  const oldRawEndTime =
+    trip.type === "ONE_WAY" ? trip.estimatedArrivalTime : (trip.estimatedReturnArrivalTime ?? trip.estimatedArrivalTime);
   const movesVehicle =
     newVehicleId !== trip.vehicleId ||
     newOriginCampusId !== trip.originCampusId ||
-    newDepartureTime.getTime() !== trip.departureTime.getTime();
+    newDepartureTime.getTime() !== trip.departureTime.getTime() ||
+    newRawEndTime.getTime() !== oldRawEndTime.getTime();
   const checksVehicle = (data.status ?? trip.status) === "SCHEDULED" && movesVehicle;
 
   // On re-vérifie dans une transaction
@@ -518,9 +522,9 @@ export async function updateTripInfo(
       );
     }
 
-    // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
+    // ── VÉRIF 1 bis : Véhicule hors indisponibilité (maintenance, Car Booking) et au campus de départ (D62) ──
     if (checksVehicle) {
-      await assertVehicleBookable(newVehicleId, newOriginCampusId, newDepartureTime, tx, tripId);
+      await assertVehicleBookable(newVehicleId, newOriginCampusId, newDepartureTime, newEndTimeWithBuffer, tx, tripId);
     }
 
     // ── VÉRIF 2 : Conducteur pas en conflit ──

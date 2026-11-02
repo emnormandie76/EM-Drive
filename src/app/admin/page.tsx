@@ -8,11 +8,14 @@ export default async function AdminDashboardPage() {
   // Rendu à la requête, jamais pré-rendu au build : la base réelle est partagée (D30)
   await connection();
 
-  // Récupérer quelques métriques globales
-  const [totalVehicles, maintenanceVehicles, activeTrips] = await Promise.all([
+  // Récupérer quelques métriques globales. Indisponible : une période (maintenance, Car Booking) couvre l'instant (D58)
+  const now = new Date();
+  const [totalVehicles, unavailableVehicles, activeTrips] = await Promise.all([
     prisma.vehicle.count(),
-    prisma.vehicle.count({ where: { status: "MAINTENANCE" } }),
-    prisma.trip.count({ where: { status: "SCHEDULED", departureTime: { gte: new Date() } } }),
+    prisma.vehicle.count({
+      where: { unavailabilities: { some: { startsAt: { lte: now }, OR: [{ endsAt: null }, { endsAt: { gt: now } }] } } },
+    }),
+    prisma.trip.count({ where: { status: "SCHEDULED", departureTime: { gte: now } } }),
   ]);
 
   return (
@@ -27,11 +30,11 @@ export default async function AdminDashboardPage() {
           </CardBody>
         </Card>
 
-        <Card className="text-center" style={{ borderLeft: maintenanceVehicles > 0 ? "4px solid var(--color-danger)" : "" }}>
+        <Card className="text-center" style={{ borderLeft: unavailableVehicles > 0 ? "4px solid var(--color-danger)" : "" }}>
           <CardBody>
-            <h3 className="text-lg text-muted">En Maintenance</h3>
-            <p className="text-3xl font-bold" style={{ marginTop: "0.5rem", color: maintenanceVehicles > 0 ? "var(--color-danger)" : "inherit" }}>
-              {maintenanceVehicles}
+            <h3 className="text-lg text-muted">Indisponibles</h3>
+            <p className="text-3xl font-bold" style={{ marginTop: "0.5rem", color: unavailableVehicles > 0 ? "var(--color-danger)" : "inherit" }}>
+              {unavailableVehicles}
             </p>
           </CardBody>
         </Card>

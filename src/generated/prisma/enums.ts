@@ -54,10 +54,21 @@ export const AuditAction = {
   VEHICLE_MAINTENANCE_ON: 'VEHICLE_MAINTENANCE_ON',
   VEHICLE_MAINTENANCE_OFF: 'VEHICLE_MAINTENANCE_OFF',
   SETTINGS_UPDATED: 'SETTINGS_UPDATED',
-  SIGNIN_REFUSED: 'SIGNIN_REFUSED'
+  SIGNIN_REFUSED: 'SIGNIN_REFUSED',
+  VEHICLE_UNAVAILABILITY_CREATED: 'VEHICLE_UNAVAILABILITY_CREATED',
+  VEHICLE_UNAVAILABILITY_UPDATED: 'VEHICLE_UNAVAILABILITY_UPDATED',
+  VEHICLE_UNAVAILABILITY_DELETED: 'VEHICLE_UNAVAILABILITY_DELETED'
 } as const
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction]
+
+
+export const UnavailabilityReason = {
+  CAR_BOOKING: 'CAR_BOOKING',
+  MAINTENANCE: 'MAINTENANCE'
+} as const
+
+export type UnavailabilityReason = (typeof UnavailabilityReason)[keyof typeof UnavailabilityReason]
 
 
 export const Role = {

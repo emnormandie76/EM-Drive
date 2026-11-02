@@ -386,6 +386,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   Campus: 'Campus',
   Vehicle: 'Vehicle',
+  VehicleUnavailability: 'VehicleUnavailability',
   Trip: 'Trip',
   Passenger: 'Passenger',
   Person: 'Person',
@@ -406,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "campus" | "vehicle" | "trip" | "passenger" | "person" | "appSetting" | "auditLog"
+    modelProps: "campus" | "vehicle" | "vehicleUnavailability" | "trip" | "passenger" | "person" | "appSetting" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -555,6 +556,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.VehicleCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.VehicleCountAggregateOutputType> | number
+        }
+      }
+    }
+    VehicleUnavailability: {
+      payload: Prisma.$VehicleUnavailabilityPayload<ExtArgs>
+      fields: Prisma.VehicleUnavailabilityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VehicleUnavailabilityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VehicleUnavailabilityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        findFirst: {
+          args: Prisma.VehicleUnavailabilityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VehicleUnavailabilityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        findMany: {
+          args: Prisma.VehicleUnavailabilityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>[]
+        }
+        create: {
+          args: Prisma.VehicleUnavailabilityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        createMany: {
+          args: Prisma.VehicleUnavailabilityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VehicleUnavailabilityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>[]
+        }
+        delete: {
+          args: Prisma.VehicleUnavailabilityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        update: {
+          args: Prisma.VehicleUnavailabilityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        deleteMany: {
+          args: Prisma.VehicleUnavailabilityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VehicleUnavailabilityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VehicleUnavailabilityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>[]
+        }
+        upsert: {
+          args: Prisma.VehicleUnavailabilityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VehicleUnavailabilityPayload>
+        }
+        aggregate: {
+          args: Prisma.VehicleUnavailabilityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVehicleUnavailability>
+        }
+        groupBy: {
+          args: Prisma.VehicleUnavailabilityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VehicleUnavailabilityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VehicleUnavailabilityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VehicleUnavailabilityCountAggregateOutputType> | number
         }
       }
     }
@@ -992,6 +1067,22 @@ export const VehicleScalarFieldEnum = {
 export type VehicleScalarFieldEnum = (typeof VehicleScalarFieldEnum)[keyof typeof VehicleScalarFieldEnum]
 
 
+export const VehicleUnavailabilityScalarFieldEnum = {
+  id: 'id',
+  vehicleId: 'vehicleId',
+  reason: 'reason',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  comment: 'comment',
+  createdBySub: 'createdBySub',
+  createdByEmail: 'createdByEmail',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VehicleUnavailabilityScalarFieldEnum = (typeof VehicleUnavailabilityScalarFieldEnum)[keyof typeof VehicleUnavailabilityScalarFieldEnum]
+
+
 export const TripScalarFieldEnum = {
   id: 'id',
   vehicleId: 'vehicleId',
@@ -1186,6 +1277,20 @@ export type ListEnumVehicleStatusFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
+ * Reference to a field of type 'UnavailabilityReason'
+ */
+export type EnumUnavailabilityReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UnavailabilityReason'>
+    
+
+
+/**
+ * Reference to a field of type 'UnavailabilityReason[]'
+ */
+export type ListEnumUnavailabilityReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UnavailabilityReason[]'>
+    
+
+
+/**
  * Reference to a field of type 'TripType'
  */
 export type EnumTripTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TripType'>
@@ -1365,6 +1470,7 @@ export type PrismaClientOptions = ({
 export type GlobalOmitConfig = {
   campus?: Prisma.CampusOmit
   vehicle?: Prisma.VehicleOmit
+  vehicleUnavailability?: Prisma.VehicleUnavailabilityOmit
   trip?: Prisma.TripOmit
   passenger?: Prisma.PassengerOmit
   person?: Prisma.PersonOmit

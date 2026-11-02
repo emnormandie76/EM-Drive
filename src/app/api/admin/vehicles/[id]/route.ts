@@ -1,7 +1,6 @@
 // PATCH /api/admin/vehicles/[id] — Modifier un véhicule
 
 import { NextRequest, NextResponse } from "next/server";
-import type { AuditAction } from "@/generated/prisma/client";
 import { requireAdminSession, handleBusinessError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/services/audit-service";
@@ -20,8 +19,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const body = await parseJsonBody(request, updateVehicleSchema);
 
-    const oldVehicle = await prisma.vehicle.findUnique({ where: { id } });
-    if (!oldVehicle) {
+    const existing = await prisma.vehicle.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ error: "NOT_FOUND", message: "Véhicule non trouvé." }, { status: 404 });
     }
 
@@ -32,20 +31,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         name: body.name,
         licensePlate: body.licensePlate,
         seats: body.seats,
-        status: body.status,
         defaultCampusId: body.defaultCampusId,
       },
     });
 
-    let action: AuditAction = "VEHICLE_UPDATED";
-    if (oldVehicle.status !== vehicle.status) {
-      action = vehicle.status === "MAINTENANCE" ? "VEHICLE_MAINTENANCE_ON" : "VEHICLE_MAINTENANCE_OFF";
-    }
-
+    // La maintenance n'est plus un statut du véhicule mais une période datée (D59) : voir les indisponibilités
     await logAudit({
       userSub: auth.session.user.sub,
       userEmail: auth.session.user.email,
-      action,
+      action: "VEHICLE_UPDATED",
       entityType: "vehicle",
       entityId: vehicle.id,
       details: { changedFields: body },

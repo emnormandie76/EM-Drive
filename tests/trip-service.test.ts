@@ -28,7 +28,7 @@ import {
   VehicleUnavailableError,
 } from "@/lib/utils/errors";
 import { resetPrismaMock, type PrismaMock } from "./helpers/prisma-mock";
-import { DRIVER, OTHER, PASSENGER, hoursFromNow, makePassenger, makeTrip, makeVehicle } from "./helpers/fixtures";
+import { DRIVER, OTHER, PASSENGER, hoursFromNow, makePassenger, makeTrip, makeUnavailability, makeVehicle } from "./helpers/fixtures";
 
 const db = prisma as unknown as PrismaMock;
 
@@ -47,7 +47,8 @@ const leftVehicleAt = (campusId: string) =>
 beforeEach(() => {
   resetPrismaMock(db);
   db.trip.findFirst.mockResolvedValue(null); // aucun conflit, aucun trajet antérieur par défaut
-  db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle()); // disponible, rattaché à campus-1
+  db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle()); // rattaché à campus-1
+  db.vehicleUnavailability.findFirst.mockResolvedValue(null); // aucune période d'indisponibilité
   db.appSetting.findUnique.mockResolvedValue(null); // buffer par défaut : 30 min
 });
 
@@ -387,6 +388,9 @@ describe("updateTripTimes : départ et retour (D61, D63)", () => {
 // ══════════════════════════════════════════════
 
 describe("véhicule réservable : maintenance et campus de départ (D62)", () => {
+  // Depuis D59, la maintenance est une période datée (vehicle_unavailabilities), plus la colonne status
+  const inMaintenance = () => db.vehicleUnavailability.findFirst.mockResolvedValue(makeUnavailability({ endsAt: null }));
+
   const createInput = (): CreateTripInput => ({
     vehicleId: "vehicle-1",
     driverSub: DRIVER,
@@ -411,7 +415,7 @@ describe("véhicule réservable : maintenance et campus de départ (D62)", () =>
   });
 
   it("refuse à la création un véhicule en maintenance", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    inMaintenance();
     await expect(createTrip(createInput())).rejects.toBeInstanceOf(VehicleUnavailableError);
     expect(db.trip.create).not.toHaveBeenCalled();
   });
@@ -429,7 +433,7 @@ describe("véhicule réservable : maintenance et campus de départ (D62)", () =>
   });
 
   it("refuse un nouvel horaire pour un véhicule en maintenance", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    inMaintenance();
     await expect(shift()).rejects.toBeInstanceOf(VehicleUnavailableError);
     expect(db.trip.update).not.toHaveBeenCalled();
   });
@@ -450,7 +454,7 @@ describe("véhicule réservable : maintenance et campus de départ (D62)", () =>
   });
 
   it("refuse qu'un admin passe un trajet sur un véhicule en maintenance (modale complète)", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ id: "vehicle-2", status: "MAINTENANCE" }));
+    inMaintenance();
     await expect(updateTripInfo("trip-1", { vehicleId: "vehicle-2" }, OTHER, "a@em-normandie.fr", true)).rejects.toBeInstanceOf(
       VehicleUnavailableError
     );
@@ -466,13 +470,13 @@ describe("véhicule réservable : maintenance et campus de départ (D62)", () =>
   });
 
   it("laisse un admin modifier le reste d'un trajet dont le véhicule est en maintenance", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    inMaintenance();
     await updateTripInfo("trip-1", { comment: "Clés à l'accueil" }, OTHER, "a@em-normandie.fr", true);
     expect(db.trip.update).toHaveBeenCalledOnce();
   });
 
   it("laisse un admin annuler un trajet dont le véhicule est en maintenance", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    inMaintenance();
     await updateTripInfo("trip-1", { status: "CANCELLED", vehicleId: "vehicle-1" }, OTHER, "a@em-normandie.fr", true);
     expect(db.trip.update).toHaveBeenCalledOnce();
   });

@@ -1,11 +1,12 @@
 // src/components/dashboard/VehicleCard.tsx
 import React from "react";
-import { Car, MapPin, Users, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Ban, Car, MapPin, Users, Calendar } from "lucide-react";
 import { Card, CardBody, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { VehicleWithPosition } from "@/hooks/use-vehicles";
+import { VehicleStatusBadge } from "@/components/vehicles/VehicleStatusBadge";
+import { formatPeriod, UNAVAILABILITY_LABELS } from "@/lib/utils/unavailability";
 import "./dashboard.css";
 
 interface VehicleCardProps {
@@ -14,21 +15,6 @@ interface VehicleCardProps {
 }
 
 export function VehicleCard({ vehicle, hideActions = false }: VehicleCardProps) {
-  const getStatusBadge = () => {
-    switch (vehicle.displayStatus) {
-      case "available":
-        return <Badge variant="success">Disponible</Badge>;
-      case "in_trip":
-        return <Badge variant="info">En trajet</Badge>;
-      case "maintenance":
-        return <Badge variant="danger">Maintenance</Badge>;
-      case "fully_booked":
-        return <Badge variant="warning">Complet</Badge>;
-      default:
-        return <Badge variant="default">Inconnu</Badge>;
-    }
-  };
-
   return (
     <Card hover className="vehicle-card">
       <CardHeader className="vc-header">
@@ -41,7 +27,7 @@ export function VehicleCard({ vehicle, hideActions = false }: VehicleCardProps) 
             {vehicle.licensePlate}
           </div>
         </div>
-        {getStatusBadge()}
+        <VehicleStatusBadge status={vehicle.displayStatus} />
       </CardHeader>
       
       <CardBody className="vc-body">
@@ -54,6 +40,16 @@ export function VehicleCard({ vehicle, hideActions = false }: VehicleCardProps) 
           <span>Places totales : <strong>{vehicle.seats}</strong></span>
         </div>
         
+        {vehicle.currentUnavailability && (
+          <div className="vc-info-row">
+            <Ban size={16} />
+            <span>
+              <strong>{UNAVAILABILITY_LABELS[vehicle.currentUnavailability.reason]}</strong>{" "}
+              {formatPeriod(vehicle.currentUnavailability.startsAt, vehicle.currentUnavailability.endsAt)}
+            </span>
+          </div>
+        )}
+
         {vehicle.nextTrip && (
           <div className="vc-next-trip">
             <div className="vc-next-trip-title">
@@ -73,8 +69,8 @@ export function VehicleCard({ vehicle, hideActions = false }: VehicleCardProps) 
             <Link href={`/vehicles/${vehicle.id}/calendar`} className="btn btn-secondary w-full">
               Calendrier
             </Link>
-            {/* En maintenance, pas de lien : un bouton désactivé dans un lien laisse passer le clic */}
-            {vehicle.displayStatus === "maintenance" ? (
+            {/* Indisponible (maintenance, Car Booking), pas de lien : un bouton désactivé dans un lien laisse passer le clic */}
+            {vehicle.displayStatus === "maintenance" || vehicle.displayStatus === "car_booking" ? (
               <Button variant="primary" className="w-full" disabled>
                 Réserver
               </Button>

@@ -154,12 +154,21 @@ describe("schémas des véhicules", () => {
     expect(createVehicleSchema.safeParse({ ...vehicle, seats: 10 }).success).toBe(false);
   });
 
-  it("accepte une modification partielle (passage en maintenance)", () => {
-    expect(updateVehicleSchema.parse({ status: "MAINTENANCE" })).toEqual({ status: "MAINTENANCE" });
+  it("accepte une modification partielle", () => {
+    expect(updateVehicleSchema.parse({ name: "Zoé" })).toEqual({ name: "Zoé" });
   });
 
-  it("refuse un statut inconnu", () => {
-    expect(updateVehicleSchema.safeParse({ status: "BROKEN" }).success).toBe(false);
+  // D59 : la maintenance se déclare par une période datée, plus par un statut
+  it("refuse tout statut : la maintenance est une indisponibilité datée (D59)", () => {
+    for (const status of ["MAINTENANCE", "AVAILABLE", "BROKEN"]) {
+      const result = updateVehicleSchema.safeParse({ status });
+      expect(result.success).toBe(false);
+      expect(JSON.stringify(result.error?.issues)).toMatch(/indisponibilit/i);
+    }
+  });
+
+  it("refuse un statut à la création d'un véhicule aussi", () => {
+    expect(createVehicleSchema.safeParse({ ...vehicle, status: "MAINTENANCE" }).success).toBe(false);
   });
 });
 
