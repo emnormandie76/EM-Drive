@@ -2,7 +2,8 @@
 
 > Un cas par entrée, numéroté à vie (jamais renuméroté). État du code concerné :
 > [`architecture/mise-en-production.md`](architecture/mise-en-production.md) §8. Relevé initial du 2026-10-26,
-> mis à jour aux étapes 1, 2a et 2b (2026-10-28), 3 et 4 (2026-10-29) : chaque cas dit si une parade est écrite.
+> mis à jour aux étapes 1, 2a et 2b (2026-10-28), 3 et 4 (2026-10-29), puis par le chantier « indisponibilités et
+> corrections » (2026-11-02) : chaque cas dit si une parade est écrite.
 
 ### Edge Case 1 : Inscription d'un passager sans aucun contrôle de capacité ni d'identité
 - **Contexte :** `POST /api/trips/[id]/passengers`, par n'importe quel utilisateur connecté.
@@ -81,3 +82,9 @@
 - **Problème :** le retrait prend effet à la connexion suivante (G15). Une session ResaVroom déjà ouverte reste valable jusqu'à son terme, 8 h au plus après la connexion ; et `people.role`, relu par les gardes, garde la valeur de la dernière connexion tant que la personne ne se reconnecte pas.
 - **Solution actuelle :** voulu par le contrat portail v1 (§3.1, §3.2) : sessions de 8 h fixes depuis la connexion, jamais prolongées (`tests/auth.test.ts`, `tests/proxy.test.ts`) ; la connexion suivante est refusée par le portail, ou recopie le nouveau rôle. Vérifié lors de l'essai réel du 2026-10-28.
 - **Risque accepté :** oui, par décision du portail (G15, portail G6), et non par ResaVroom.
+
+### Edge Case 14 : Réservation sur une recherche périmée (véhicule en maintenance ou ailleurs)
+- **Contexte :** assistant de réservation (`TripWizard`, `StepSearch`), `POST /api/trips`, `PATCH /api/trips/[id]`. Relevé le 2026-11-02 (chantier « indisponibilités et corrections », §3), sur signalement du propriétaire.
+- **Problème :** après une recherche, un changement du formulaire n'effaçait pas les résultats ; la réservation partait avec les critères de la dernière recherche, pas ceux affichés. « Retour » depuis la confirmation vidait le formulaire mais gardait les résultats. Côté serveur, seule la recherche vérifiait la maintenance et le campus du véhicule : `createTrip`, le changement d'horaire et la modification admin ne revérifiaient que les chevauchements, si bien qu'une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou qui serait ailleurs.
+- **Solution actuelle :** corrigé le 2026-11-02 (étape 1, D62). Serveur : `assertVehicleBookable` (maintenance, puis position au départ tirée des trajets, le trajet modifié exclu), dans la transaction de `createTrip`, `updateTripTimes` et `updateTripInfo` (quand le véhicule, le campus de départ ou le départ d'un trajet prévu change) ; refus 409 `VEHICLE_UNAVAILABLE` ou `VEHICLE_NOT_AT_CAMPUS`. Écran : état de l'assistant dans une fonction pure (`wizard-state.ts`) ; tout changement du formulaire efface les résultats, une recherche lancée avant un changement ne rend pas les siens, seul un véhicule de la recherche en cours se choisit, « Retour » retrouve le formulaire rempli, un refus du serveur ramène à la recherche. Tests : `tests/trip-service.test.ts`, `tests/trip-times-route.test.ts`, `tests/wizard-state.test.ts` (vus en échec : trajet créé sur un véhicule en maintenance ou ailleurs). Limite : la recherche ne vérifie pas qu'un trajet déjà réservé plus tard part du campus où ce nouveau trajet laissera le véhicule (algorithme d'origine, SAD 7.2).
+- **Risque accepté :** non.

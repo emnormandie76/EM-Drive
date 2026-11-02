@@ -1,7 +1,9 @@
 # EM Drive — état du code
 
 > Ce que fait le code de la branche `dev-claude` (créée depuis `jules`). Chaque étape du plan
-> [`features/mise-en-production.md`](../features/mise-en-production.md) tient ce document à jour ; les
+> [`features/mise-en-production.md`](../features/mise-en-production.md), puis du plan
+> [`features/indisponibilites-et-corrections.md`](../features/indisponibilites-et-corrections.md) (D58 et
+> suivantes, depuis le 2026-11-02), tient ce document à jour ; les
 > décisions citées (G1…, D1…) et les pièges (§4) y sont expliqués. Les spécifications d'origine sont dans
 > [`SAD.md`](../SAD.md) et [`Cahier des charge.md`](../Cahier%20des%20charge.md).
 
@@ -150,7 +152,8 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 | Règle | Fonction | Appelée par |
 |---|---|---|
 | Supprimer (annuler) : admin toujours ; sinon conducteur seulement, et seulement s'il n'y a aucun passager `SELF` | `canDeleteTrip` | `cancelTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) |
-| Décaler le départ : admin toujours ; sinon conducteur ; s'il y a des passagers `SELF`, au moins 48 h avant le départ (`MIN_HOURS_BEFORE_MODIFICATION`) | `canModifyDepartureTime` | `updateDepartureTime` |
+| Changer les horaires (bouton « Modifier les horaires ») : personne, admin compris, une fois le trajet parti (D63) ; sinon admin toujours, ou conducteur ; s'il y a des passagers `SELF`, au moins 48 h avant le départ (`MIN_HOURS_BEFORE_MODIFICATION`). La modale complète de `/admin/trips` (`updateTripInfo`) ne passe pas par cette règle | `canModifyDepartureTime` | `updateTripTimes`, et [GET /api/trips/[id]](../../src/app/api/trips/[id]/route.ts) (bouton) |
+| Véhicule réservable (D62) : pas en maintenance, et au campus de départ à l'heure du départ (position tirée des trajets, le trajet modifié exclu) | `assertVehicleBookable` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | `createTrip`, `updateTripTimes`, `updateTripInfo` (quand le véhicule, le campus de départ ou le départ d'un trajet prévu change) |
 | Rejoindre : trajet `SCHEDULED`, futur, passager ≠ conducteur, places libres (`seats - 1`) | `canJoinAsPassenger` | `addPassenger` (à l'écriture, pour tous, admin compris) et [GET /api/trips/[id]](../../src/app/api/trips/[id]/route.ts) (bouton) |
 | Ajouter un passager « par le conducteur » (`addedBy: DRIVER`) : conducteur du trajet ou admin | dans `addPassenger` | `POST /api/trips/[id]/passengers` |
 | Désigner une autre personne (conducteur choisi par un admin, passagers à la création, passager ajouté par le conducteur) : son identité vient de l'annuaire, jamais du corps (D24, §2.1 bis) | `resolveChosenPerson` | `POST /api/trips`, `PATCH /api/trips/[id]`, `POST /api/trips/[id]/passengers` |
@@ -169,8 +172,8 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 | `/unauthorized` | public | [src/app/(auth)/unauthorized/page.tsx](../../src/app/%28auth%29/unauthorized/page.tsx) | « Connexion refusée » : cible du rappel `signIn` quand le compte ne peut pas être rattaché (§2.1) ; lien vers le portail |
 | `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | « Mes trajets à venir » : les cinq prochains trajets de l'appelant, conducteur ou passager, filtrés par le serveur (`GET /api/trips?mine=true`, D32) ; flotte (position, statut) ; polling SWR 30 s ; états de chargement, vide et d'erreur par section |
 | `/trips` | connecté | [src/app/trips/page.tsx](../../src/app/trips/page.tsx) | liste filtrable (statut, campus, date) ; squelettes au chargement, état d'erreur avec « Réessayer », état vide avec « Réinitialiser les filtres » |
-| `/trips/new` | connecté | [src/app/trips/new/page.tsx](../../src/app/trips/new/page.tsx) | assistant `TripWizard` : recherche (`StepSearch`) puis confirmation (`StepConfirm`) ; dans `StepConfirm`, passagers choisis dans l'annuaire (le conducteur et les passagers déjà choisis ne sont pas proposés ; un passager choisi ensuite comme conducteur sort de la liste, D27) et, pour un admin, conducteur choisi dans l'annuaire |
-| `/trips/[id]` | connecté | [src/app/trips/[id]/page.tsx](../../src/app/trips/[id]/page.tsx) | détail, frise, passagers, actions selon `permissions` ; 404 → « Trajet introuvable » avec retour à la liste |
+| `/trips/new` | connecté | [src/app/trips/new/page.tsx](../../src/app/trips/new/page.tsx) | assistant `TripWizard` : recherche (`StepSearch`) puis confirmation (`StepConfirm`) ; dans `StepConfirm`, passagers choisis dans l'annuaire (le conducteur et les passagers déjà choisis ne sont pas proposés ; un passager choisi ensuite comme conducteur sort de la liste, D27) et, pour un admin, conducteur choisi dans l'annuaire. État dans [wizard-state.ts](../../src/components/trips/wizard-state.ts) (fonction pure, testée) : tout changement du formulaire efface les résultats, une recherche lancée avant un changement ne rend pas les siens, seul un véhicule de la recherche en cours se choisit ; « Retour » retrouve le formulaire rempli (la recherche reste montée, masquée) ; un refus du véhicule par le serveur (`VEHICLE_CONFLICT`, `VEHICLE_UNAVAILABLE`, `VEHICLE_NOT_AT_CAMPUS`) efface les résultats et ramène à la recherche |
+| `/trips/[id]` | connecté | [src/app/trips/[id]/page.tsx](../../src/app/trips/[id]/page.tsx) | détail, frise, passagers, actions selon `permissions` ; « Modifier les horaires » (ex-« Modifier l'heure ») ouvre [EditTripTimesModal](../../src/components/trips/EditTripTimesModal.tsx) (départ, et retour pour un aller-retour, arrivées calculées avec les durées du trajet, message du serveur en cas de refus, D61 ; calendrier ouvert dans la modale, `DatePickerInput inline`, comme dans `AdminEditTripModal`) ; 404 → « Trajet introuvable » avec retour à la liste |
 | `/vehicles/[id]/calendar` | connecté | [src/app/vehicles/[id]/calendar/page.tsx](../../src/app/vehicles/[id]/calendar/page.tsx) | calendrier hebdomadaire et mensuel (défilement horizontal interne sous 800 px) ; 404 → « Véhicule introuvable » |
 | `/admin` | admin | [src/app/admin/page.tsx](../../src/app/admin/page.tsx) | compteurs lus directement via Prisma (composant serveur) : véhicules, en maintenance, trajets à venir ; `await connection()` en tête : rendu à la requête, jamais pré-rendu au build (D30) |
 | `/admin/vehicles` | admin | [src/app/admin/vehicles/page.tsx](../../src/app/admin/vehicles/page.tsx) | ajout, modification, maintenance ; campus du formulaire lus dans `/api/campuses` (ils étaient tirés des véhicules : flotte vide, aucun campus) ; une plaque déjà prise affiche le message du 409 (cas limite 10) |
@@ -236,7 +239,7 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/trips` | GET | connecté | tous les trajets non annulés, quel que soit l'appelant ; avec `mine=true`, ceux que l'appelant conduit ou où il voyage, filtrés avant la pagination, l'identité lue dans la session (D32) |
 | `/api/trips` | POST | connecté | l'admin peut choisir le conducteur (`driverSub`, `driverEmail`) ; passagers `{ userSub, userEmail }` ; nom et adresse de chacun lus dans l'annuaire (D24, écart 5 corrigé) ; passagers limités aux places, sans le conducteur ni doublon |
 | `/api/trips/[id]` | GET | connecté | ajoute `permissions` calculées pour l'appelant |
-| `/api/trips/[id]` | PATCH | connecté | non-admin ou corps limité aux horaires/statut : `updateDepartureTime` (`departureTime` requis) ; admin avec d'autres champs : `updateTripInfo`, un nouveau conducteur étant lu dans l'annuaire (D24) et refusé s'il est passager |
+| `/api/trips/[id]` | PATCH | connecté | non-admin ou corps limité aux horaires/statut : `updateTripTimes` (`departureTime` requis, `returnDepartureTime` facultatif, D61) ; admin avec d'autres champs : `updateTripInfo`, un nouveau conducteur étant lu dans l'annuaire (D24) et refusé s'il est passager ; véhicule en maintenance → 409 `VEHICLE_UNAVAILABLE`, ailleurs → 409 `VEHICLE_NOT_AT_CAMPUS` (D62) ; trajet parti → 403 (D63) |
 | `/api/trips/[id]` | DELETE | connecté + `canDeleteTrip` | annulation logique (`CANCELLED`) |
 | `/api/trips/[id]/passengers` | POST | connecté + règles dans `addPassenger` | `addedBy` = `SELF` (soi-même) ou `DRIVER` (conducteur ou admin ; `userSub` et `userEmail`, passager lu dans l'annuaire, D24) ; `canJoinAsPassenger` appliquée |
 | `/api/trips/[id]/passengers/[passengerId]` | DELETE | connecté + règles dans `removePassenger` | admin ; soi-même ou conducteur pour ses ajouts `DRIVER`, avant le départ |
@@ -270,13 +273,13 @@ Le type de retour de `requireAuthSession()` et `requireAdminSession()` est une u
 
 | Sujet | Fichier | Règle |
 |---|---|---|
-| Position d'un véhicule | `getVehiclePosition` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | dérivée du dernier trajet non annulé terminé : `ONE_WAY` → destination ; `ROUND_TRIP` → origine ; `ROUND_TRIP_OTHER` → campus de retour ; sans trajet → campus par défaut |
+| Position d'un véhicule | `getVehiclePosition` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | dérivée du dernier trajet non annulé terminé : `ONE_WAY` → destination ; `ROUND_TRIP` → origine ; `ROUND_TRIP_OTHER` → campus de retour ; sans trajet → campus par défaut ; lue dans la transaction de l'écriture, le trajet modifié exclu (D62) |
 | Disponibilité | `getAvailableVehicles`, `findVehicleConflict` | véhicule `AVAILABLE`, positionné au campus de départ, sans trajet qui chevauche `[départ, fin + buffer]` |
 | Fin d'un trajet | [dates.ts](../../src/lib/utils/dates.ts) | `estimatedReturnArrivalTime ?? estimatedArrivalTime` ; le buffer (`buffer_minutes`, 30 par défaut) s'ajoute pour les conflits |
 | Statut d'affichage | `getTripDisplayStatus` | `cancelled`, `scheduled`, `in_progress`, `completed` dérivés du temps ; la base ne stocke que `SCHEDULED` et `CANCELLED` |
-| Création | `createTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) | transaction `Serializable` : passagers dans la limite des places, sans le conducteur ni doublon, conflit véhicule, conflit conducteur, conflit de chaque passager ; audit hors transaction. Les identités viennent de la route, déjà lues dans l'annuaire (D24) |
-| Modification admin | `updateTripInfo` | refuse un nouveau conducteur qui est passager du trajet ; transaction `Serializable` : conflit véhicule et conducteur (trajet exclu) ; les passagers ne sont pas revérifiés |
-| Décalage d'horaire | `updateDepartureTime` | décale les quatre dates du même delta ; transaction `Serializable` qui revérifie véhicule, conducteur et chaque passager sur le nouveau créneau, buffer compris, trajet exclu |
+| Création | `createTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) | transaction `Serializable` : passagers dans la limite des places, sans le conducteur ni doublon, conflit véhicule, véhicule réservable (`assertVehicleBookable`, D62), conflit conducteur, conflit de chaque passager ; audit hors transaction. Les identités viennent de la route, déjà lues dans l'annuaire (D24) |
+| Modification admin | `updateTripInfo` | refuse un nouveau conducteur qui est passager du trajet ; transaction `Serializable` : conflit véhicule, véhicule réservable si le véhicule, le campus de départ ou le départ d'un trajet prévu change (D62), conflit conducteur (trajet exclu) ; les passagers ne sont pas revérifiés ; un trajet passé se corrige ici (D63) |
+| Changement d'horaire | `updateTripTimes` | nouveau départ et, pour un aller-retour, nouveau départ du retour (absent : décalé du même écart) ; arrivées = départs + durées de route du trajet (D61) ; refuse un trajet annulé, un trajet parti et un départ passé, pour tous (D63), et un retour qui part avant l'arrivée de l'aller ; transaction `Serializable` qui revérifie véhicule (conflit, maintenance, campus), conducteur et chaque passager sur le nouveau créneau, buffer compris, trajet exclu ; audit des anciens et nouveaux départs |
 | Passagers | `addPassenger`, `removePassenger` | ajout : droit d'ajouter, `canJoinAsPassenger` et chevauchement du passager, lus et écrits dans une même transaction `Serializable` ; retrait : règles du §2.4 |
 | Chevauchement | `findVehicleConflict`, `findPersonConflict` | trajet non annulé avec `departureTime < fin` et arrivée (aller ou retour selon le type) `> début` ; un trajet peut être exclu |
 | Itinéraire | [geo-service.ts](../../src/lib/services/geo-service.ts) | BAN pour les communes ; ORS pour durée et distance ; repli Haversine × 1,3 à 70 km/h, minimum 10 min |
@@ -330,6 +333,8 @@ d'administrateur de départ (D21) : le premier administrateur est la personne qu
   détail d'un trajet resserré), 768 px (menu latéral de l'administration), 1023 px (menu mobile de la barre),
   1024 px (`.grid-3`, `.grid-4`). Les grilles de cartes utilisent `minmax(min(320px, 100%), 1fr)`. Vérifié sans
   défilement horizontal à 375, 768 et 1280 px (essai de fin d'étape 3).
+- La barre du haut (`.navbar`, `components/layout/layout.css`) a un fond plein (`--color-surface`) depuis le
+  2026-11-02 ; elle était translucide et floutée (`--glass-bg`, qui reste employé ailleurs).
 - `.admin-container` élargit l'administration au-delà des 1200 px de l'application, centré, sans dépasser la
   fenêtre (`min(1600px, 100vw - 3rem)` : sous Windows, `100vw` compte la barre de défilement) et sans `transform`
   (il casserait les modales en `position: fixed`).
@@ -356,9 +361,11 @@ forme est vérifiée.
 | [logout.test.ts](../../tests/logout.test.ts) | `POST /api/auth/logout` avec `fetch` simulé : adresse de fin de session et ses trois paramètres, cookies effacés (morceaux compris), repli sur `/login` sans session, portail muet ou adresse hors de l'émetteur |
 | [portail-directory.test.ts](../../tests/portail-directory.test.ts) | annuaire (§2.1 bis), contre le portail imité, l'heure simulée (`vi.setSystemTime`) : jeton sur le `token_endpoint` de la découverte, corps et en-tête Basic exacts (secret fictif avec un deux-points et l'exemple de la RFC 6749, annexe B), gardé jusqu'à son terme moins la marge puis renouvelé, demande partagée, aucun appel sous deux caractères, délai sur chaque appel, secret jamais envoyé hors de l'émetteur ; fermé, 401 puis un seul nouvel essai, deux 401, 429, panne, 500, réponse illisible ; forme `{ sub, name, email }` ; rien de secret ni de personnel dans la console ; `resolveChosenPerson` (D24) |
 | [directory-routes.test.ts](../../tests/directory-routes.test.ts) | route par route, Prisma simulé et portail imité : `/api/users/search` (401, moins de deux caractères, forme, 503, 429) ; écart 5 (conducteur choisi par un admin à la création et en modification, passager ajouté par le conducteur : nom et adresse de l'annuaire, inconnu refusé, conducteur inchangé sans appel) ; cas limite 11 (passagers par `sub` et adresse, absent de l'annuaire, égal au conducteur, doublon, annuaire fermé) |
-| [permission-checker.test.ts](../../tests/permission-checker.test.ts) | les quatre règles du §2.4 |
+| [permission-checker.test.ts](../../tests/permission-checker.test.ts) | les quatre règles du §2.4, dont le trajet parti refusé à tous (D63) |
 | [conflicts.test.ts](../../tests/conflicts.test.ts) | forme des requêtes de chevauchement, exclusion d'un trajet |
-| [trip-service.test.ts](../../tests/trip-service.test.ts) | cas limites 1, 2, 3 et 9 ; capacité à la création ; passager en double (cas limite 11) ; nouveau conducteur déjà passager |
+| [trip-service.test.ts](../../tests/trip-service.test.ts) | cas limites 1, 2, 3 et 9 ; capacité à la création ; passager en double (cas limite 11) ; nouveau conducteur déjà passager ; `updateTripTimes` (départ et retour séparés, durées gardées, retour avant l'arrivée, aller simple, départ passé, trajet parti ou annulé, D61, D63) ; véhicule réservable à la création, au changement d'horaire et en modification admin (maintenance, autre campus, trajet modifié exclu, D62 ; cas limite 14) |
+| [trip-times-route.test.ts](../../tests/trip-times-route.test.ts) | `PATCH /api/trips/[id]` : départ et retour transmis au service (D61), 403 pour un trajet parti même admin (D63), 409 `VEHICLE_UNAVAILABLE` (D62) |
+| [wizard-state.test.ts](../../tests/wizard-state.test.ts) | assistant de réservation : résultats effacés au changement du formulaire, véhicule hors de la recherche en cours refusé, « Retour » qui garde la recherche, véhicule refusé par le serveur (cas limite 14) |
 | [request-schemas.test.ts](../../tests/request-schemas.test.ts) | schémas zod sur les corps réellement envoyés par l'interface ; cas limite 11 (`sub` exigé, nom plus lu) |
 | [routes-validation.test.ts](../../tests/routes-validation.test.ts) | un corps invalide donne 400, jamais 500, sur cinq routes d'écriture |
 | [proxy.test.ts](../../tests/proxy.test.ts) | emplacement, export et matcher de `src/proxy.ts` ; lecture du cookie `resavroom.session-token` (pas celui par défaut) ; redirection 8 h après la connexion, même si le jeton a été relu |
@@ -373,9 +380,9 @@ forme est vérifiée.
 
 L'ancien script `tests/admin_delegation.ts`, qui vidait les trajets de la base réelle, a été retiré (piège 1).
 
-| Commande | Rôle | Résultat relevé le 2026-10-29 (étape 4, avant la mise en ligne) |
+| Commande | Rôle | Résultat relevé le 2026-11-02 (étape 1 du chantier « indisponibilités et corrections ») |
 |---|---|---|
-| `npm test` | Vitest | 19 fichiers, 273 tests, tous verts |
+| `npm test` | Vitest | 21 fichiers, 303 tests, tous verts |
 | `npx tsc --noEmit` | types | 0 erreur |
 | `npm run lint` | ESLint | 0 problème, sans aucun `eslint-disable` hors `src/generated/` (D5) ; 0 aussi avec `--no-inline-config` |
 | `npm run build` | compilation de production | sans erreur ; lancé avec une `DATABASE_URL` factice dans son seul processus (D30) ; seules des pages client sans lecture de la base sont pré-rendues, toutes les routes `/admin` et `/api` sont dynamiques |
@@ -388,7 +395,8 @@ L'ancien script `tests/admin_delegation.ts`, qui vidait les trajets de la base r
 client confidentiel, session de 8 h fixes, cookies propres, rapprochement par `sub` avec refus consigné d'une
 adresse réattribuée, rôle relu en base) ; redirection des pages sans session (§2.3) ; gardes API et pages admin
 (§2.3), table vérifiée par test ; règles de passagers appliquées à l'écriture (§2.4) ; transactions
-`Serializable` pour la création, le décalage, la modification admin d'un trajet et l'ajout d'un passager ;
+`Serializable` pour la création, le changement d'horaire, la modification admin d'un trajet et l'ajout d'un
+passager, qui revérifient aussi que le véhicule est réservable (maintenance, campus de départ, D62) ;
 corps des routes d'écriture validés (§4) ; audit des actions sensibles (l'écriture de l'audit ne bloque jamais
 l'opération) ; annuaire du portail (§2.1 bis) : secret du client dans un module `server-only`, envoyé au seul
 `token_endpoint` de l'origine de l'émetteur, jeton en mémoire du serveur, aucun jeton ni nom ni adresse dans les
@@ -431,7 +439,7 @@ le propriétaire, et le 13 l'est par le portail ; voir les cas limites et le pla
 |---|---|---|
 | 1 | *Corrigé à l'étape 1* : `addPassenger` applique `canJoinAsPassenger` et réserve `addedBy: "DRIVER"` au conducteur ou à un admin ; `createTrip` limite les passagers aux places | EC 1 |
 | 2 | *Corrigé à l'étape 1* : retrait selon le SAD (§2.4) | EC 2 |
-| 3 | *Corrigé à l'étape 1* : `updateDepartureTime` revérifie véhicule, conducteur et passagers | EC 3 |
+| 3 | *Corrigé à l'étape 1* : `updateDepartureTime` (devenue `updateTripTimes` le 2026-11-02) revérifie véhicule, conducteur et passagers | EC 3 |
 | 4 | *Corrigé à l'étape 2a* : `authorized_services` est supprimée ; le mode restreint et la grille du portail filtrent la connexion | EC 4 |
 | 5 | *Corrigé à l'étape 2a* : le fournisseur de développement et ses comptes sont retirés ; seul le fournisseur `portail` existe | EC 5 |
 | 6 | *Corrigé à l'étape 1* : corps validés par zod (§4). *Corrigé en partie à l'étape 4* (D44) : débit limité sur les trois routes qui appellent un service extérieur (§8.1), par instance | EC 6 |
@@ -443,6 +451,7 @@ le propriétaire, et le 13 l'est par le portail ; voir les cas limites et le pla
 | 12 | Une adresse portée en base par une autre personne (autre `sub`) bloque la connexion, sans écran pour lever le conflit | EC 12 |
 | 13 | Après un retrait d'accès, la session ouverte va à son terme (8 h au plus) et le rôle en base reste celui de la dernière connexion (contrat, G15) | EC 13 |
 | 14 | *Corrigé à l'étape 2b* (écart 5 du relevé P-01, D24) : l'identité d'une autre personne (conducteur choisi par un admin, passagers à la création, passager ajouté par le conducteur) était recopiée du corps de la requête ; elle vient de l'annuaire | EC 11 |
+| 15 | *Corrigé le 2026-11-02* (chantier « indisponibilités et corrections », étape 1, D62) : la maintenance et le campus du véhicule n'étaient vérifiés que par la recherche ; une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou ailleurs. `assertVehicleBookable` les revérifie à l'écriture, et l'assistant efface les résultats périmés | EC 14 |
 
 ---
 

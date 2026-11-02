@@ -55,10 +55,15 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   mode restreinte ; en-têtes et CSP ; limitation de débit des routes à quota ; `vercel.json` (`fra1`) ; CI GitHub
   Actions ; branche Neon `dev` pour le poste ; projet Vercel `em-drive` ; client `production` du portail ; essai en
   ligne conforme. **Chantier « mise en production » terminé.**
-- **Chantier « renommage EM Drive » en cours** (2026-10-29, [plan](docs/features/renommage-em-drive.md)) : D52
-  à D57 tranchées. L'application s'appelle désormais « EM Drive » dans l'interface et les docs.
+- **Chantier « renommage EM Drive »** (2026-10-29, [plan](docs/features/renommage-em-drive.md)) : D52 à D57
+  tranchées ; code, docs et portail faits (D55 le 2026-11-02). Reste le nom du projet Neon (D57).
+- **Chantier « indisponibilités et corrections »** (2026-11-02,
+  [plan](docs/features/indisponibilites-et-corrections.md)) : D58 à D65 tranchées ; **étape 1 faite et validée**
+  (2026-11-02) ; prochaine : étape 2. Étape 1 : en-tête opaque, recherche périmée, « Modifier les horaires », véhicule
+  revérifié à l'écriture (maintenance, campus, D62) ; étape 2 : indisponibilités
+  datées (Car Booking, maintenance), avec migration ; étape 3 : retrait de `vehicles.status`.
 
-L'étape en cours se lit dans le journal du plan (§9).
+L'étape en cours se lit dans le journal du plan du chantier en cours.
 
 ## Règles pour tout agent
 
@@ -173,7 +178,7 @@ dans la grille : le demander au super-admin du portail.
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | serveur de développement sur le port 3002 (D12, adresse connue du portail ; base de `DATABASE_URL` : la branche Neon `dev`). Arrêter sa tâche ne tue pas son processus `node` : l'arrêter par son port, après avoir vérifié sa ligne de commande |
-| `npm test` | Vitest : aucun réseau, aucune base, portail imité (273 tests, 19 fichiers, à l'étape 4) ; la CI les rejoue à chaque push de `dev-claude` et `main` |
+| `npm test` | Vitest : aucun réseau, aucune base, portail imité (303 tests, 21 fichiers, le 2026-11-02) ; la CI les rejoue à chaque push de `dev-claude` et `main` |
 | `npx tsc --noEmit` | contrôle des types (0 erreur) |
 | `npm run lint` | ESLint : 0 problème depuis l'étape 3 (D5), sans aucun `eslint-disable` hors `src/generated/` ; n'en ajouter aucun |
 | `npx next typegen` | régénère les types de routes de `.next/types` après le retrait d'une route (sinon `tsc` cite l'ancienne) ; `.next/dev/types`, laissé par `next dev`, se régénère au `next dev` suivant ou peut être effacé (cache ignoré par Git) |

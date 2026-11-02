@@ -138,8 +138,9 @@ pour EM Drive (ses adresses de retour sont exactes, port compris). La page de co
 - Les recherches de communes, d'itinéraires et de collègues sont limitées par personne (au-delà : « Trop de
   requêtes… », réessayer une minute plus tard).
 - Les covoiturages suggérés pendant une réservation ne sont pas filtrés par destination, et le bouton
-  « Réserver » d'une carte de véhicule ne présélectionne pas ce véhicule. « Modifier l'heure » d'un trajet n'est
-  pas encore disponible.
+  « Réserver » d'une carte de véhicule ne présélectionne pas ce véhicule.
+- « Modifier les horaires » d'un trajet n'est plus possible une fois le trajet parti, même pour un admin ; un admin
+  corrige un trajet passé depuis l'administration des trajets.
 - Le nettoyage de la base est définitif.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 

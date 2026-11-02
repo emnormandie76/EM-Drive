@@ -1,6 +1,7 @@
 # Chantier — Renommage de l'application en « EM Drive »
 
-> **Statut au 2026-10-29 :** terminé et validé. Décisions D52 à D57 appliquées. Vérifications complètes vertes.
+> **Statut au 2026-11-02 :** code et docs terminés et validés (2026-10-29) ; portail fait (D55, 2026-11-02) ;
+> reste le renommage du projet Neon (D57). Vérifications complètes vertes.
 > Chantier distinct de « mise en production » (terminé et validé le 2026-10-29). Branche de travail : `dev-claude`.
 > Source : prompt du propriétaire du 2026-10-29. Relevé de départ : 156 occurrences de « ResaVroom » ou
 > « resavroom » dans 34 fichiers suivis, hors `src/generated` (git grep -i -c -E "resa ?vroom").
@@ -151,7 +152,8 @@
 ### d) Services externes (avec accord du propriétaire)
 
 - [ ] Neon : renommer le projet `resavroom` → `em-drive` (D57) dans la console Neon (accord confirmé)
-- [ ] Portail : demande rédigée (§7) et à transmettre par le propriétaire (D55)
+- [x] Portail : demande rédigée (§7), transmise par le propriétaire ; nom affiché « EM Drive » sur la tuile,
+  identifiant `resavroom` conservé (D55, confirmé par le propriétaire le 2026-11-02)
 
 ### e) Vérifications finales
 
@@ -169,6 +171,7 @@
 |---|---|---|
 | 2026-10-29 | **Départ vérifié.** `dev-claude` à jour (`origin/dev-claude`), arbre propre. `npm test` 273 verts (19 fichiers) ; `npx tsc --noEmit` 0 erreur ; `npm run lint` 0 problème ; `npm run build` (DATABASE_URL factice) sans erreur ; `tsc` après build 0 erreur. Docs lus : CLAUDE.md, plan mise-en-production (§2.8, §4, §9), architecture (§2.1, §3, §8.1, §9), mémo (§0, §1.1, §3, §4), edgecase.md, guides Next métadonnées. Questions D52 à D57 posées et tranchées par le propriétaire. Plan créé. | Implémentation en attente de validation du plan par le propriétaire. |
 | 2026-10-29 | **Renommage exécuté et validé.** Code et interface renommés (layout, login, unauthorized, dashboard, global-error, Navbar, errors.ts). Commentaires et libellés de tests mis à jour. Documentation vivante mise à jour (CLAUDE.md, README.md, docs/README.md, mise-en-production, architecture, memory-exploitation, edgecase). Vérifications toutes vertes : 273/273 tests OK, tsc 0 erreur, lint 0 problème, build de prod vert, tsc après build vert, git grep vérifié conforme au §3. | Demande portail rédigée (§7) à transmettre par le propriétaire ; projet Neon à renommer dans la console Neon (D57). Prêt pour commit sur demande explicite. |
+| 2026-11-02 | **D55 faite.** Le propriétaire confirme que le nom affiché sur la tuile du portail est « EM Drive » ; identifiant `resavroom` inchangé. Case cochée (§5 d). | Reste : D57 (projet Neon `resavroom` → `em-drive`), non vérifiée à ce jour. |
 
 ---
 
