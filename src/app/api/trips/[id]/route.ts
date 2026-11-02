@@ -1,5 +1,5 @@
 // GET /api/trips/[id] — Détail d'un trajet
-// PATCH /api/trips/[id] — Modifier l'heure de départ
+// PATCH /api/trips/[id] — Modifier les horaires (départ, retour) ; modification libre par un admin
 // DELETE /api/trips/[id] — Annuler un trajet
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthSession, handleBusinessError } from "@/lib/api-helpers";
 import { isAdmin } from "@/lib/auth";
-import { getTripById, cancelTrip, updateDepartureTime, updateTripInfo, type TripInfoUpdate } from "@/lib/services/trip-service";
+import { getTripById, cancelTrip, updateTripTimes, updateTripInfo, type TripInfoUpdate } from "@/lib/services/trip-service";
 import { resolveChosenPerson, type PersonIdentity } from "@/lib/portail-directory";
 import { getTripDisplayStatus } from "@/lib/utils/dates";
 import { canDeleteTrip, canModifyDepartureTime, canJoinAsPassenger } from "@/lib/validators/permission-checker";
@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { sub, email, name } = auth.session.user;
     const userIsAdmin = await isAdmin(sub);
 
-    // Si c'est un admin et qu'on modifie autre chose que l'heure de départ
+    // Si c'est un admin et qu'on modifie autre chose que les horaires
     if (userIsAdmin && Object.keys(body).some((key) => !TIME_ONLY_FIELDS.includes(key))) {
       const updated = await updateTripInfo(
         id,
@@ -109,9 +109,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       throw new ValidationError("departureTime : l'heure de départ est requise.");
     }
 
-    const updated = await updateDepartureTime(
+    // « Modifier les horaires » (D61) : le départ et, pour un aller-retour, le départ du retour
+    const updated = await updateTripTimes(
       id,
-      body.departureTime,
+      { departureTime: body.departureTime, returnDepartureTime: body.returnDepartureTime ?? undefined },
       auth.session.user.sub,
       auth.session.user.email,
       userIsAdmin

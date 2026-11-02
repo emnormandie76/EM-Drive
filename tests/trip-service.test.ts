@@ -1,4 +1,5 @@
-// tests/trip-service.test.ts — Gardes du service des trajets : cas limites 1, 2, 3 et 9
+// tests/trip-service.test.ts — Gardes du service des trajets : cas limites 1, 2, 3 et 9 ; horaires et véhicule
+// réservable (D61 à D63)
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,8 +14,8 @@ import {
   addPassenger,
   createTrip,
   removePassenger,
-  updateDepartureTime,
   updateTripInfo,
+  updateTripTimes,
   type CreateTripInput,
 } from "@/lib/services/trip-service";
 import {
@@ -23,15 +24,30 @@ import {
   PermissionError,
   ValidationError,
   VehicleConflictError,
+  VehicleNotAtCampusError,
+  VehicleUnavailableError,
 } from "@/lib/utils/errors";
 import { resetPrismaMock, type PrismaMock } from "./helpers/prisma-mock";
-import { DRIVER, OTHER, PASSENGER, hoursFromNow, makePassenger, makeTrip } from "./helpers/fixtures";
+import { DRIVER, OTHER, PASSENGER, hoursFromNow, makePassenger, makeTrip, makeVehicle } from "./helpers/fixtures";
 
 const db = prisma as unknown as PrismaMock;
 
+type FindFirstArgs = { where: Record<string, unknown> };
+/** Les recherches de chevauchement bornent le départ ; celle de la position du véhicule, non. */
+const isOverlapQuery = (where: Record<string, unknown>) => "departureTime" in where;
+
+/** Dernier trajet du véhicule avant l'heure demandée : un aller simple qui l'a laissé à `campusId`. */
+const leftVehicleAt = (campusId: string) =>
+  db.trip.findFirst.mockImplementation(async ({ where }: FindFirstArgs) =>
+    isOverlapQuery(where)
+      ? null
+      : { type: "ONE_WAY", originCampusId: "campus-1", destinationCampusId: campusId, returnCampusId: null }
+  );
+
 beforeEach(() => {
   resetPrismaMock(db);
-  db.trip.findFirst.mockResolvedValue(null); // aucun conflit par défaut
+  db.trip.findFirst.mockResolvedValue(null); // aucun conflit, aucun trajet antérieur par défaut
+  db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle()); // disponible, rattaché à campus-1
   db.appSetting.findUnique.mockResolvedValue(null); // buffer par défaut : 30 min
 });
 
@@ -178,7 +194,7 @@ describe("removePassenger (cas limite 2)", () => {
 // CAS LIMITE 3 — décalage de l'heure de départ
 // ══════════════════════════════════════════════
 
-describe("updateDepartureTime (cas limite 3)", () => {
+describe("updateTripTimes : conflits (cas limite 3)", () => {
   // Toutes les heures partent du même instant, pour des comparaisons exactes
   const base = Date.now();
   const at = (hours: number) => new Date(base + hours * 60 * 60 * 1000);
@@ -190,9 +206,8 @@ describe("updateDepartureTime (cas limite 3)", () => {
       estimatedArrivalTime: at(74),
       passengers: [makePassenger({ addedBy: "DRIVER" })],
     });
-  const shift = () => updateDepartureTime("trip-1", newDeparture, DRIVER, "d@em-normandie.fr", false);
+  const shift = () => updateTripTimes("trip-1", { departureTime: newDeparture }, DRIVER, "d@em-normandie.fr", false);
 
-  type FindFirstArgs = { where: Record<string, unknown> };
   const conflictWhen = (predicate: (where: Record<string, unknown>) => boolean) =>
     db.trip.findFirst.mockImplementation(async ({ where }: FindFirstArgs) => (predicate(where) ? { id: "trip-9" } : null));
 
@@ -220,7 +235,9 @@ describe("updateDepartureTime (cas limite 3)", () => {
 
   it("vérifie le nouveau créneau, buffer compris, en excluant le trajet lui-même", async () => {
     await shift();
-    const calls = db.trip.findFirst.mock.calls.map((call) => (call[0] as FindFirstArgs).where);
+    const calls = db.trip.findFirst.mock.calls
+      .map((call) => (call[0] as FindFirstArgs).where)
+      .filter(isOverlapQuery); // la position du véhicule a sa propre recherche (D62), vue plus bas
     expect(calls.length).toBeGreaterThanOrEqual(3); // véhicule, conducteur, passager
     for (const where of calls) {
       expect(where.id).toEqual({ not: "trip-1" });
@@ -257,7 +274,6 @@ describe("createTrip : passagers (cas limite 1)", () => {
   });
 
   beforeEach(() => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue({ id: "vehicle-1", seats: 5 });
     db.trip.create.mockResolvedValue({ id: "trip-1" });
   });
 
@@ -279,6 +295,186 @@ describe("createTrip : passagers (cas limite 1)", () => {
   it("refuse un passager en double (cas limite 11, D27 : sinon l'unicité de la base répond 500)", async () => {
     await expect(createTrip(input(["u1", "u1"]))).rejects.toBeInstanceOf(ValidationError);
     expect(db.trip.create).not.toHaveBeenCalled();
+  });
+});
+
+// ══════════════════════════════════════════════
+// D61, D63 — « Modifier l'heure » : départ et retour
+// ══════════════════════════════════════════════
+
+describe("updateTripTimes : départ et retour (D61, D63)", () => {
+  const base = Date.now();
+  const at = (hours: number) => new Date(base + hours * 60 * 60 * 1000);
+  const roundTrip = (overrides: Record<string, unknown> = {}) =>
+    makeTrip({
+      type: "ROUND_TRIP",
+      departureTime: at(72),
+      estimatedArrivalTime: at(74), // 2 h de route à l'aller
+      returnDepartureTime: at(80),
+      estimatedReturnArrivalTime: at(83), // 3 h au retour
+      returnCampusId: "campus-1",
+      ...overrides,
+    });
+  const update = (times: { departureTime: Date; returnDepartureTime?: Date }, actorIsAdmin = false) =>
+    updateTripTimes("trip-1", times, actorIsAdmin ? OTHER : DRIVER, "a@em-normandie.fr", actorIsAdmin);
+
+  it("change le départ et le retour séparément, en gardant les durées de route", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip());
+    await update({ departureTime: at(96), returnDepartureTime: at(110) });
+    expect(db.trip.update).toHaveBeenCalledWith({
+      where: { id: "trip-1" },
+      data: expect.objectContaining({
+        departureTime: at(96),
+        estimatedArrivalTime: at(98),
+        returnDepartureTime: at(110),
+        estimatedReturnArrivalTime: at(113),
+      }),
+    });
+  });
+
+  it("sans nouveau retour, décale le retour du même écart que le départ", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip());
+    await update({ departureTime: at(96) });
+    expect(db.trip.update).toHaveBeenCalledWith({
+      where: { id: "trip-1" },
+      data: expect.objectContaining({ returnDepartureTime: at(104), estimatedReturnArrivalTime: at(107) }),
+    });
+  });
+
+  it("vérifie les chevauchements jusqu'à l'arrivée du nouveau retour, buffer compris", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip());
+    await update({ departureTime: at(96), returnDepartureTime: at(110) });
+    const overlaps = db.trip.findFirst.mock.calls.map((call) => (call[0] as FindFirstArgs).where).filter(isOverlapQuery);
+    expect(overlaps.length).toBeGreaterThanOrEqual(2); // véhicule, conducteur
+    for (const where of overlaps) {
+      expect(where.departureTime).toEqual({ lt: new Date(at(113).getTime() + 30 * 60 * 1000) });
+    }
+  });
+
+  it("refuse un retour qui part avant l'arrivée de l'aller", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip());
+    await expect(update({ departureTime: at(96), returnDepartureTime: at(97) })).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un retour sur un aller simple", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip({ departureTime: at(72), estimatedArrivalTime: at(74) }));
+    await expect(update({ departureTime: at(96), returnDepartureTime: at(110) })).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un nouveau départ dans le passé, même pour un admin", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip());
+    await expect(update({ departureTime: at(-1) }, true)).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un trajet déjà parti, même pour un admin", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip({ departureTime: at(-1), estimatedArrivalTime: at(1) }));
+    await expect(update({ departureTime: at(96) }, true)).rejects.toBeInstanceOf(PermissionError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un trajet annulé", async () => {
+    db.trip.findUniqueOrThrow.mockResolvedValue(roundTrip({ status: "CANCELLED" }));
+    await expect(update({ departureTime: at(96) }, true)).rejects.toBeInstanceOf(ValidationError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+});
+
+// ══════════════════════════════════════════════
+// D62 — le véhicule peut-il partir de ce campus à cette heure ?
+// ══════════════════════════════════════════════
+
+describe("véhicule réservable : maintenance et campus de départ (D62)", () => {
+  const createInput = (): CreateTripInput => ({
+    vehicleId: "vehicle-1",
+    driverSub: DRIVER,
+    driverEmail: "d@em-normandie.fr",
+    driverDisplayName: "Conducteur",
+    type: "ONE_WAY",
+    originCampusId: "campus-1",
+    destinationCampusId: "campus-2",
+    departureTime: hoursFromNow(72),
+    estimatedArrivalTime: hoursFromNow(74),
+  });
+  const shift = () => updateTripTimes("trip-1", { departureTime: hoursFromNow(96) }, DRIVER, "d@em-normandie.fr", false);
+
+  beforeEach(() => {
+    db.trip.create.mockResolvedValue({ id: "trip-1" });
+    db.trip.findUniqueOrThrow.mockResolvedValue(makeTrip());
+  });
+
+  it("crée le trajet quand le véhicule est disponible et au campus de départ", async () => {
+    await createTrip(createInput());
+    expect(db.trip.create).toHaveBeenCalledOnce();
+  });
+
+  it("refuse à la création un véhicule en maintenance", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    await expect(createTrip(createInput())).rejects.toBeInstanceOf(VehicleUnavailableError);
+    expect(db.trip.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse à la création un véhicule rattaché à un autre campus, sans trajet pour l'amener", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ defaultCampusId: "campus-2" }));
+    await expect(createTrip(createInput())).rejects.toBeInstanceOf(VehicleNotAtCampusError);
+    expect(db.trip.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse à la création un véhicule qu'un trajet antérieur aura laissé ailleurs", async () => {
+    leftVehicleAt("campus-3");
+    await expect(createTrip(createInput())).rejects.toBeInstanceOf(VehicleNotAtCampusError);
+    expect(db.trip.create).not.toHaveBeenCalled();
+  });
+
+  it("refuse un nouvel horaire pour un véhicule en maintenance", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    await expect(shift()).rejects.toBeInstanceOf(VehicleUnavailableError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse un nouvel horaire où le véhicule ne sera pas au campus de départ", async () => {
+    leftVehicleAt("campus-3");
+    await expect(shift()).rejects.toBeInstanceOf(VehicleNotAtCampusError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("ignore le trajet modifié lui-même pour situer le véhicule", async () => {
+    await shift();
+    const positionQueries = db.trip.findFirst.mock.calls
+      .map((call) => (call[0] as FindFirstArgs).where)
+      .filter((where) => !isOverlapQuery(where));
+    expect(positionQueries).toHaveLength(1);
+    expect(positionQueries[0].id).toEqual({ not: "trip-1" });
+  });
+
+  it("refuse qu'un admin passe un trajet sur un véhicule en maintenance (modale complète)", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ id: "vehicle-2", status: "MAINTENANCE" }));
+    await expect(updateTripInfo("trip-1", { vehicleId: "vehicle-2" }, OTHER, "a@em-normandie.fr", true)).rejects.toBeInstanceOf(
+      VehicleUnavailableError
+    );
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("refuse qu'un admin déplace un trajet à une heure où le véhicule sera ailleurs (modale complète)", async () => {
+    leftVehicleAt("campus-3");
+    await expect(
+      updateTripInfo("trip-1", { departureTime: hoursFromNow(96) }, OTHER, "a@em-normandie.fr", true)
+    ).rejects.toBeInstanceOf(VehicleNotAtCampusError);
+    expect(db.trip.update).not.toHaveBeenCalled();
+  });
+
+  it("laisse un admin modifier le reste d'un trajet dont le véhicule est en maintenance", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    await updateTripInfo("trip-1", { comment: "Clés à l'accueil" }, OTHER, "a@em-normandie.fr", true);
+    expect(db.trip.update).toHaveBeenCalledOnce();
+  });
+
+  it("laisse un admin annuler un trajet dont le véhicule est en maintenance", async () => {
+    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
+    await updateTripInfo("trip-1", { status: "CANCELLED", vehicleId: "vehicle-1" }, OTHER, "a@em-normandie.fr", true);
+    expect(db.trip.update).toHaveBeenCalledOnce();
   });
 });
 

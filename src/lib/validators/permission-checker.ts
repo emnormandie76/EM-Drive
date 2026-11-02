@@ -65,7 +65,9 @@ export function canDeleteTrip(
  * Vérifie si un utilisateur peut MODIFIER l'heure de départ d'un trajet.
  *
  * Règles :
- * - Un admin peut toujours modifier.
+ * - Personne, admin compris, une fois le trajet parti (D63) ; l'admin corrige un trajet passé par la modale
+ *   complète de /admin/trips, qui ne passe pas par cette règle.
+ * - Un admin peut toujours modifier un trajet à venir.
  * - Seul le conducteur peut modifier son trajet.
  * - Si des passagers SELF existent → modification possible uniquement si 48h+
  *   avant le départ.
@@ -76,6 +78,10 @@ export function canModifyDepartureTime(
   userSub: string,
   userIsAdmin: boolean
 ): PermissionResult {
+  if (trip.departureTime <= new Date()) {
+    return { allowed: false, reason: "Ce trajet est déjà parti : son horaire ne se modifie plus." };
+  }
+
   if (userIsAdmin) return { allowed: true };
 
   if (trip.driverSub !== userSub) {

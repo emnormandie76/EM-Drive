@@ -1,9 +1,8 @@
 /* src/components/layout/layout.css — Styles specifiques au Layout (Navbar etc) */
 
+/* Fond plein : le contenu ne transparaît plus sous la barre collée en haut */
 .navbar {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;

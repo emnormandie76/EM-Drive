@@ -69,6 +69,26 @@ export class PassengerOverlapError extends BusinessError {
 }
 
 /**
+ * Le véhicule ne peut pas être réservé : il est en maintenance (D62).
+ */
+export class VehicleUnavailableError extends BusinessError {
+  constructor(message = "Ce véhicule est en maintenance : il ne peut pas être réservé.") {
+    super(message, "VEHICLE_UNAVAILABLE");
+    this.name = "VehicleUnavailableError";
+  }
+}
+
+/**
+ * Le véhicule ne sera pas au campus de départ à l'heure du départ (D62).
+ */
+export class VehicleNotAtCampusError extends BusinessError {
+  constructor() {
+    super("Ce véhicule ne sera pas au campus de départ à l'heure prévue.", "VEHICLE_NOT_AT_CAMPUS");
+    this.name = "VehicleNotAtCampusError";
+  }
+}
+
+/**
  * La plaque d'immatriculation est déjà portée par un autre véhicule (cas limite 10, D34).
  */
 export class LicensePlateTakenError extends BusinessError {

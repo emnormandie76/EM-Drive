@@ -9,12 +9,14 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import type { TripDetailData } from '@/hooks/use-trips';
+import { EditTripTimesModal } from './EditTripTimesModal';
 import './trips.css';
 
-export function TripDetail({ trip }: { trip: TripDetailData }) {
+export function TripDetail({ trip, onUpdated }: { trip: TripDetailData; onUpdated: () => void }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditTimesModal, setShowEditTimesModal] = useState(false);
 
   const departureDate = new Date(trip.departureTime);
   const arrivalDate = new Date(trip.estimatedArrivalTime);
@@ -148,8 +150,8 @@ export function TripDetail({ trip }: { trip: TripDetailData }) {
         {trip.status !== 'CANCELLED' && (trip.permissions.canDelete || trip.permissions.canModifyDeparture) && (
           <div className="trip-detail-actions">
              {trip.permissions.canModifyDeparture && (
-               <Button variant="secondary" disabled>
-                 <Edit size={16} style={{ marginRight: '8px' }} /> Modifier l&apos;heure
+               <Button variant="secondary" onClick={() => setShowEditTimesModal(true)}>
+                 <Edit size={16} style={{ marginRight: '8px' }} /> Modifier les horaires
                </Button>
              )}
              <Button
@@ -161,6 +163,10 @@ export function TripDetail({ trip }: { trip: TripDetailData }) {
           </div>
         )}
       </Card>
+
+      {showEditTimesModal && (
+        <EditTripTimesModal trip={trip} onClose={() => setShowEditTimesModal(false)} onSaved={onUpdated} />
+      )}
 
       <Modal
         isOpen={showDeleteModal}

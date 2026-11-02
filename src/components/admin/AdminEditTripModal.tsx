@@ -437,7 +437,8 @@ export function AdminEditTripModal({
               flexWrap: "wrap",
               gap: "0 1rem",
               width: "100%",
-              alignItems: "flex-end",
+              // En haut : le calendrier ouvert sous la date ne fait pas descendre l'heure
+              alignItems: "flex-start",
             }}
           >
             <div style={{ flex: 1, minWidth: "140px" }}>
@@ -446,6 +447,7 @@ export function AdminEditTripModal({
                 value={departureDate}
                 onChange={setDepartureDate}
                 minDate={new Date().toISOString().split("T")[0]}
+                inline
               />
             </div>
             <div style={{ flex: 1, minWidth: "140px" }}>
@@ -495,7 +497,7 @@ export function AdminEditTripModal({
                 flexWrap: "wrap",
                 gap: "0 1rem",
                 width: "100%",
-                alignItems: "flex-end",
+                alignItems: "flex-start",
               }}
             >
               <div style={{ flex: 1, minWidth: "140px" }}>
@@ -506,6 +508,7 @@ export function AdminEditTripModal({
                   minDate={
                     departureDate || new Date().toISOString().split("T")[0]
                   }
+                  inline
                 />
               </div>
               <div style={{ flex: 1, minWidth: "140px" }}>

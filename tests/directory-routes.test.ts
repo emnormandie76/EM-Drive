@@ -5,7 +5,7 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PrismaMock } from "./helpers/prisma-mock";
-import { DRIVER, hoursFromNow, makePassenger, makeTrip } from "./helpers/fixtures";
+import { DRIVER, hoursFromNow, makePassenger, makeTrip, makeVehicle } from "./helpers/fixtures";
 import {
   CLIENT_ID,
   CLIENT_SECRET,
@@ -63,7 +63,8 @@ async function setup(options: { admin?: boolean; session?: boolean; portal?: Fak
   resetPrismaMock(db);
   db.trip.findFirst.mockResolvedValue(null); // aucun conflit
   db.appSetting.findUnique.mockResolvedValue(null); // buffer par défaut
-  db.vehicle.findUniqueOrThrow.mockResolvedValue({ id: "vehicle-1", seats: 5 });
+  // Disponible et rattaché au campus de départ des trajets créés ici (D62)
+  db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle());
   db.trip.create.mockImplementation(async ({ data }) => ({ id: "trip-1", ...data }));
   db.trip.update.mockImplementation(async ({ data }) => ({ id: "trip-1", ...data }));
 

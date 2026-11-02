@@ -1,5 +1,5 @@
 // src/components/trips/StepSearch.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -56,9 +56,11 @@ interface StepSearchProps {
     suggestedTrips: SuggestedTrip[]
   ) => void;
   initialParams?: Partial<TripSearchParams>;
+  /** Appelé à chaque changement du formulaire : les résultats affichés ne correspondent plus aux critères. */
+  onFormChange?: () => void;
 }
 
-export function StepSearch({ onResults, initialParams }: StepSearchProps) {
+export function StepSearch({ onResults, initialParams, onFormChange }: StepSearchProps) {
   const { data: campuses, error: campusesError, mutate: retryCampuses } = useSWR<Campus[]>("/api/campuses", fetchJson);
   const CAMPUSES = useMemo(() => campuses ?? [], [campuses]);
 
@@ -81,21 +83,36 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
   const [isRoundTripState, setIsRoundTripState] = useState(initialParams?.isRoundTrip ?? false);
   const isRoundTrip = destinationMode === "OTHER" ? true : isRoundTripState;
 
-  const handleIsRoundTripChange = (checked: boolean) => {
-    if (destinationMode === "OTHER") return; // Forcé si "Autre"
-    setIsRoundTripState(checked);
-  };
-
   const [departureDate, setDepartureDate] = useState("");
   const [departureTime, setDepartureTime] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const [returnTime, setReturnTime] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Version du formulaire : une recherche lancée avant un changement ne rend pas ses résultats
+  const formVersion = useRef(0);
+
+  /** Signale un changement du formulaire : l'assistant efface les résultats devenus périmés. */
+  const markChanged = () => {
+    formVersion.current += 1;
+    onFormChange?.();
+  };
+
+  const update = <T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+    setter(value);
+    markChanged();
+  };
+
+  const handleIsRoundTripChange = (checked: boolean) => {
+    if (destinationMode === "OTHER") return; // Forcé si "Autre"
+    update(setIsRoundTripState, checked);
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (CAMPUSES.length === 0) return;
+    const searchedVersion = formVersion.current;
 
     if (!departureDate || !departureTime) {
       toast.error("Veuillez renseigner la date et l'heure de départ.");
@@ -187,6 +204,8 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
 
       const data: AvailabilityResponse = await response.json();
 
+      // Le formulaire a changé pendant la recherche : ces résultats ne valent plus pour lui
+      if (searchedVersion !== formVersion.current) return;
       onResults(params, data.availableVehicles, data.suggestedTrips);
 
     } catch (error) {
@@ -217,7 +236,7 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
             label="Campus de départ"
             options={CAMPUSES.map(c => ({ value: c.id, label: c.name }))}
             value={originCampusId}
-            onChange={(e) => setOriginCampusId(e.target.value)}
+            onChange={(e) => update(setOriginCampusId, e.target.value)}
             required
           />
 
@@ -237,13 +256,14 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
                     setDestinationMode("CAMPUS");
                     setDestCampusId(e.target.value);
                   }
+                  markChanged();
                 }}
               />
               {destinationMode === "OTHER" && (
                 <div className="animate-slide-up mt-1">
                   <AddressAutocomplete
                     placeholder="Rechercher une adresse (API BAN)..."
-                    onSelect={setDestinationGeo}
+                    onSelect={(location) => update<GeoLocation | null>(setDestinationGeo, location)}
                     defaultValue={initialParams?.destinationText}
                   />
                 </div>
@@ -257,14 +277,14 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
         <DatePickerInput
           label="Date de départ"
           value={departureDate}
-          onChange={setDepartureDate}
+          onChange={(value) => update(setDepartureDate, value)}
           minDate={new Date().toISOString().split('T')[0]}
         />
         <Input
           type="time"
           label="Heure de départ"
           value={departureTime}
-          onChange={(e) => setDepartureTime(e.target.value)}
+          onChange={(e) => update(setDepartureTime, e.target.value)}
           required
         />
       </div>
@@ -295,14 +315,14 @@ export function StepSearch({ onResults, initialParams }: StepSearchProps) {
           <DatePickerInput
             label="Date de retour"
             value={returnDate}
-            onChange={setReturnDate}
+            onChange={(value) => update(setReturnDate, value)}
             minDate={departureDate || new Date().toISOString().split('T')[0]}
           />
           <Input
             type="time"
             label="Heure de retour"
             value={returnTime}
-            onChange={(e) => setReturnTime(e.target.value)}
+            onChange={(e) => update(setReturnTime, e.target.value)}
             required
           />
         </div>

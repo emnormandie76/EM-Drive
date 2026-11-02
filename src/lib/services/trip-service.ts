@@ -11,7 +11,7 @@ import {
   ValidationError,
   BusinessError,
 } from "@/lib/utils/errors";
-import { findVehicleConflict } from "./vehicle-service";
+import { assertVehicleBookable, findVehicleConflict } from "./vehicle-service";
 import { logAudit } from "./audit-service";
 import {
   canDeleteTrip,
@@ -107,7 +107,7 @@ export async function findPersonConflict(
  *
  * Étapes :
  * 0. Vérifier les passagers : places du véhicule, conducteur absent de la liste
- * 1. Re-vérifier la disponibilité du véhicule (race condition)
+ * 1. Re-vérifier la disponibilité du véhicule (race condition), sa maintenance et son campus (D62)
  * 2. Vérifier le chevauchement du conducteur
  * 3. Vérifier le chevauchement de chaque passager
  * 4. Créer le trajet + les passagers
@@ -156,6 +156,9 @@ export async function createTrip(input: CreateTripInput): Promise<Trip> {
           vehicleConflict.id
         );
       }
+
+      // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
+      await assertVehicleBookable(input.vehicleId, input.originCampusId, input.departureTime, tx);
 
       // ── VÉRIF 2 : Conducteur pas de chevauchement ──
       const driverConflict = await findPersonConflict(
@@ -291,18 +294,27 @@ export async function cancelTrip(
 }
 
 // ══════════════════════════════════════════════
-// MODIFICATION DE L'HEURE DE DÉPART
+// MODIFICATION DES HORAIRES (« Modifier les horaires »)
 // ══════════════════════════════════════════════
 
+/** Nouveaux horaires choisis par « Modifier les horaires » (D61). */
+export interface TripTimesUpdate {
+  departureTime: Date;
+  /** Départ du retour, pour un aller-retour ; absent, il est décalé du même écart que le départ. */
+  returnDepartureTime?: Date;
+}
+
 /**
- * Modifie l'heure de départ d'un trajet.
- * Recalcule les heures dérivées en décalant du même delta, puis revérifie dans une
- * transaction sérialisée que le véhicule, le conducteur et chaque passager sont libres
- * sur le nouveau créneau, buffer compris (cas limite 3).
+ * Modifie les horaires d'un trajet : le départ et, pour un aller-retour, le départ du retour (D61).
+ * Les arrivées gardent les durées de route du trajet, sans nouvel appel d'itinéraire.
+ * Refuse, pour tout le monde, un trajet annulé ou déjà parti et un nouveau départ passé (D63).
+ * Revérifie dans une transaction sérialisée que le véhicule est libre, hors maintenance et au
+ * campus de départ (D62), et que le conducteur et chaque passager sont libres sur le nouveau
+ * créneau, buffer compris (cas limite 3).
  */
-export async function updateDepartureTime(
+export async function updateTripTimes(
   tripId: string,
-  newDepartureTime: Date,
+  times: TripTimesUpdate,
   userSub: string,
   userEmail: string,
   userIsAdmin: boolean
@@ -312,18 +324,41 @@ export async function updateDepartureTime(
     include: { passengers: true },
   });
 
-  // Vérification des permissions
+  if (trip.status === "CANCELLED") {
+    throw new ValidationError("Ce trajet est annulé : son horaire ne se modifie plus.");
+  }
+
+  // Vérification des permissions (dont le trajet déjà parti, D63)
   const permission = canModifyDepartureTime(trip, userSub, userIsAdmin);
   if (!permission.allowed) {
     throw new PermissionError(permission.reason!);
   }
 
-  // Calcul du delta pour décaler toutes les dates
-  const deltaMs = newDepartureTime.getTime() - trip.departureTime.getTime();
-  const shift = (date: Date) => new Date(date.getTime() + deltaMs);
+  const newDepartureTime = times.departureTime;
+  if (newDepartureTime <= new Date()) {
+    throw new ValidationError("Le nouveau départ doit être dans le futur.");
+  }
 
-  const newArrivalTime = shift(trip.estimatedArrivalTime);
-  const newReturnArrivalTime = trip.estimatedReturnArrivalTime && shift(trip.estimatedReturnArrivalTime);
+  // Les arrivées gardent les durées de route du trajet
+  const durationMs = (from: Date, to: Date) => to.getTime() - from.getTime();
+  const newArrivalTime = new Date(newDepartureTime.getTime() + durationMs(trip.departureTime, trip.estimatedArrivalTime));
+
+  let newReturnDepartureTime: Date | null = null;
+  let newReturnArrivalTime: Date | null = null;
+  if (trip.returnDepartureTime && trip.estimatedReturnArrivalTime) {
+    newReturnDepartureTime =
+      times.returnDepartureTime ??
+      new Date(trip.returnDepartureTime.getTime() + durationMs(trip.departureTime, newDepartureTime));
+    newReturnArrivalTime = new Date(
+      newReturnDepartureTime.getTime() + durationMs(trip.returnDepartureTime, trip.estimatedReturnArrivalTime)
+    );
+    if (newReturnDepartureTime <= newArrivalTime) {
+      throw new ValidationError("Le retour doit partir après l'arrivée de l'aller.");
+    }
+  } else if (times.returnDepartureTime) {
+    throw new ValidationError("Ce trajet n'a pas de retour.");
+  }
+
   const bufferMinutes = await getBufferMinutes();
   const newEndTimeWithBuffer = addMinutes(newReturnArrivalTime ?? newArrivalTime, bufferMinutes);
 
@@ -343,6 +378,9 @@ export async function updateDepartureTime(
           vehicleConflict.id
         );
       }
+
+      // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
+      await assertVehicleBookable(trip.vehicleId, trip.originCampusId, newDepartureTime, tx, tripId);
 
       // ── VÉRIF 2 : Conducteur libre ──
       const driverConflict = await findPersonConflict(
@@ -382,10 +420,8 @@ export async function updateDepartureTime(
         data: {
           departureTime: newDepartureTime,
           estimatedArrivalTime: newArrivalTime,
-          ...(trip.returnDepartureTime && {
-            returnDepartureTime: shift(trip.returnDepartureTime),
-          }),
-          ...(newReturnArrivalTime && {
+          ...(newReturnDepartureTime && {
+            returnDepartureTime: newReturnDepartureTime,
             estimatedReturnArrivalTime: newReturnArrivalTime,
           }),
         },
@@ -404,6 +440,10 @@ export async function updateDepartureTime(
     details: {
       oldDepartureTime: trip.departureTime.toISOString(),
       newDepartureTime: newDepartureTime.toISOString(),
+      ...(newReturnDepartureTime && {
+        oldReturnDepartureTime: trip.returnDepartureTime?.toISOString(),
+        newReturnDepartureTime: newReturnDepartureTime.toISOString(),
+      }),
     },
   });
 
@@ -443,6 +483,14 @@ export async function updateTripInfo(
   const newEndTimeWithBuffer = addMinutes(newRawEndTime, bufferMinutes);
   const newVehicleId = data.vehicleId || trip.vehicleId;
   const newDriverSub = data.driverSub || trip.driverSub;
+  const newOriginCampusId = data.originCampusId || trip.originCampusId;
+  // D62 : un trajet prévu dont le véhicule, le campus de départ ou le départ change se revérifie ; le reste
+  // (commentaire, conducteur, annulation) laisse le véhicule où il est
+  const movesVehicle =
+    newVehicleId !== trip.vehicleId ||
+    newOriginCampusId !== trip.originCampusId ||
+    newDepartureTime.getTime() !== trip.departureTime.getTime();
+  const checksVehicle = (data.status ?? trip.status) === "SCHEDULED" && movesVehicle;
 
   // On re-vérifie dans une transaction
   const updated = await prisma.$transaction(async (tx) => {
@@ -468,6 +516,11 @@ export async function updateTripInfo(
         "Ce véhicule est déjà réservé par un autre utilisateur sur ce nouveau créneau.",
         vehicleConflict.id
       );
+    }
+
+    // ── VÉRIF 1 bis : Véhicule hors maintenance et au campus de départ (D62) ──
+    if (checksVehicle) {
+      await assertVehicleBookable(newVehicleId, newOriginCampusId, newDepartureTime, tx, tripId);
     }
 
     // ── VÉRIF 2 : Conducteur pas en conflit ──

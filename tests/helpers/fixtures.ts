@@ -29,7 +29,18 @@ export function makePassenger(overrides: Partial<PassengerFixture> = {}): Passen
   };
 }
 
-/** Un aller simple dans 72 h, véhicule de 5 places, sans passager. */
+/** Un véhicule de 5 places, disponible, rattaché au campus de départ des trajets de test. */
+export function makeVehicle(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "vehicle-1",
+    seats: 5,
+    status: "AVAILABLE" as const,
+    defaultCampusId: "campus-1",
+    ...overrides,
+  };
+}
+
+/** Un aller simple dans 72 h, de campus-1 à campus-2, véhicule de 5 places, sans passager. */
 export function makeTrip(overrides: Record<string, unknown> = {}) {
   return {
     id: "trip-1",
@@ -39,6 +50,9 @@ export function makeTrip(overrides: Record<string, unknown> = {}) {
     driverDisplayName: "Conducteur",
     type: "ONE_WAY" as const,
     status: "SCHEDULED" as const,
+    originCampusId: "campus-1",
+    destinationCampusId: "campus-2" as string | null,
+    returnCampusId: null as string | null,
     departureTime: hoursFromNow(72),
     estimatedArrivalTime: hoursFromNow(74),
     returnDepartureTime: null as Date | null,

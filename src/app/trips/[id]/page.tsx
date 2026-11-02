@@ -61,7 +61,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         </Link>
       </div>
 
-      <TripDetail trip={trip} />
+      <TripDetail trip={trip} onUpdated={() => mutate()} />
 
       <PassengerList
         passengers={trip.passengers}

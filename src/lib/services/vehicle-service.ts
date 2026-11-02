@@ -3,11 +3,15 @@
 
 import { prisma } from "@/lib/prisma";
 import { addMinutes, getBufferMinutes } from "@/lib/utils/dates";
+import { VehicleNotAtCampusError, VehicleUnavailableError } from "@/lib/utils/errors";
 import type { Vehicle, Campus } from "@/generated/prisma/client";
 
 // ══════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════
+
+// Type pour le client transactionnel Prisma
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 export interface VehicleWithPosition extends Vehicle {
   currentCampus: Campus;
@@ -57,11 +61,20 @@ export interface SuggestedTrip {
  *    - ROUND_TRIP → véhicule au originCampusId (il est revenu)
  *    - ROUND_TRIP_OTHER → véhicule au returnCampusId
  * 3. Si aucun trajet → véhicule au defaultCampusId
+ *
+ * `excludeTripId` écarte le trajet qu'on modifie : son ancien horaire ne doit pas servir à situer le véhicule.
  */
-export async function getVehiclePosition(vehicleId: string, atTime: Date): Promise<string> {
-  const lastTrip = await prisma.trip.findFirst({
+export async function getVehiclePosition(
+  vehicleId: string,
+  atTime: Date,
+  tx?: TransactionClient,
+  excludeTripId?: string
+): Promise<string> {
+  const db = tx ?? prisma;
+  const lastTrip = await db.trip.findFirst({
     where: {
       vehicleId,
+      ...(excludeTripId && { id: { not: excludeTripId } }),
       status: { not: "CANCELLED" },
       OR: [
         {
@@ -87,7 +100,7 @@ export async function getVehiclePosition(vehicleId: string, atTime: Date): Promi
   });
 
   if (!lastTrip) {
-    const vehicle = await prisma.vehicle.findUniqueOrThrow({
+    const vehicle = await db.vehicle.findUniqueOrThrow({
       where: { id: vehicleId },
       select: { defaultCampusId: true },
     });
@@ -101,6 +114,34 @@ export async function getVehiclePosition(vehicleId: string, atTime: Date): Promi
       return lastTrip.originCampusId;
     case "ROUND_TRIP_OTHER":
       return lastTrip.returnCampusId || lastTrip.originCampusId;
+  }
+}
+
+/**
+ * Vérifie, dans la transaction de l'écriture, que le véhicule peut partir de `originCampusId` à `departureTime`
+ * (D62) : il n'est pas en maintenance, et il sera à ce campus à cette heure. La recherche le vérifiait seule :
+ * une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou ailleurs.
+ * `excludeTripId` écarte le trajet qu'on modifie.
+ */
+export async function assertVehicleBookable(
+  vehicleId: string,
+  originCampusId: string,
+  departureTime: Date,
+  tx?: TransactionClient,
+  excludeTripId?: string
+): Promise<void> {
+  const db = tx ?? prisma;
+  const vehicle = await db.vehicle.findUniqueOrThrow({
+    where: { id: vehicleId },
+    select: { status: true },
+  });
+  if (vehicle.status === "MAINTENANCE") {
+    throw new VehicleUnavailableError();
+  }
+
+  const campusId = await getVehiclePosition(vehicleId, departureTime, tx, excludeTripId);
+  if (campusId !== originCampusId) {
+    throw new VehicleNotAtCampusError();
   }
 }
 
@@ -134,7 +175,7 @@ export async function findVehicleConflict(
   vehicleId: string,
   start: Date,
   end: Date,
-  tx?: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  tx?: TransactionClient,
   excludeTripId?: string
 ): Promise<{ id: string } | null> {
   const db = tx ?? prisma;

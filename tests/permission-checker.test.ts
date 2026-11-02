@@ -54,6 +54,12 @@ describe("canModifyDepartureTime", () => {
     const trip = makeTrip({ departureTime: hoursFromNow(2), passengers: [makePassenger({ addedBy: "DRIVER" })] });
     expect(canModifyDepartureTime(trip, DRIVER, false).allowed).toBe(true);
   });
+
+  it("refuse tout le monde, admin compris, une fois le trajet parti (D63)", () => {
+    const trip = makeTrip({ departureTime: hoursFromNow(-1) });
+    expect(canModifyDepartureTime(trip, DRIVER, false).allowed).toBe(false);
+    expect(canModifyDepartureTime(trip, OTHER, true).allowed).toBe(false);
+  });
 });
 
 describe("canJoinAsPassenger", () => {

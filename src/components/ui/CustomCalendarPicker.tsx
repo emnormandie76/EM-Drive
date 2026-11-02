@@ -1,19 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 
-export function CustomCalendarPicker({ 
-  selectedDate, 
-  onSelectDate, 
+export function CustomCalendarPicker({
+  selectedDate,
+  onSelectDate,
   onClose,
   minDate,
-  allowPastDates = false
-}: { 
-  selectedDate: string, 
-  onSelectDate: (d: string) => void, 
+  allowPastDates = false,
+  inline = false
+}: {
+  selectedDate: string,
+  onSelectDate: (d: string) => void,
   onClose?: () => void,
   minDate?: string,
-  allowPastDates?: boolean
+  allowPastDates?: boolean,
+  /** Dans une modale : le calendrier s'ouvre dans le flux, sous le champ, au lieu de flotter (la modale le couperait). */
+  inline?: boolean
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (inline) panelRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [inline]);
+
   const todayStr = new Date().toISOString().split('T')[0];
   const effectiveMinDate = allowPastDates ? '1900-01-01' : (minDate || todayStr);
   
@@ -47,12 +55,16 @@ export function CustomCalendarPicker({
   const daysLabels = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
 
   return (
-    <div 
+    <div
+      ref={panelRef}
       style={{
-        position: 'absolute', top: '100%', left: '0', 
+        ...(inline
+          // Peut déborder sur la colonne voisine, vide sous son champ ; jamais plus large que l'écran
+          ? { position: 'relative', width: 'min(300px, calc(100vw - 5rem))' }
+          : { position: 'absolute', top: '100%', left: '0', width: '300px' }),
         backgroundColor: 'var(--color-surface, #ffffff)', borderRadius: '16px', padding: '20px',
-        boxShadow: 'var(--shadow-lg, 0 20px 40px -10px rgba(0, 34, 102, 0.15))', 
-        zIndex: 100, width: '300px', marginTop: '8px',
+        boxShadow: 'var(--shadow-lg, 0 20px 40px -10px rgba(0, 34, 102, 0.15))',
+        zIndex: 100, marginTop: '8px',
         border: '1px solid var(--color-border, rgba(0, 34, 102, 0.1))', cursor: 'default'
       }}
       onClick={e => e.stopPropagation()} 
@@ -132,18 +144,21 @@ export function CustomCalendarPicker({
   )
 }
 
-export function DatePickerInput({ 
-  value, 
-  onChange, 
+export function DatePickerInput({
+  value,
+  onChange,
   label,
   minDate,
-  allowPastDates = false
-}: { 
-  value: string, 
-  onChange: (v: string) => void, 
+  allowPastDates = false,
+  inline = false
+}: {
+  value: string,
+  onChange: (v: string) => void,
   label: string,
   minDate?: string,
-  allowPastDates?: boolean
+  allowPastDates?: boolean,
+  /** À passer dans une modale (voir CustomCalendarPicker). */
+  inline?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +199,7 @@ export function DatePickerInput({
           onClose={() => setIsOpen(false)}
           minDate={minDate}
           allowPastDates={allowPastDates}
+          inline={inline}
         />
       )}
     </div>
