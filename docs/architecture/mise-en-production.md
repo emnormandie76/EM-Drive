@@ -153,7 +153,8 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 |---|---|---|
 | Supprimer (annuler) : admin toujours ; sinon conducteur seulement, et seulement s'il n'y a aucun passager `SELF` | `canDeleteTrip` | `cancelTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) |
 | Changer les horaires (bouton « Modifier les horaires ») : personne, admin compris, une fois le trajet parti (D63) ; sinon admin toujours, ou conducteur ; s'il y a des passagers `SELF`, au moins 48 h avant le départ (`MIN_HOURS_BEFORE_MODIFICATION`). La modale complète de `/admin/trips` (`updateTripInfo`) ne passe pas par cette règle | `canModifyDepartureTime` | `updateTripTimes`, et [GET /api/trips/[id]](../../src/app/api/trips/[id]/route.ts) (bouton) |
-| Véhicule réservable (D62) : pas en maintenance, et au campus de départ à l'heure du départ (position tirée des trajets, le trajet modifié exclu) | `assertVehicleBookable` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | `createTrip`, `updateTripTimes`, `updateTripInfo` (quand le véhicule, le campus de départ ou le départ d'un trajet prévu change) |
+| Véhicule réservable (D62, D58) : aucune période d'indisponibilité (maintenance, Car Booking) ne couvre le créneau entier `[départ, fin + buffer)`, et le véhicule est au campus de départ à l'heure du départ (position tirée des trajets, le trajet modifié exclu ; une indisponibilité ne la déplace pas, D66). Point unique : la colonne `vehicles.status` n'est plus lue (D59) | `assertVehicleBookable(véhicule, campus, départ, fin + buffer, tx, trajet exclu)` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | `createTrip`, `updateTripTimes`, `updateTripInfo` (quand le véhicule, le campus de départ ou le créneau d'un trajet prévu change) ; la recherche applique la même lecture (`getAvailableVehicles`) |
+| Déclarer, modifier, retirer une indisponibilité : administrateur ; fin obligatoire pour Car Booking et après le début ; jamais sur un trajet réservé (409 avec la liste, D60) ni sur une autre période du véhicule (409, D70) | `createUnavailability`, `updateUnavailability`, `deleteUnavailability` ([unavailability-service.ts](../../src/lib/services/unavailability-service.ts)) | routes `/api/admin/vehicles/[id]/unavailabilities` et `/api/admin/unavailabilities/[id]` (§4) |
 | Rejoindre : trajet `SCHEDULED`, futur, passager ≠ conducteur, places libres (`seats - 1`) | `canJoinAsPassenger` | `addPassenger` (à l'écriture, pour tous, admin compris) et [GET /api/trips/[id]](../../src/app/api/trips/[id]/route.ts) (bouton) |
 | Ajouter un passager « par le conducteur » (`addedBy: DRIVER`) : conducteur du trajet ou admin | dans `addPassenger` | `POST /api/trips/[id]/passengers` |
 | Désigner une autre personne (conducteur choisi par un admin, passagers à la création, passager ajouté par le conducteur) : son identité vient de l'annuaire, jamais du corps (D24, §2.1 bis) | `resolveChosenPerson` | `POST /api/trips`, `PATCH /api/trips/[id]`, `POST /api/trips/[id]/passengers` |
@@ -170,13 +171,13 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 | `/` | connecté | [src/app/page.tsx](../../src/app/page.tsx) | redirige vers `/dashboard` |
 | `/login` | public | [src/app/(auth)/login/page.tsx](../../src/app/%28auth%29/login/page.tsx) | bouton « Se connecter avec le portail » ([PortalSignInButton.tsx](../../src/app/%28auth%29/login/PortalSignInButton.tsx)) ; avec `?error=…`, message neutre et lien vers le portail, sans relancer le flux (§2.1) ; pleine fenêtre (`.login-container` en `position: fixed`, étape 3) |
 | `/unauthorized` | public | [src/app/(auth)/unauthorized/page.tsx](../../src/app/%28auth%29/unauthorized/page.tsx) | « Connexion refusée » : cible du rappel `signIn` quand le compte ne peut pas être rattaché (§2.1) ; lien vers le portail |
-| `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | « Mes trajets à venir » : les cinq prochains trajets de l'appelant, conducteur ou passager, filtrés par le serveur (`GET /api/trips?mine=true`, D32) ; flotte (position, statut) ; polling SWR 30 s ; états de chargement, vide et d'erreur par section |
+| `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | « Mes trajets à venir » : les cinq prochains trajets de l'appelant, conducteur ou passager, filtrés par le serveur (`GET /api/trips?mine=true`, D32) ; flotte (position, statut) : le statut d'une carte (`VehicleStatusBadge`) vient des trajets en cours et des périodes d'indisponibilité en cours, « Maintenance » ou « Car Booking » (D69), avec « Réserver » désactivé et la période (motif, dates) sous la position ; la tuile « Indisponibles » de la flotte regroupe les deux ; polling SWR 30 s ; états de chargement, vide et d'erreur par section |
 | `/trips` | connecté | [src/app/trips/page.tsx](../../src/app/trips/page.tsx) | liste filtrable (statut, campus, date) ; squelettes au chargement, état d'erreur avec « Réessayer », état vide avec « Réinitialiser les filtres » |
 | `/trips/new` | connecté | [src/app/trips/new/page.tsx](../../src/app/trips/new/page.tsx) | assistant `TripWizard` : recherche (`StepSearch`) puis confirmation (`StepConfirm`) ; dans `StepConfirm`, passagers choisis dans l'annuaire (le conducteur et les passagers déjà choisis ne sont pas proposés ; un passager choisi ensuite comme conducteur sort de la liste, D27) et, pour un admin, conducteur choisi dans l'annuaire. État dans [wizard-state.ts](../../src/components/trips/wizard-state.ts) (fonction pure, testée) : tout changement du formulaire efface les résultats, une recherche lancée avant un changement ne rend pas les siens, seul un véhicule de la recherche en cours se choisit ; « Retour » retrouve le formulaire rempli (la recherche reste montée, masquée) ; un refus du véhicule par le serveur (`VEHICLE_CONFLICT`, `VEHICLE_UNAVAILABLE`, `VEHICLE_NOT_AT_CAMPUS`) efface les résultats et ramène à la recherche |
 | `/trips/[id]` | connecté | [src/app/trips/[id]/page.tsx](../../src/app/trips/[id]/page.tsx) | détail, frise, passagers, actions selon `permissions` ; « Modifier les horaires » (ex-« Modifier l'heure ») ouvre [EditTripTimesModal](../../src/components/trips/EditTripTimesModal.tsx) (départ, et retour pour un aller-retour, arrivées calculées avec les durées du trajet, message du serveur en cas de refus, D61 ; calendrier ouvert dans la modale, `DatePickerInput inline`, comme dans `AdminEditTripModal`) ; 404 → « Trajet introuvable » avec retour à la liste |
-| `/vehicles/[id]/calendar` | connecté | [src/app/vehicles/[id]/calendar/page.tsx](../../src/app/vehicles/[id]/calendar/page.tsx) | calendrier hebdomadaire et mensuel (défilement horizontal interne sous 800 px) ; 404 → « Véhicule introuvable » |
-| `/admin` | admin | [src/app/admin/page.tsx](../../src/app/admin/page.tsx) | compteurs lus directement via Prisma (composant serveur) : véhicules, en maintenance, trajets à venir ; `await connection()` en tête : rendu à la requête, jamais pré-rendu au build (D30) |
-| `/admin/vehicles` | admin | [src/app/admin/vehicles/page.tsx](../../src/app/admin/vehicles/page.tsx) | ajout, modification, maintenance ; campus du formulaire lus dans `/api/campuses` (ils étaient tirés des véhicules : flotte vide, aucun campus) ; une plaque déjà prise affiche le message du 409 (cas limite 10) |
+| `/vehicles/[id]/calendar` | connecté | [src/app/vehicles/[id]/calendar/page.tsx](../../src/app/vehicles/[id]/calendar/page.tsx) | calendrier hebdomadaire et mensuel (défilement horizontal interne sous 800 px) ; les périodes d'indisponibilité en cours et à venir s'écrivent en liste (motif, dates, et le commentaire pour un admin seulement, D67) puis en **un bandeau continu** par période (D71) : au-dessus des colonnes en vue Semaine, sur les jours en vue Mois, libellé une fois, flèche `◀` `▶` s'il déborde, voies distinctes pour des périodes superposées ; couleurs distinctes des trajets (rouge : maintenance, orange : Car Booking) ; la mise en page est `layoutUnavailabilityBars` ([unavailability.ts](../../src/lib/utils/unavailability.ts), fonction pure, testée) ; 404 → « Véhicule introuvable » |
+| `/admin` | admin | [src/app/admin/page.tsx](../../src/app/admin/page.tsx) | compteurs lus directement via Prisma (composant serveur) : véhicules, indisponibles (une période couvre l'instant), trajets à venir ; `await connection()` en tête : rendu à la requête, jamais pré-rendu au build (D30) |
+| `/admin/vehicles` | admin | [src/app/admin/vehicles/page.tsx](../../src/app/admin/vehicles/page.tsx) | ajout, modification ; statut tiré des périodes en cours ; un bouton « Indisponibilités » par véhicule (remplace l'interrupteur de maintenance, D59) ouvre [VehicleUnavailabilitiesModal](../../src/components/admin/VehicleUnavailabilitiesModal.tsx) : liste des périodes en cours et à venir, ajout (motif, début, fin ou « sans date de fin » pour une maintenance, commentaire), modification (D68), retrait avec confirmation en ligne ; un refus 409 affiche les trajets en cause (liens) ou les périodes qui se chevauchent ; campus du formulaire lus dans `/api/campuses` (ils étaient tirés des véhicules : flotte vide, aucun campus) ; une plaque déjà prise affiche le message du 409 (cas limite 10) |
 | `/admin/trips` | admin | [src/app/admin/trips/page.tsx](../../src/app/admin/trips/page.tsx) | liste paginée, filtres, modale `AdminEditTripModal` (conducteur choisi dans l'annuaire, passagers du trajet non proposés) ; annulation forcée sans promesse de mail (D31) |
 | `/admin/settings` | admin | [src/app/admin/settings/page.tsx](../../src/app/admin/settings/page.tsx) | `buffer_minutes` ; `DatabaseControls` : métriques Neon **au clic seulement** (D35), nettoyage derrière une modale où l'on tape `SUPPRIMER` (cas limite 8) |
 | `/admin/audit` | admin | [src/app/admin/audit/page.tsx](../../src/app/admin/audit/page.tsx) | journal paginé, filtre par type d'entité (`entityType` : trajets, véhicules, paramètres, personnes ; le filtre envoyait `entity`, que la route ignorait, corrigé à l'étape 3) |
@@ -215,8 +216,11 @@ Hooks SWR : [src/hooks/](../../src/hooks/) (`use-vehicles`, `use-trips`, `use-ge
 Toutes les réponses d'erreur ont la forme `{ error: CODE, message }`. Les erreurs métier
 ([src/lib/utils/errors.ts](../../src/lib/utils/errors.ts)) sont converties par `handleBusinessError` : conflits en
 **409** (`VEHICLE_CONFLICT`, `DRIVER_OVERLAP`, `PASSENGER_OVERLAP`, avec `conflictingTripId` ; `LICENSE_PLATE_TAKEN`
-depuis l'étape 3, D34), `PERMISSION_DENIED`
-en **403**, `VALIDATION_ERROR` et `PERSON_NOT_IN_DIRECTORY` en **400**, `DIRECTORY_RATE_LIMITED` en **429**,
+depuis l'étape 3, D34 ; `VEHICLE_UNAVAILABLE` et `VEHICLE_NOT_AT_CAMPUS` depuis l'étape 1 du chantier « indisponibilités », D62 ;
+`UNAVAILABILITY_TRIPS_CONFLICT` avec `conflictingTrips` (D60) et `UNAVAILABILITY_OVERLAP` avec `overlappingPeriods`
+(D70) à l'étape 2), `PERMISSION_DENIED`
+en **403**, `NOT_FOUND` (véhicule ou période inconnus, `NotFoundError`) en **404**,
+`VALIDATION_ERROR` et `PERSON_NOT_IN_DIRECTORY` en **400**, `DIRECTORY_RATE_LIMITED` en **429**,
 `DIRECTORY_UNAVAILABLE` en **503** (§2.1 bis) ; toute autre erreur donne **500** `INTERNAL_ERROR`.
 
 **Corps validés** (étape 1, cas limite 6) : les routes d'écriture qui survivront à l'étape 2a lisent leur corps
@@ -233,8 +237,8 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/auth/[...nextauth]` | GET, POST | public | NextAuth : fournisseur `portail`, retour `/api/auth/callback/portail` (§2.1) |
 | `/api/auth/logout` | POST | public | déconnexion par le portail (§2.1, D23) : efface la session, 303 vers `end_session_endpoint` ou `/login` |
 | `/api/campuses` | GET | connecté | |
-| `/api/vehicles` | GET | connecté | véhicules avec position et statut d'affichage |
-| `/api/vehicles/[id]` | GET | connecté | |
+| `/api/vehicles` | GET | connecté | véhicules avec position et statut d'affichage (`displayStatus` : `available`, `in_trip`, `maintenance`, `car_booking`, `fully_booked`) et `currentUnavailability` (motif et dates de la période en cours, jamais le commentaire, D67) |
+| `/api/vehicles/[id]` | GET | connecté | le véhicule et ses `unavailabilities` (en cours et à venir, pour le calendrier) : motif et dates pour tous, commentaire et auteur pour un admin seulement (rôle relu en base) |
 | `/api/vehicles/availability` | GET | connecté | véhicules libres + covoiturages suggérés |
 | `/api/trips` | GET | connecté | tous les trajets non annulés, quel que soit l'appelant ; avec `mine=true`, ceux que l'appelant conduit ou où il voyage, filtrés avant la pagination, l'identité lue dans la session (D32) |
 | `/api/trips` | POST | connecté | l'admin peut choisir le conducteur (`driverSub`, `driverEmail`) ; passagers `{ userSub, userEmail }` ; nom et adresse de chacun lus dans l'annuaire (D24, écart 5 corrigé) ; passagers limités aux places, sans le conducteur ni doublon |
@@ -247,7 +251,9 @@ méthode ajoutée sans y figurer fait échouer `npm test`).
 | `/api/geo/directions` | GET | connecté | proxy ORS, repli à vol d'oiseau ; 20 requêtes par minute et par personne (D44) |
 | `/api/users/search` | GET | connecté | annuaire du portail (contrat portail v1 §7, §2.1 bis) : `[{ sub, name, email }]` ; `[]` sous deux caractères ; 503 ou 429 si l'annuaire ne répond pas (D25) ; 30 recherches par minute et par personne (D44) |
 | `/api/admin/vehicles` | POST | admin | plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` (cas limite 10, D34) |
-| `/api/admin/vehicles/[id]` | PATCH | admin | audit `VEHICLE_UPDATED` / `VEHICLE_MAINTENANCE_ON` / `_OFF` ; plaque déjà prise → 409 `LICENSE_PLATE_TAKEN` |
+| `/api/admin/vehicles/[id]` | PATCH | admin | audit `VEHICLE_UPDATED` ; n'accepte plus `status` (400 qui renvoie aux indisponibilités, D59 ; `POST /api/admin/vehicles` non plus) ; plaque déjà prise → 409 `LICENSE_PLATE_TAKEN`. Les actions d'audit `VEHICLE_MAINTENANCE_ON` / `_OFF` ne s'écrivent plus (des lignes du journal les portent) |
+| `/api/admin/vehicles/[id]/unavailabilities` | GET, POST | admin | GET : périodes en cours et à venir, avec commentaire et auteur ; POST `{ reason, startsAt, endsAt?, comment? }` (dates ISO) → 201 ; fin obligatoire pour `CAR_BOOKING` et après le début (400) ; 409 `UNAVAILABILITY_OVERLAP` puis 409 `UNAVAILABILITY_TRIPS_CONFLICT` ; 404 véhicule inconnu ; audit `VEHICLE_UNAVAILABILITY_CREATED` (entité : le véhicule) |
+| `/api/admin/unavailabilities/[id]` | PATCH, DELETE | admin | PATCH : champs facultatifs, mêmes contrôles sur la période fusionnée (D68), audit `VEHICLE_UNAVAILABILITY_UPDATED` avec l'avant et l'après ; DELETE : audit `VEHICLE_UNAVAILABILITY_DELETED` ; 404 période inconnue |
 | `/api/admin/settings` | GET, PATCH | admin | audit `SETTINGS_UPDATED` ; seule la clé `buffer_minutes` est acceptée (entier de 0 à 1440) |
 | `/api/admin/trips` | GET | admin | liste paginée (max 100) |
 | `/api/admin/audit` | GET | admin | journal paginé |
@@ -274,13 +280,16 @@ Le type de retour de `requireAuthSession()` et `requireAdminSession()` est une u
 | Sujet | Fichier | Règle |
 |---|---|---|
 | Position d'un véhicule | `getVehiclePosition` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | dérivée du dernier trajet non annulé terminé : `ONE_WAY` → destination ; `ROUND_TRIP` → origine ; `ROUND_TRIP_OTHER` → campus de retour ; sans trajet → campus par défaut ; lue dans la transaction de l'écriture, le trajet modifié exclu (D62) |
-| Disponibilité | `getAvailableVehicles`, `findVehicleConflict` | véhicule `AVAILABLE`, positionné au campus de départ, sans trajet qui chevauche `[départ, fin + buffer]` |
+| Indisponibilité | `findVehicleUnavailability` ([vehicle-service.ts](../../src/lib/services/vehicle-service.ts)) | seul lecteur des périodes pour une décision de réservation (D58) : période du véhicule avec `début < fin du créneau` et (`fin` absente ou `fin > début du créneau`) ; la période occupe `[début, fin)`, sans fin elle n'a pas de limite ; deux créneaux qui se touchent ne sont pas en conflit (piège 4) |
+| Disponibilité | `getAvailableVehicles`, `findVehicleConflict` | tous les véhicules (la colonne `status` n'est plus lue, D59) ; aucune période d'indisponibilité sur `[départ, fin + buffer)`, positionné au campus de départ, sans trajet qui chevauche `[départ, fin + buffer)` |
+| Statut d'un véhicule | `getAllVehiclesWithPositions` | une requête pour les périodes en cours (`début ≤ maintenant`, fin absente ou `> maintenant`) ; `maintenance` avant `car_booking` avant `in_trip` avant `available` (D69) ; ni commentaire ni auteur (D67) |
 | Fin d'un trajet | [dates.ts](../../src/lib/utils/dates.ts) | `estimatedReturnArrivalTime ?? estimatedArrivalTime` ; le buffer (`buffer_minutes`, 30 par défaut) s'ajoute pour les conflits |
 | Statut d'affichage | `getTripDisplayStatus` | `cancelled`, `scheduled`, `in_progress`, `completed` dérivés du temps ; la base ne stocke que `SCHEDULED` et `CANCELLED` |
-| Création | `createTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) | transaction `Serializable` : passagers dans la limite des places, sans le conducteur ni doublon, conflit véhicule, véhicule réservable (`assertVehicleBookable`, D62), conflit conducteur, conflit de chaque passager ; audit hors transaction. Les identités viennent de la route, déjà lues dans l'annuaire (D24) |
-| Modification admin | `updateTripInfo` | refuse un nouveau conducteur qui est passager du trajet ; transaction `Serializable` : conflit véhicule, véhicule réservable si le véhicule, le campus de départ ou le départ d'un trajet prévu change (D62), conflit conducteur (trajet exclu) ; les passagers ne sont pas revérifiés ; un trajet passé se corrige ici (D63) |
+| Création | `createTrip` ([trip-service.ts](../../src/lib/services/trip-service.ts)) | transaction `Serializable` : passagers dans la limite des places, sans le conducteur ni doublon, conflit véhicule, véhicule réservable (`assertVehicleBookable`, D62 : indisponibilités sur `[départ, fin + buffer)`, puis campus), conflit conducteur, conflit de chaque passager ; audit hors transaction. Les identités viennent de la route, déjà lues dans l'annuaire (D24) |
+| Modification admin | `updateTripInfo` | refuse un nouveau conducteur qui est passager du trajet ; transaction `Serializable` : conflit véhicule, véhicule réservable si le véhicule, le campus de départ ou le créneau (départ ou fin) d'un trajet prévu change (D62, indisponibilités comprises), conflit conducteur (trajet exclu) ; les passagers ne sont pas revérifiés ; un trajet passé se corrige ici (D63) |
 | Changement d'horaire | `updateTripTimes` | nouveau départ et, pour un aller-retour, nouveau départ du retour (absent : décalé du même écart) ; arrivées = départs + durées de route du trajet (D61) ; refuse un trajet annulé, un trajet parti et un départ passé, pour tous (D63), et un retour qui part avant l'arrivée de l'aller ; transaction `Serializable` qui revérifie véhicule (conflit, maintenance, campus), conducteur et chaque passager sur le nouveau créneau, buffer compris, trajet exclu ; audit des anciens et nouveaux départs |
 | Passagers | `addPassenger`, `removePassenger` | ajout : droit d'ajouter, `canJoinAsPassenger` et chevauchement du passager, lus et écrits dans une même transaction `Serializable` ; retrait : règles du §2.4 |
+| Indisponibilités (écriture) | `createUnavailability`, `updateUnavailability`, `deleteUnavailability` ([unavailability-service.ts](../../src/lib/services/unavailability-service.ts)) | admin ; transaction `Serializable` (une réservation concurrente revérifie les périodes) : règles de la période (fin obligatoire pour Car Booking, après le début, sur la période fusionnée à la modification), puis **aucune autre période du véhicule ne la chevauche** (D70, 409 `UNAVAILABILITY_OVERLAP`, la période modifiée écartée), puis **aucun trajet réservé** (D60, 409 `UNAVAILABILITY_TRIPS_CONFLICT` avec la liste : trajet non annulé avec `départ < fin de période` et `fin + buffer > max(début, maintenant)` ; un trajet déjà fini n'est pas listé) ; le commentaire vide devient absent ; audit hors transaction, sur le véhicule |
 | Chevauchement | `findVehicleConflict`, `findPersonConflict` | trajet non annulé avec `departureTime < fin` et arrivée (aller ou retour selon le type) `> début` ; un trajet peut être exclu |
 | Itinéraire | [geo-service.ts](../../src/lib/services/geo-service.ts) | BAN pour les communes ; ORS pour durée et distance ; repli Haversine × 1,3 à 70 km/h, minimum 10 min |
 
@@ -291,23 +300,28 @@ Constantes : [src/lib/utils/constants.ts](../../src/lib/utils/constants.ts) (`MA
 
 ## 5. Tables
 
-Schéma : [prisma/schema.prisma](../../prisma/schema.prisma). Deux migrations, appliquées au projet Neon
+Schéma : [prisma/schema.prisma](../../prisma/schema.prisma). Trois migrations. Deux appliquées au projet Neon
 `resavroom` le 2026-10-28 : `20260415124547_init` (étape 1, puis le seed) et
 `20261028160000_portail_identity` (étape 2a, écrite à la main : table `people` et énumération `Role`, colonnes
 `*_entra_id` renommées `*_sub` sans perte, `AuditAction` recréée, `admins` et `authorized_services` supprimées
-avec l'accord du propriétaire, D17). Base et schéma vérifiés identiques après application
-(`prisma migrate diff --from-config-datasource`). Client généré dans `src/generated/prisma/` (versionné ; ne
+avec l'accord du propriétaire, D17). Une troisième, `20261102160000_vehicle_unavailabilities` (étape 2 du chantier
+« indisponibilités et corrections », écrite à la main, **additive**) : type `UnavailabilityReason`, table
+`vehicle_unavailabilities`, trois valeurs d'`AuditAction`, et la reprise des véhicules en `MAINTENANCE` en périodes
+ouvertes ; appliquée le 2026-11-02 à la branche `dev` puis à la branche `main` (accord du propriétaire,
+partage de connexion). Base et schéma vérifiés identiques après chaque application
+(`prisma migrate diff --from-config-datasource` : « empty migration »). Client généré dans `src/generated/prisma/` (versionné ; ne
 pas éditer).
 
 | Table (modèle) | Contenu | Relations et contraintes |
 |---|---|---|
 | `campuses` (Campus) | nom unique, latitude, longitude | référencé par véhicules et trajets (origine, destination, retour) |
-| `vehicles` (Vehicle) | nom, plaque unique, places (5 par défaut, conducteur inclus), `status` `AVAILABLE`/`MAINTENANCE`, campus par défaut | N trajets |
+| `vehicles` (Vehicle) | nom, plaque unique, places (5 par défaut, conducteur inclus), campus par défaut ; `status` `AVAILABLE`/`MAINTENANCE` **obsolète** (D59) : plus lue ni écrite par le code, elle reste en base le temps d'une livraison (le code en ligne la lisait) et sera retirée à l'étape 3 | N trajets, N périodes d'indisponibilité |
+| `vehicle_unavailabilities` (VehicleUnavailability) | véhicule, `reason` (`UnavailabilityReason` : `CAR_BOOKING`, `MAINTENANCE`), `starts_at`, `ends_at` (facultative : sans fin, maintenance seulement), `comment`, `created_by_sub` et `created_by_email` (copies de l'admin, piège 6), `created_at`, `updated_at` | clé étrangère vers `vehicles` (sans suppression en cascade) ; index `(vehicle_id, starts_at)` ; occupe `[starts_at, ends_at)` ; commentaire et auteur lus des seuls admins (D67) ; sans effet sur la position du véhicule (D66) ; ne chevauche pas une autre période du même véhicule (D70, vérifié par le service, pas par la base) |
 | `trips` (Trip) | véhicule, conducteur (`driverSub`, e-mail, nom copiés), `type` (`ONE_WAY`, `ROUND_TRIP`, `ROUND_TRIP_OTHER`), campus origine/destination/retour, destination « autre » (libellé, lat, lng), quatre horaires, commentaire, `status` | index `(vehicleId, status, departureTime)` et `(driverSub, status)` |
 | `passengers` (Passenger) | `userSub`, e-mail, nom, `addedBy` `DRIVER`/`SELF` | unique `(tripId, userSub)` ; suppression en cascade avec le trajet |
 | `people` (Person) | `sub` du portail (unique, facultatif pour l'étape « par l'adresse »), `email` (unique), `name`, `role` (`Role` : `USER`, `ADMIN`), `last_login_at` | écrite par le rapprochement à chaque connexion (§2.1) ; lue par `isAdmin` ; pas de clé étrangère depuis les autres tables (copies, piège 6) |
 | `app_settings` (AppSetting) | clé/valeur ; clé connue : `buffer_minutes` | |
-| `audit_logs` (AuditLog) | `userSub`, e-mail, `action` (12 valeurs, dont `SIGNIN_REFUSED`), type (`trip`, `vehicle`, `setting`, `person`) et id d'entité, `details` JSON | index `(entityType, entityId)` et `createdAt` |
+| `audit_logs` (AuditLog) | `userSub`, e-mail, `action` (15 valeurs, dont `SIGNIN_REFUSED` et `VEHICLE_UNAVAILABILITY_CREATED` / `_UPDATED` / `_DELETED`, qui portent l'identifiant de la période dans `details`), type (`trip`, `vehicle`, `setting`, `person`) et id d'entité, `details` JSON | index `(entityType, entityId)` et `createdAt` |
 
 Données de départ : [prisma/seed.ts](../../prisma/seed.ts) (3 campus, 3 véhicules, `buffer_minutes = 30`) ; plus
 d'administrateur de départ (D21) : le premier administrateur est la personne qui reçoit `ADMIN` du portail.
@@ -351,8 +365,10 @@ touchent ni le réseau ni une base : `@/lib/prisma` est remplacé par un client 
 annuaire qui suit le contrat §7 ([tests/helpers/portail-fake.ts](../../tests/helpers/portail-fake.ts) : `fetch`
 simulé, découverte, jeton `client_credentials` vérifié en `client_secret_basic`, annuaire filtré sur le nom ou
 l'adresse, pannes réglables). `server-only` est remplacé par le module vide de Next (alias de
-`vitest.config.ts`, D28). Limite assumée : les requêtes SQL de chevauchement ne sont pas exécutées, seule leur
-forme est vérifiée.
+`vitest.config.ts`, D28). Limite assumée : les requêtes SQL de chevauchement ne sont pas exécutées. Pour les
+bornes des périodes, [where-matcher.ts](../../tests/helpers/where-matcher.ts) rejoue la clause `where` reçue par
+le client simulé sur des lignes en mémoire, avec de vraies dates (égalité, `null`, `lt`, `lte`, `gt`, `gte`, `not`,
+`in`, `OR`, `AND`) : les créneaux qui se touchent et les périodes sans fin se vérifient ainsi, sans base.
 
 | Fichier | Ce qu'il vérifie |
 |---|---|
@@ -365,6 +381,11 @@ forme est vérifiée.
 | [conflicts.test.ts](../../tests/conflicts.test.ts) | forme des requêtes de chevauchement, exclusion d'un trajet |
 | [trip-service.test.ts](../../tests/trip-service.test.ts) | cas limites 1, 2, 3 et 9 ; capacité à la création ; passager en double (cas limite 11) ; nouveau conducteur déjà passager ; `updateTripTimes` (départ et retour séparés, durées gardées, retour avant l'arrivée, aller simple, départ passé, trajet parti ou annulé, D61, D63) ; véhicule réservable à la création, au changement d'horaire et en modification admin (maintenance, autre campus, trajet modifié exclu, D62 ; cas limite 14) |
 | [trip-times-route.test.ts](../../tests/trip-times-route.test.ts) | `PATCH /api/trips/[id]` : départ et retour transmis au service (D61), 403 pour un trajet parti même admin (D63), 409 `VEHICLE_UNAVAILABLE` (D62) |
+| [vehicle-unavailability.test.ts](../../tests/vehicle-unavailability.test.ts) | le contrôle commun des périodes (D58, D59) : `findVehicleUnavailability` rejoué sur de vraies dates (créneaux qui se touchent, une milliseconde de recouvrement, période sans fin, autre véhicule) ; `assertVehicleBookable` (motif du refus, colonne `status` ignorée) ; création, changement d'horaire et modification admin d'un trajet (buffer compris, aller-retour, arrivée seule qui change) ; `getAvailableVehicles` ; statut du tableau de bord (maintenance avant Car Booking, période à venir ou finie, sans commentaire, position inchangée, D66, D67, D69) |
+| [unavailability-service.test.ts](../../tests/unavailability-service.test.ts) | création, modification (D68), retrait, liste des périodes ; règles de fin (Car Booking, après le début, sur la période fusionnée) ; 409 avec la liste des trajets (buffer, aller-retour, annulé, autre véhicule, trajet fini ou en cours, D60) ; 409 de chevauchement entre périodes (motifs croisés, période sans fin, la période modifiée écartée, D70) ; transaction `Serializable` ; audit ; 404 |
+| [unavailability-routes.test.ts](../../tests/unavailability-routes.test.ts) | les quatre routes admin : 401, 403 (rôle relu), 400 par corps invalide (onze cas), 201, 404, 409 (corps avec `conflictingTrips` / `overlappingPeriods`, sans commentaire), audit ; `GET /api/vehicles/[id]` (commentaire et auteur pour un admin seulement, D67) ; `status` refusé par les routes véhicule (D59) |
+| [unavailability-layout.test.ts](../../tests/unavailability-layout.test.ts) | bandeau continu du calendrier (D71) : colonnes, débordements, période sans fin, fin exclue, voies d'empilement |
+| [unavailability-display.test.ts](../../tests/unavailability-display.test.ts) | libellés des motifs, `formatPeriod`, conversion de l'heure locale (piège 3) |
 | [wizard-state.test.ts](../../tests/wizard-state.test.ts) | assistant de réservation : résultats effacés au changement du formulaire, véhicule hors de la recherche en cours refusé, « Retour » qui garde la recherche, véhicule refusé par le serveur (cas limite 14) |
 | [request-schemas.test.ts](../../tests/request-schemas.test.ts) | schémas zod sur les corps réellement envoyés par l'interface ; cas limite 11 (`sub` exigé, nom plus lu) |
 | [routes-validation.test.ts](../../tests/routes-validation.test.ts) | un corps invalide donne 400, jamais 500, sur cinq routes d'écriture |
@@ -380,9 +401,9 @@ forme est vérifiée.
 
 L'ancien script `tests/admin_delegation.ts`, qui vidait les trajets de la base réelle, a été retiré (piège 1).
 
-| Commande | Rôle | Résultat relevé le 2026-11-02 (étape 1 du chantier « indisponibilités et corrections ») |
+| Commande | Rôle | Résultat relevé le 2026-11-02 (étape 2 du chantier « indisponibilités et corrections ») |
 |---|---|---|
-| `npm test` | Vitest | 21 fichiers, 303 tests, tous verts |
+| `npm test` | Vitest | 26 fichiers, 460 tests, tous verts |
 | `npx tsc --noEmit` | types | 0 erreur |
 | `npm run lint` | ESLint | 0 problème, sans aucun `eslint-disable` hors `src/generated/` (D5) ; 0 aussi avec `--no-inline-config` |
 | `npm run build` | compilation de production | sans erreur ; lancé avec une `DATABASE_URL` factice dans son seul processus (D30) ; seules des pages client sans lecture de la base sont pré-rendues, toutes les routes `/admin` et `/api` sont dynamiques |
@@ -396,7 +417,7 @@ client confidentiel, session de 8 h fixes, cookies propres, rapprochement par `s
 adresse réattribuée, rôle relu en base) ; redirection des pages sans session (§2.3) ; gardes API et pages admin
 (§2.3), table vérifiée par test ; règles de passagers appliquées à l'écriture (§2.4) ; transactions
 `Serializable` pour la création, le changement d'horaire, la modification admin d'un trajet et l'ajout d'un
-passager, qui revérifient aussi que le véhicule est réservable (maintenance, campus de départ, D62) ;
+passager, qui revérifient aussi que le véhicule est réservable (périodes d'indisponibilité, campus de départ, D62) ; indisponibilités déclarées, modifiées et retirées par un admin seulement, en transaction `Serializable`, sans trajet réservé ni chevauchement, avec audit, commentaire et auteur réservés aux admins (D60, D67, D70) ;
 corps des routes d'écriture validés (§4) ; audit des actions sensibles (l'écriture de l'audit ne bloque jamais
 l'opération) ; annuaire du portail (§2.1 bis) : secret du client dans un module `server-only`, envoyé au seul
 `token_endpoint` de l'origine de l'émetteur, jeton en mémoire du serveur, aucun jeton ni nom ni adresse dans les
@@ -451,7 +472,9 @@ le propriétaire, et le 13 l'est par le portail ; voir les cas limites et le pla
 | 12 | Une adresse portée en base par une autre personne (autre `sub`) bloque la connexion, sans écran pour lever le conflit | EC 12 |
 | 13 | Après un retrait d'accès, la session ouverte va à son terme (8 h au plus) et le rôle en base reste celui de la dernière connexion (contrat, G15) | EC 13 |
 | 14 | *Corrigé à l'étape 2b* (écart 5 du relevé P-01, D24) : l'identité d'une autre personne (conducteur choisi par un admin, passagers à la création, passager ajouté par le conducteur) était recopiée du corps de la requête ; elle vient de l'annuaire | EC 11 |
-| 15 | *Corrigé le 2026-11-02* (chantier « indisponibilités et corrections », étape 1, D62) : la maintenance et le campus du véhicule n'étaient vérifiés que par la recherche ; une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou ailleurs. `assertVehicleBookable` les revérifie à l'écriture, et l'assistant efface les résultats périmés | EC 14 |
+| 15 | *Corrigé le 2026-11-02* (chantier « indisponibilités et corrections », étape 1, D62) : la maintenance et le campus du véhicule n'étaient vérifiés que par la recherche ; une recherche périmée ou une requête forgée réservait un véhicule en maintenance ou ailleurs. `assertVehicleBookable` les revérifie à l'écriture, et l'assistant efface les résultats périmés. Depuis l'étape 2, la maintenance et Car Booking sont des périodes datées lues sur le créneau entier, buffer compris (D58) | EC 14 |
+| 16 | *Corrigé le 2026-11-02* (étape 2, D60) : une indisponibilité déclarée sur des trajets réservés les aurait laissés sans véhicule ; 409 avec la liste des trajets. Limite : la reprise de la migration écrit en SQL, sans ce contrôle (une période reprise peut recouvrir un trajet prévu) | EC 15 |
+| 17 | *Corrigé le 2026-11-02* (étape 2, D70, à l'essai réel) : deux périodes d'un même véhicule pouvaient se chevaucher ; 409 avec la liste. Reste : les chevauchements déjà en base (branche `dev`) | EC 16 |
 
 ---
 

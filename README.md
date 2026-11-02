@@ -11,7 +11,8 @@ de Caen et de Paris.
 
 ### Tableau de bord
 
-- État de la flotte (disponible, en trajet, en maintenance) et position de chaque véhicule par campus.
+- État de la flotte (disponible, en trajet, en maintenance, réservé sur Car Booking) et position de chaque
+  véhicule par campus ; le calendrier d'un véhicule montre ses indisponibilités en bandeaux continus.
 - Vos cinq prochains trajets, comme conducteur ou passager, rafraîchis toutes les 30 secondes.
 - Écrans utilisables sur téléphone, tablette et ordinateur (vérifiés à 375, 768 et 1280 px).
 
@@ -30,7 +31,10 @@ de Caen et de Paris.
 
 ### Administration
 
-- Flotte : ajout, modification, mise en maintenance des véhicules.
+- Flotte : ajout, modification des véhicules, et leurs **indisponibilités datées** : maintenance (la fin peut
+  rester inconnue) ou réservation sur Car Booking (l'application de réservation commune à l'école, saisie à la
+  main). Un véhicule indisponible n'est plus proposé sur le créneau ; une indisponibilité ne se déclare pas sur un
+  trajet déjà réservé (la liste des trajets est affichée) ni sur une autre indisponibilité du même véhicule.
 - Trajets : modification complète et annulation.
 - Paramètres : temps de battement entre deux réservations.
 - Journal d'audit des actions sensibles ; métriques de la base Neon (chargées à la demande) et nettoyage des
@@ -141,6 +145,9 @@ pour EM Drive (ses adresses de retour sont exactes, port compris). La page de co
   « Réserver » d'une carte de véhicule ne présélectionne pas ce véhicule.
 - « Modifier les horaires » d'un trajet n'est plus possible une fois le trajet parti, même pour un admin ; un admin
   corrige un trajet passé depuis l'administration des trajets.
+- Les réservations Car Booking se saisissent à la main : aucune synchronisation avec Car Booking, et aucun avis
+  aux personnes dont un trajet est touché. La colonne `status` des véhicules est obsolète, laissée en base
+  jusqu'à l'étape 3 du chantier « indisponibilités et corrections ».
 - Le nettoyage de la base est définitif.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 
