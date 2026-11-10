@@ -5,6 +5,7 @@
 | [features/mise-en-production.md](features/mise-en-production.md) | **le plan** : décisions (§2), pièges (§4), étapes (§5), journal (§9) |
 | [features/renommage-em-drive.md](features/renommage-em-drive.md) | **plan de renommage** en « EM Drive » : décisions D52-D57, pièges, cases, journal |
 | [features/indisponibilites-et-corrections.md](features/indisponibilites-et-corrections.md) | **plan en cours** : indisponibilités datées (Car Booking, maintenance), « Modifier l'heure », recherche périmée, en-tête ; D58 et suivantes |
+| [features/branchement-portail.md](features/branchement-portail.md) | **chantiers venus du portail** depuis la mise en production : nouvelle adresse de l'Espace Admission (P-05) ; G26 et suivantes, D74 et suivantes |
 | [architecture/mise-en-production.md](architecture/mise-en-production.md) | **l'état réel du code** : accès, écrans, routes, tables, sécurité |
 | [memory/memory-exploitation.md](memory/memory-exploitation.md) | exploitation : ce qui est en ligne, variables, base, services externes |
 | [edgecase.md](edgecase.md) | cas limites numérotés et leur parade |

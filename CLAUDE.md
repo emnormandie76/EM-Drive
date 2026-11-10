@@ -70,6 +70,12 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
   point 7) ; après elle, le retour arrière de Vercel vers un déploiement d'avant l'étape 3 casse l'application
   (mémo §4.3). **Chantier terminé à la validation de l'étape 3 (2026-11-10)** ; reste sa livraison : le code en
   ligne, puis la migration, sur accord, `dev` puis `main`.
+- **Chantier « branchement au portail »** (2026-11-10, [plan](docs/features/branchement-portail.md), prompt
+  guidé P-05 du portail) : le portail s'affiche désormais « Espace Admission ». Depuis la bascule du 2026-11-10, il
+  est à `https://espace-admission.vercel.app` (émetteur `…/api/auth`, G26 à G32). Bascule constatée : production
+  redéployée, `.env.local` changé, essai conforme. **Étape 0 faite et validée** (2026-11-10), D74 à D76. L'étape 1
+  (textes « l'Espace Admission », documents) vient **après la livraison de l'étape 3 des indisponibilités** (D74).
+  D'ici là, les sections ci-dessous gardent l'ancienne adresse et l'ancien nom.
 
 L'étape en cours se lit dans le journal du plan du chantier en cours.
 
