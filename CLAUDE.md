@@ -8,7 +8,7 @@ client `production` en ligne, client `dev` sur le poste (`http://localhost:3002`
 - **Next.js 16.2** (App Router) et **React 19**, TypeScript strict : pages, routes API et actions serveur.
 - **Prisma 7.7** avec l'adaptateur Neon (WebSocket) ; **NextAuth v4** (JWT) ; SWR, Sonner, Lucide.
 - **PostgreSQL chez Neon** : le projet `resavroom` (`wispy-shadow-66847588`), créé par l'intégration Neon de
-  Vercel (D7), migré (trois migrations appliquées ; la quatrième, `drop_vehicle_status`, attend sa livraison) et seedé. **Deux branches** (D40) : `main` sert la **production** (reliée
+  Vercel (D7), migré (quatre migrations appliquées ; la dernière, `drop_vehicle_status`, le 2026-11-10) et seedé. **Deux branches** (D40) : `main` sert la **production** (reliée
   au projet Vercel), `dev` sert le **poste** (`.env.local`). L'ancienne base `neon-cyclamen-river` (compte
   Anton1P) n'est plus utilisée. Lectures sur ce seul projet ; migration et seed sur accord.
 - **Hébergement** : Vercel, projet `em-drive`, <https://em-drive.vercel.app>, branche de production `main`
@@ -60,16 +60,15 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
 - **Chantier « indisponibilités et corrections »** (2026-11-02,
   [plan](docs/features/indisponibilites-et-corrections.md)) : D58 à D73 tranchées ; **étape 1 faite et validée**
   (2026-11-02, commitée) ; **étape 2 faite et validée** (2026-11-02, en ligne) ; **étape 3 faite et validée**
-  (2026-11-10), **livraison en cours**. Étape 1 :
+  (2026-11-10), **livrée** le même jour (code en ligne, `main` sur `15228b8`, puis migration). Étape 1 :
   en-tête opaque, recherche périmée, « Modifier les horaires », véhicule revérifié à l'écriture (D62) ; étape 2 :
   indisponibilités datées (Car Booking, maintenance), table `vehicle_unavailabilities`, migration
   `20261102160000_vehicle_unavailabilities` **appliquée sur `dev` et sur `main`**, routes admin, modale
   « Indisponibilités », calendrier en bandeaux ; étape 3 : `vehicles.status` et `VehicleStatus` retirés du schéma
-  et du code (D72, D73), migration `20261102180000_drop_vehicle_status` **écrite, comparée, pas encore
-  appliquée** : **le code se livre d'abord, la migration ensuite** (ordre inverse de l'étape 2, mémo §4.1
-  point 7) ; après elle, le retour arrière de Vercel vers un déploiement d'avant l'étape 3 casse l'application
-  (mémo §4.3). **Chantier terminé à la validation de l'étape 3 (2026-11-10)** ; reste sa livraison : le code en
-  ligne, puis la migration, sur accord, `dev` puis `main`.
+  et du code (D72, D73), migration `20261102180000_drop_vehicle_status` **appliquée le 2026-11-10 sur `dev`
+  puis sur `main`**, après la mise en ligne du code (ordre inverse de l'étape 2, mémo §4.1 point 7). Depuis, le
+  retour arrière de Vercel vers un déploiement d'avant l'étape 3 (`e3a8894` et avant) casse l'application (mémo
+  §4.3). **Chantier terminé et livré (2026-11-10).**
 - **Chantier « branchement au portail »** (2026-11-10, [plan](docs/features/branchement-portail.md), prompt
   guidé P-05 du portail) : le portail s'affiche désormais « Espace Admission ». Depuis la bascule du 2026-11-10, il
   est à `https://espace-admission.vercel.app` (émetteur `…/api/auth`, G26 à G32). Bascule constatée : production

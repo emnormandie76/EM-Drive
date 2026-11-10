@@ -164,7 +164,10 @@ Vérifications sur l'arbre ci-dessus : `npm test` 467 tests verts (27 fichiers, 
    `end_session_endpoint`, `portail-directory.ts` l. 71 pour `token_endpoint`). Résultat sur un tel déploiement :
    plus de déconnexion par le portail (seulement locale), un annuaire en 503, et une connexion que le contrat ne
    garantit plus (§3). Revenir en arrière veut donc dire redéployer, pas reprendre un ancien déploiement. À écrire
-   au mémo §4.3 (étape 1), à côté de l'avertissement de l'étape 3 des indisponibilités.
+   au mémo §4.3 (étape 1), à côté de l'avertissement de l'étape 3 des indisponibilités. *Depuis la livraison de
+   cette étape 3 (2026-11-10, `dpl_7u9jQTMin3wneKnkBz6dsRrVr99P`), le candidat est
+   `dpl_67fnM1ZXJZpLFPuax1BxYLacwjd6` : construit après la bascule, il lit encore `vehicles.status`, retirée de la
+   base, et casse donc l'application. Aucun retour arrière n'est utilisable ; corriger en avant.*
 2. **Le poste garde l'ancienne valeur** tant que le propriétaire n'a pas changé `.env.local`. Les effets sont ceux
    du piège 1 : déconnexion locale seulement (l'annuaire du client `dev`, lui, est fermé de toute façon : 503) et
    connexion non garantie. Une fois la valeur changée, redémarrer `npm run dev` : la CSP se calcule au démarrage.

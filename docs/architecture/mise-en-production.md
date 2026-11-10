@@ -310,8 +310,9 @@ avec l'accord du propriétaire, D17). Une troisième, `20261102160000_vehicle_un
 ouvertes ; appliquée le 2026-11-02 à la branche `dev` puis à la branche `main` (accord du propriétaire,
 partage de connexion). Une quatrième, `20261102180000_drop_vehicle_status` (étape 3 du même chantier, écrite à la
 main, **destructive** : `ALTER TABLE "vehicles" DROP COLUMN "status"` puis `DROP TYPE "VehicleStatus"`, seule
-exception accordée à la règle 8, D72), **rédigée et comparée hors ligne, pas encore appliquée** : elle se joue
-après la mise en ligne du code dont le client ne sélectionne plus `status` (mémo §4.1). Base et schéma vérifiés
+exception accordée à la règle 8, D72), **appliquée le 2026-11-10** à la branche `dev` puis à la branche `main`
+(accord du propriétaire, partage de connexion), après la mise en ligne du code dont le client ne sélectionne plus
+`status` (mémo §4.1). Base et schéma vérifiés
 identiques après chaque application (`prisma migrate diff --from-config-datasource` : « empty migration »).
 Client généré dans `src/generated/prisma/` (versionné ; ne
 pas éditer).
