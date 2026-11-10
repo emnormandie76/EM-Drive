@@ -15,7 +15,8 @@
 campus (Le Havre, Caen, Paris). Un utilisateur crée un trajet (aller simple, aller-retour inter-campus, ou
 aller-retour vers une destination « autre »), choisit un véhicule libre, et d'autres utilisateurs peuvent
 s'inscrire comme passagers. Un administrateur gère la flotte, les trajets, les paramètres et lit un journal
-d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par lequel on se connecte (§2).
+d'audit. Les accès et les rôles se gèrent dans le **portail**, affiché « Espace Admission » (G26), par lequel on se
+connecte (§2).
 
 - **Pile** : Next.js 16.2.3 (App Router, Turbopack), React 19, TypeScript strict, Prisma 7.7 avec
   l'adaptateur Neon (WebSocket, port 443), NextAuth v4 (JWT, fournisseur OIDC), SWR, date-fns, Sonner, Lucide.
@@ -23,7 +24,8 @@ d'audit. Les accès et les rôles se gèrent dans le **portail admission**, par 
   d'exploitation, [`memory/memory-exploitation.md`](../memory/memory-exploitation.md)).
 - **En ligne** depuis le 2026-10-29 (étape 4) : <https://em-drive.vercel.app>, projet Vercel `em-drive`, région
   `fra1`, base Neon `resavroom` branche `main` ; le poste travaille sur la branche `dev` (mémo §0, §4).
-- **Connexion** : par le portail admission, fournisseur d'identité OIDC (G9), selon le **contrat portail v1**
+- **Connexion** : par le portail, affiché « Espace Admission », à `https://espace-admission.vercel.app` depuis la
+  bascule du 2026-11-10 (G28) ; fournisseur d'identité OIDC (G9), selon le **contrat portail v1**
   (`../portail/docs/architecture/contrat-apps.md`, lecture seule), branchée à l'étape 2a avec le client `dev`
   (`http://localhost:3002`), en production à l'étape 4 avec le client `production`.
 - **Recherche de collègues** : par l'annuaire du portail (contrat portail v1 §7), depuis l'étape 2b (§2.1).
@@ -74,9 +76,11 @@ préfixes `__Secure-` (et `__Host-` pour le jeton CSRF), selon `NEXTAUTH_URL`. L
 le même nom par `sessionCookieName()`.
 
 **Pages** : `/login` ([page.tsx](../../src/app/%28auth%29/login/page.tsx)) montre un bouton « Se connecter avec
-le portail » (`signIn("portail")`) ; avec `?error=…` (`pages.error`), un message neutre et un lien vers le
-portail, **sans relancer le flux**. `/unauthorized` dit que ResaVroom ne peut pas ouvrir de session avec ce
-compte, avec un lien vers le portail. Un refus d'accès (personne hors de la grille) s'affiche sur le portail :
+l'Espace Admission » (`signIn("portail")`) ; avec `?error=…` (`pages.error`), un message neutre et un lien
+« Ouvrir l'Espace Admission » vers le portail, **sans relancer le flux**. `/unauthorized` dit qu'EM Drive ne peut
+pas ouvrir de session avec ce compte, avec un lien « Retour à l'Espace Admission ». Les textes visibles disent
+« l'Espace Admission » depuis le 2026-11-10 (G31) ; le fournisseur garde l'`id` `portail` (adresse de retour) et
+s'appelle « Espace Admission » (D75, visible dans `/api/auth/providers`). Un refus d'accès (personne hors de la grille) s'affiche sur le portail :
 ResaVroom ne reçoit rien (contrat §3.6).
 
 **Déconnexion** (contrat §3.8, D23) : la barre de navigation envoie un formulaire `POST /api/auth/logout`
@@ -169,8 +173,8 @@ l'affichage de la barre de navigation ([Navbar.tsx](../../src/components/layout/
 | Chemin | Accès | Fichier | Remarque |
 |---|---|---|---|
 | `/` | connecté | [src/app/page.tsx](../../src/app/page.tsx) | redirige vers `/dashboard` |
-| `/login` | public | [src/app/(auth)/login/page.tsx](../../src/app/%28auth%29/login/page.tsx) | bouton « Se connecter avec le portail » ([PortalSignInButton.tsx](../../src/app/%28auth%29/login/PortalSignInButton.tsx)) ; avec `?error=…`, message neutre et lien vers le portail, sans relancer le flux (§2.1) ; pleine fenêtre (`.login-container` en `position: fixed`, étape 3) |
-| `/unauthorized` | public | [src/app/(auth)/unauthorized/page.tsx](../../src/app/%28auth%29/unauthorized/page.tsx) | « Connexion refusée » : cible du rappel `signIn` quand le compte ne peut pas être rattaché (§2.1) ; lien vers le portail |
+| `/login` | public | [src/app/(auth)/login/page.tsx](../../src/app/%28auth%29/login/page.tsx) | bouton « Se connecter avec l'Espace Admission » ([PortalSignInButton.tsx](../../src/app/%28auth%29/login/PortalSignInButton.tsx)) ; avec `?error=…`, message neutre et lien « Ouvrir l'Espace Admission », sans relancer le flux (§2.1) ; pleine fenêtre (`.login-container` en `position: fixed`, étape 3) |
+| `/unauthorized` | public | [src/app/(auth)/unauthorized/page.tsx](../../src/app/%28auth%29/unauthorized/page.tsx) | « Connexion refusée » : cible du rappel `signIn` quand le compte ne peut pas être rattaché (§2.1) ; lien « Retour à l'Espace Admission » |
 | `/dashboard` | connecté | [src/app/dashboard/page.tsx](../../src/app/dashboard/page.tsx) | « Mes trajets à venir » : les cinq prochains trajets de l'appelant, conducteur ou passager, filtrés par le serveur (`GET /api/trips?mine=true`, D32) ; flotte (position, statut) : le statut d'une carte (`VehicleStatusBadge`) vient des trajets en cours et des périodes d'indisponibilité en cours, « Maintenance » ou « Car Booking » (D69), avec « Réserver » désactivé et la période (motif, dates) sous la position ; la tuile « Indisponibles » de la flotte regroupe les deux ; polling SWR 30 s ; états de chargement, vide et d'erreur par section |
 | `/trips` | connecté | [src/app/trips/page.tsx](../../src/app/trips/page.tsx) | liste filtrable (statut, campus, date) ; squelettes au chargement, état d'erreur avec « Réessayer », état vide avec « Réinitialiser les filtres » |
 | `/trips/new` | connecté | [src/app/trips/new/page.tsx](../../src/app/trips/new/page.tsx) | assistant `TripWizard` : recherche (`StepSearch`) puis confirmation (`StepConfirm`) ; dans `StepConfirm`, passagers choisis dans l'annuaire (le conducteur et les passagers déjà choisis ne sont pas proposés ; un passager choisi ensuite comme conducteur sort de la liste, D27) et, pour un admin, conducteur choisi dans l'annuaire. État dans [wizard-state.ts](../../src/components/trips/wizard-state.ts) (fonction pure, testée) : tout changement du formulaire efface les résultats, une recherche lancée avant un changement ne rend pas les siens, seul un véhicule de la recherche en cours se choisit ; « Retour » retrouve le formulaire rempli (la recherche reste montée, masquée) ; un refus du véhicule par le serveur (`VEHICLE_CONFLICT`, `VEHICLE_UNAVAILABLE`, `VEHICLE_NOT_AT_CAMPUS`) efface les résultats et ramène à la recherche |
@@ -444,7 +448,8 @@ pour React) ; `style-src 'self' 'unsafe-inline'` (styles en ligne des composants
 `font-src 'self'` (Inter est servie par l'application, `next/font`) ; `connect-src 'self'` (les écrans n'appellent
 que `/api`) ; `object-src 'none'` ; `base-uri 'self'` ; `form-action 'self'` plus **l'origine du portail**, lue
 dans `PORTAIL_ISSUER` au build (contrat §2 : le formulaire de déconnexion redirige vers le portail ; sans émetteur,
-l'application seule) ; `frame-ancestors 'self'` (le cadrage par l'application elle-même sert aux essais de largeur,
+l'application seule ; `https://espace-admission.vercel.app` depuis la bascule du 2026-11-10 : une nouvelle adresse
+du portail demande un nouveau build) ; `frame-ancestors 'self'` (le cadrage par l'application elle-même sert aux essais de largeur,
 piège 15). Limite assumée : `'unsafe-inline'` laisse passer un script injecté dans la page ; la CSP protège surtout
 du cadrage par un autre site, de l'injection de `<base>` et d'`<object>`, et des envois vers d'autres origines.
 Vérifié sur `next start` (2026-10-29) : en-têtes servis sur `/login` et `/api/trips`.

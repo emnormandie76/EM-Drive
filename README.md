@@ -19,7 +19,7 @@ de Caen et de Paris.
 ### Réservation et covoiturage
 
 - Recherche d'un véhicule libre, ou d'un trajet existant à rejoindre comme passager.
-- Passagers (et, pour un administrateur, le conducteur) choisis dans l'annuaire du portail admission : seules
+- Passagers (et, pour un administrateur, le conducteur) choisis dans l'annuaire de l'Espace Admission (le portail) : seules
   les personnes qui ont accès à EM Drive y figurent.
 - Trois types de trajet : aller simple entre campus, aller-retour entre campus, aller-retour vers une adresse
   libre.
@@ -39,11 +39,12 @@ de Caen et de Paris.
 - Paramètres : temps de battement entre deux réservations.
 - Journal d'audit des actions sensibles ; métriques de la base Neon (chargées à la demande) et nettoyage des
   trajets terminés ou des journaux de plus d'un mois, confirmé en tapant `SUPPRIMER`.
-- Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans le portail admission, pas dans EM Drive.
+- Les accès et les rôles (`USER`, `ADMIN`) se gèrent dans l'Espace Admission (le portail), pas dans EM Drive.
 
 ### Connexion
 
-- Par le portail admission, avec son adresse `@em-normandie.fr` : bouton « Se connecter avec le portail ».
+- Par l'Espace Admission (le portail, <https://espace-admission.vercel.app> depuis la bascule du 2026-11-10), avec
+  son adresse `@em-normandie.fr` : bouton « Se connecter avec l'Espace Admission ».
 - EM Drive est restreinte : seules les personnes à qui le super-admin du portail a donné un rôle y entrent.
 - Une session dure 8 h depuis la connexion ; la déconnexion ferme aussi la session du portail.
 
@@ -87,7 +88,8 @@ Renseignez `.env.local`. Le rôle de chaque variable est décrit dans
 - `DATABASE_URL` (connexion pooled) et `DATABASE_URL_UNPOOLED` (connexion directe, pour les migrations) ;
 - `NEXTAUTH_URL` (`http://localhost:3002`) et `NEXTAUTH_SECRET` (une chaîne longue et aléatoire) ;
 - `ORS_API_KEY` (facultative) ;
-- `PORTAIL_ISSUER` (`https://portail-admission.vercel.app/api/auth`), `PORTAIL_CLIENT_ID` et
+- `PORTAIL_ISSUER` (`https://espace-admission.vercel.app/api/auth` depuis la bascule du 2026-11-10),
+  `PORTAIL_CLIENT_ID` et
   `PORTAIL_CLIENT_SECRET` : le client `dev` du portail.
 
 Ne committez jamais `.env` ni `.env.local`.

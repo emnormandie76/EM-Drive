@@ -2,8 +2,9 @@
 
 **EM Drive** est une application web interne de réservation de véhicules et de covoiturage entre trois
 campus (Le Havre, Caen, Paris), pour les salariés d'une entreprise. **En ligne depuis le 2026-10-29** sur
-<https://em-drive.vercel.app> (étape 4). On s'y connecte par le **portail admission** (G9, contrat portail v1) :
-client `production` en ligne, client `dev` sur le poste (`http://localhost:3002`).
+<https://em-drive.vercel.app> (étape 4). On s'y connecte par le **portail**, affiché **« Espace Admission »**
+(G9, G26, contrat portail v1), à `https://espace-admission.vercel.app` depuis la bascule du 2026-11-10 : client
+`production` en ligne, client `dev` sur le poste (`http://localhost:3002`).
 
 - **Next.js 16.2** (App Router) et **React 19**, TypeScript strict : pages, routes API et actions serveur.
 - **Prisma 7.7** avec l'adaptateur Neon (WebSocket) ; **NextAuth v4** (JWT) ; SWR, Sonner, Lucide.
@@ -72,9 +73,10 @@ Chantier « mise en production » ([plan](docs/features/mise-en-production.md)),
 - **Chantier « branchement au portail »** (2026-11-10, [plan](docs/features/branchement-portail.md), prompt
   guidé P-05 du portail) : le portail s'affiche désormais « Espace Admission ». Depuis la bascule du 2026-11-10, il
   est à `https://espace-admission.vercel.app` (émetteur `…/api/auth`, G26 à G32). Bascule constatée : production
-  redéployée, `.env.local` changé, essai conforme. **Étape 0 faite et validée** (2026-11-10), D74 à D76. L'étape 1
-  (textes « l'Espace Admission », documents) vient **après la livraison de l'étape 3 des indisponibilités** (D74).
-  D'ici là, les sections ci-dessous gardent l'ancienne adresse et l'ancien nom.
+  redéployée, `.env.local` changé, essai conforme. **Étape 0 faite et validée** (2026-11-10), D74 à D76.
+  **Étape 1 faite et validée, livraison en cours** (2026-11-10) : les textes visibles disent
+  « l'Espace Admission » (G31) ; le fournisseur s'appelle « Espace Admission » (D75) et garde son `id` `portail` ;
+  les documents portent la nouvelle adresse. Les noms techniques gardent « portail » (G27).
 
 L'étape en cours se lit dans le journal du plan du chantier en cours.
 
@@ -171,8 +173,9 @@ passer ce `teamId` (les journaux l'exigent). Ne jamais toucher `app-vc`, `les-pe
 | **Avec l'accord du propriétaire, à chaque fois** | `create_branch`, `create_or_update_file`, `push_files`, `delete_file`, `actions_run_trigger`, `create_repository`, `fork_repository` |
 | **Jamais** | `delete_repository`, tout ce qui touche à `main` |
 
-**Portail admission** (<https://portail-admission.vercel.app>) — fournisseur d'identité de ResaVroom (G9),
-qui n'est pas à elle. **Jamais** : écrire dans `../portail`, appeler un MCP sur ses ressources (dépôt
+**Portail**, affiché **« Espace Admission »** (<https://espace-admission.vercel.app> depuis la bascule du
+2026-11-10 ; l'ancienne adresse <https://portail-admission.vercel.app> y renvoie) — fournisseur d'identité de
+ResaVroom (G9), qui n'est pas à elle. Ses projets Vercel et Neon et son dépôt gardent le nom `portail-admission`. **Jamais** : écrire dans `../portail`, appeler un MCP sur ses ressources (dépôt
 `emnormandie76/portail-admission`, projets Vercel et Neon `portail-admission`), demander ou lire
 `PORTAIL_CLIENT_SECRET`, créer un compte de test, **travailler dans l'administration du portail, même dans la
 session du propriétaire** (D29 du portail, G25) : un réglage du portail à changer (annuaire, grille, client) se

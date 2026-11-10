@@ -1,6 +1,7 @@
 # Chantier — Branchement au portail : la nouvelle adresse de l'Espace Admission (P-05)
 
-> **Statut au 2026-11-10 :** **étape 0 faite, sans code, et validée.** Le portail s'affiche
+> **Statut au 2026-11-10 :** **étapes 0, 1 et 2 faites et validées ; livraison de l'étape 1 en cours (avance de `main`).**
+> Historique : étape 0 faite, sans code, et validée. Le portail s'affiche
 > désormais « Espace Admission ». Il a basculé sur `https://espace-admission.vercel.app` le 2026-11-10 à 10 h 13
 > (G32). Le propriétaire a redéployé la production d'EM Drive avec la nouvelle `PORTAIL_ISSUER` et changé
 > `.env.local`. **Bascule constatée** le même jour : CSP sur la nouvelle origine, connexion, déconnexion et annuaire
@@ -201,7 +202,7 @@ Vérifications sur l'arbre ci-dessus : `npm test` 467 tests verts (27 fichiers, 
 
 Elle vient après la livraison de l'étape 3 des indisponibilités (D74).
 
-- [ ] **Textes visibles** (G31). Libellés proposés, à confirmer à l'écran :
+- [x] **Textes visibles** (G31). Libellés proposés, repris tels quels (2026-11-10) :
   - `src/app/(auth)/login/PortalSignInButton.tsx` : « Redirection vers le portail... » → « Redirection vers
     l'Espace Admission... » ; « Se connecter avec le portail » → « Se connecter avec l'Espace Admission » ;
   - `src/app/(auth)/login/page.tsx` : « … ou passer par le portail. » → « … ou passer par l'Espace Admission. » ;
@@ -213,21 +214,26 @@ Elle vient après la livraison de l'étape 3 des indisponibilités (D74).
   - `src/lib/utils/errors.ts` : « l'annuaire du portail ne répond pas » → « l'annuaire de l'Espace Admission ne
     répond pas » ; « Trop de recherches dans l'annuaire du portail » → « Trop de recherches dans l'annuaire de
     l'Espace Admission ».
-- [ ] `name` du fournisseur : « Espace Admission » (D75). L'`id` `portail` ne change pas.
-- [ ] Commentaires d'en-tête alignés quand ils citent l'ancien nom ou le texte du bouton (G27 : « le portail »
-  reste pour parler du projet).
-- [ ] `tests/security-headers.test.ts` : valeur d'essai `https://portail.test` (D76). Il doit rester vert sans
-  autre changement.
-- [ ] `.env.example` : le commentaire, et la valeur d'exemple de `PORTAIL_ISSUER`, qui devient le nouvel émetteur.
-- [ ] **Documents** : écrire « depuis la bascule du 2026-11-10 » partout où ils décrivent la production. Fichiers :
+- [x] `name` du fournisseur : « Espace Admission » (D75). L'`id` `portail` ne change pas.
+- [x] Commentaires d'en-tête alignés quand ils citent l'ancien nom ou le texte du bouton (G27 : « le portail »
+  reste pour parler du projet). *Cinq en-têtes : `PortalSignInButton.tsx`, `login/page.tsx`, `auth.ts`,
+  `portail.ts`, `portail-directory.ts`.*
+- [x] `tests/security-headers.test.ts` : valeur d'essai `https://portail.test` (D76). Il doit rester vert sans
+  autre changement. *Vert, inchangé par ailleurs.*
+- [x] `.env.example` : le commentaire, et la valeur d'exemple de `PORTAIL_ISSUER`, qui devient le nouvel émetteur.
+- [x] **Documents** : écrire « depuis la bascule du 2026-11-10 » partout où ils décrivent la production. Fichiers :
   `CLAUDE.md`, `README.md`, architecture, et mémo (§0, §1, §1.1, §3, le contrôle de la CSP du §4.2, et le retour
   arrière du §4.3 avec le piège 1). Puis un `git grep` des anciennes formes : il ne doit plus montrer que
   l'histoire et les noms techniques.
-- [ ] `npm test` (par PowerShell, piège 6), `npx tsc --noEmit`, `npm run lint` ; build (`DATABASE_URL` factice)
-  puis `tsc`.
-- [ ] Essai sur le poste, une fois `.env.local` changé (étape 2) : les textes de `/login` et de `/unauthorized`.
-- [ ] Validation, commit à part, livraison selon le mémo §4.1 (avance de `main` sur demande). Vérification en
-  ligne (§4.2) : textes de `/login`, `/api/auth/providers` (« Espace Admission »), CSP.
+- [x] `npm test` (par PowerShell, piège 6), `npx tsc --noEmit`, `npm run lint` ; build (`DATABASE_URL` factice)
+  puis `tsc`. *467 verts (27 fichiers), 0, 0 ; build vert, puis `tsc` 0.*
+- [x] Essai sur le poste, une fois `.env.local` changé (étape 2) : les textes de `/login` et de `/unauthorized`.
+  *Fait par l'agent (requêtes sans session sur `localhost:3002`) : les cinq libellés présents, y compris le
+  message d'erreur de `/login?error=…` ; aucun texte visible ne contient « portail » ; `/api/auth/providers` :
+  `"name":"Espace Admission"`, `id` `portail` ; CSP sur la nouvelle origine.*
+- [x] Validation, commit à part, livraison selon le mémo §4.1 (avance de `main` sur demande). *Validée par le
+  propriétaire le 2026-11-10 ; commits puis avance de `main` à sa demande.*
+- [ ] Vérification en ligne (§4.2) : textes de `/login`, `/api/auth/providers` (« Espace Admission »), CSP.
 
 ### Étape 2 — La bascule (faite par le propriétaire le 2026-11-10 ; reste à constater)
 
@@ -246,7 +252,7 @@ C'est l'étape 2 du P-05, réduite par sa mise à jour de 10 h 30.
 - [x] Le propriétaire met la nouvelle valeur dans `.env.local`, puis redémarre `npm run dev` (piège 2). *Fait par
   le propriétaire le 2026-11-10. Constaté sans lire le fichier : `npm run dev` relancé par l'agent, `/login` sur
   `localhost:3002` porte `form-action 'self' https://espace-admission.vercel.app`.*
-- [ ] Documents : « depuis la bascule du 2026-11-10 » (avec l'étape 1) ; journal ; partie « après la bascule » du
+- [x] Documents : « depuis la bascule du 2026-11-10 » (avec l'étape 1) ; journal ; partie « après la bascule » du
   compte rendu (§8 du P-05).
 
 ---
@@ -271,3 +277,5 @@ C'est l'étape 2 du P-05, réduite par sa mise à jour de 10 h 30.
 | 2026-11-10 | 2 | **`.env.local` changé par le propriétaire** (il le signale dans le chat ; l'agent n'a pas lu le fichier). Port 3002 libre au départ ; `npm run dev` lancé par l'agent ; `GET /login` en local : 200, `form-action 'self' https://espace-admission.vercel.app`. Donc `PORTAIL_ISSUER` vise bien la nouvelle origine. `/api/auth/providers` répond encore « Portail admission » (attendu jusqu'à l'étape 1, D75). Case cochée. | Restent : la connexion et la déconnexion du propriétaire sur le poste et en production, et une recherche de passager en production (sur le poste, l'annuaire du client `dev` est fermé : 503 attendu). Serveur de développement laissé lancé pour l'essai. |
 | 2026-11-10 | 2 | **Essai du propriétaire, connecté lui-même** : connexion et déconnexion sur le poste et en production, recherche de passager en production. Il répond « tout est bon ». Journaux relus par l'agent : sur le poste, `POST /api/auth/signin/portail`, retour `callback/portail`, `/dashboard`, `POST /api/auth/logout` 303, sans aucune ligne `[AUTH]` (la découverte suivie donne bien un `end_session_endpoint` sur l'émetteur) ; en production, aucun journal d'erreur ni d'avertissement sur 45 minutes (MCP Vercel). Serveur de développement arrêté par son port, après vérification de sa ligne de commande. **La bascule est constatée** : déploiement `dpl_67fnM1ZXJZpLFPuax1BxYLacwjd6`, CSP sur la nouvelle origine en production et sur le poste, connexion, déconnexion et annuaire conformes. | Reste de l'étape 2 : les documents (« depuis la bascule du 2026-11-10 »), avec l'étape 1. Restent aussi la validation de l'étape 3 des indisponibilités, puis celle de cette étape 0, et leurs commits séparés (D74). |
 | 2026-11-10 | 0 | **Étape 0 validée par le propriétaire**, en même temps que l'étape 3 des indisponibilités (« je valide tout »). Ordre de D74 respecté : d'abord les deux commits de l'étape 3 (`3ae054e` pour le code, `be604b4` pour les docs), puis la ligne du chantier dans `CLAUDE.md` et ce commit à part. Aucun code. | **Prochaine étape : 1**, une fois l'étape 3 des indisponibilités livrée jusqu'à sa migration. Le propriétaire annonce « P-05 fait » à l'agent du portail une fois l'étape 1 livrée, ou dès maintenant pour l'étape 0. |
+| 2026-11-10 | 1 | **Début d'étape**, sur demande du propriétaire (« fais-moi le rename »), une fois l'étape 3 des indisponibilités livrée (D74 rempli). Départ : `dev-claude` sur `79d0ec8`, arbre propre. Guide Next des pages et mises en page parcouru (règle 11) : seuls des textes changent, aucune API de Next. **Code** : textes de `PortalSignInButton.tsx`, `login/page.tsx`, `unauthorized/page.tsx`, `admin/page.tsx` et des deux messages de l'annuaire (`errors.ts`) ; `name` du fournisseur (D75) ; cinq commentaires d'en-tête ; valeur d'essai de `tests/security-headers.test.ts` (D76) ; `.env.example`. **Docs** : `CLAUDE.md`, `README.md`, architecture (§1, §2.1, table des écrans, CSP §8.1), mémo (§0, §1, §1.1, §3, §4.2, §4.3 avec le piège 1). `git grep` : il ne reste que l'ancienne adresse citée comme redirection et « le portail » pour le projet. Vérifications : 467 tests verts, `tsc` 0, lint 0, build puis `tsc` 0. Essai sur le poste : conforme (§6, étape 1). | **Aucun test d'abord** : un texte ne protège rien, et aucun test ne lisait ces textes (§4, écart 3). `/admin` et les deux messages de l'annuaire ne se voient qu'avec une session : relus dans le code, pas à l'écran. **Rien n'est commité.** Reste : validation, commit à part, livraison (avance de `main`, sur demande) et vérification en ligne. |
+| 2026-11-10 | 1 | **Étape 1 validée par le propriétaire** (« je valide la partie faite, commit et push, tout sur `main` après »). Contrôles relancés avant les commits : 467 tests verts (27 fichiers), `tsc` 0, lint 0. Deux commits (code, puis docs), push de `dev-claude`, puis avance de `main` (`origin/main` était sur `15228b8`, `main` locale en retard). | Reste : vérification en ligne une fois le déploiement de `main` prêt (§4.2), puis le propriétaire annonce « P-05 fait » à l'agent du portail. |
