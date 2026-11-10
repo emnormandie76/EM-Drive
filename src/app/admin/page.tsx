@@ -53,8 +53,8 @@ export default async function AdminDashboardPage() {
           <h2 className="text-xl font-bold mb-4">Bienvenue dans l&#39;espace d&#39;administration</h2>
           <p className="text-muted">
             Utilisez le menu latéral pour gérer la flotte de véhicules, consulter et annuler des trajets,
-            ou paramétrer l&#39;application (temps de buffer, etc.). Les accès et les rôles se gèrent dans le
-            portail admission.
+            ou paramétrer l&#39;application (temps de buffer, etc.). Les accès et les rôles se gèrent dans
+            l&#39;Espace Admission.
           </p>
         </CardBody>
       </Card>

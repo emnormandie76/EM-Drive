@@ -4,8 +4,9 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const PORTAL_ISSUER = "https://portail-admission.vercel.app/api/auth";
-const PORTAL_ORIGIN = "https://portail-admission.vercel.app";
+// Adresse neutre, comme les autres tests (D76) : le test ne suit pas l'adresse réelle du portail
+const PORTAL_ISSUER = "https://portail.test/api/auth";
+const PORTAL_ORIGIN = "https://portail.test";
 
 type HeaderRule = { source: string; headers: { key: string; value: string }[] };
 

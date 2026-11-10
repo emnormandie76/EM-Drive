@@ -1,4 +1,4 @@
-// src/lib/portail-directory.ts — Annuaire du portail admission (contrat portail v1 §7), côté serveur seulement
+// src/lib/portail-directory.ts — Annuaire du portail, affiché « Espace Admission » (contrat portail v1 §7), côté serveur seulement
 // Jeton client_credentials (scope directory) gardé en mémoire jusqu'à son terme ; recherche des personnes qui ont
 // accès à EM Drive ; identité d'une personne choisie par un écran (D24). Ce module lit le secret du client : il
 // ne doit jamais atteindre le navigateur (D28).

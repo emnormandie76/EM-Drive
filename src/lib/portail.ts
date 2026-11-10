@@ -1,4 +1,4 @@
-// src/lib/portail.ts — Adresses du portail admission, déduites de PORTAIL_ISSUER (contrat portail v1 §3.3, §3.9)
+// src/lib/portail.ts — Adresses du portail (affiché « Espace Admission »), déduites de PORTAIL_ISSUER (contrat portail v1 §3.3, §3.9)
 // Les routes du portail se lisent dans sa découverte : aucune n'est écrite en dur.
 
 /** L'émetteur, sans barre finale (contrat §3.3). */

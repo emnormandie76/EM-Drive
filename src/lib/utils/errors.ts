@@ -190,7 +190,7 @@ export class ValidationError extends BusinessError {
 export class DirectoryUnavailableError extends BusinessError {
   constructor() {
     super(
-      "La recherche de collègues est indisponible : l'annuaire du portail ne répond pas. Réessayez plus tard.",
+      "La recherche de collègues est indisponible : l'annuaire de l'Espace Admission ne répond pas. Réessayez plus tard.",
       "DIRECTORY_UNAVAILABLE",
       undefined,
       503
@@ -204,7 +204,12 @@ export class DirectoryUnavailableError extends BusinessError {
  */
 export class DirectoryRateLimitedError extends BusinessError {
   constructor() {
-    super("Trop de recherches dans l'annuaire du portail : réessayez dans un instant.", "DIRECTORY_RATE_LIMITED", undefined, 429);
+    super(
+      "Trop de recherches dans l'annuaire de l'Espace Admission : réessayez dans un instant.",
+      "DIRECTORY_RATE_LIMITED",
+      undefined,
+      429
+    );
     this.name = "DirectoryRateLimitedError";
   }
 }

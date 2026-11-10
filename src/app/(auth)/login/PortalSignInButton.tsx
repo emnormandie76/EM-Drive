@@ -1,4 +1,4 @@
-// src/app/(auth)/login/PortalSignInButton.tsx — Bouton « Se connecter avec le portail »
+// src/app/(auth)/login/PortalSignInButton.tsx — Bouton « Se connecter avec l'Espace Admission »
 "use client";
 
 import { signIn } from "next-auth/react";
@@ -15,7 +15,7 @@ export function PortalSignInButton({ callbackUrl }: { callbackUrl: string }) {
 
   return (
     <button type="button" className="login-button" onClick={handleClick} disabled={loading}>
-      {loading ? "Redirection vers le portail..." : "Se connecter avec le portail"}
+      {loading ? "Redirection vers l'Espace Admission..." : "Se connecter avec l'Espace Admission"}
     </button>
   );
 }

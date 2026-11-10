@@ -1,4 +1,4 @@
-// src/lib/auth.ts — Configuration NextAuth : connexion par le portail admission (G9, contrat portail v1)
+// src/lib/auth.ts — Configuration NextAuth : connexion par le portail, affiché « Espace Admission » (G9, contrat portail v1)
 // Un seul fournisseur, OIDC « portail ». NextAuth v4 ne suit pas le contrat sans réglage (piège 11) :
 // vérifications, authentification du client, session de 8 h fixes, cookies, déconnexion (route logout).
 
@@ -30,7 +30,7 @@ interface PortalProfile extends Record<string, unknown> {
 function portalProvider(): OAuthConfig<PortalProfile> {
   return {
     id: "portail",
-    name: "Portail admission",
+    name: "Espace Admission", // nom affiché (D75) ; l'id « portail » fixe l'adresse de retour et ne change pas
     type: "oauth",
     wellKnown: portalDiscoveryUrl(),
     clientId: process.env.PORTAIL_CLIENT_ID,

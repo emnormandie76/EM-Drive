@@ -15,15 +15,15 @@ export default function UnauthorizedPage() {
           <div className="login-logo">🔒</div>
           <h1>Connexion refusée</h1>
           <p>
-            EM Drive ne peut pas ouvrir de session avec ce compte. Contactez l&apos;administrateur du
-            portail.
+            EM Drive ne peut pas ouvrir de session avec ce compte. Contactez l&apos;administrateur de
+            l&apos;Espace Admission.
           </p>
         </div>
 
         <div className="unauthorized-actions">
           {portalUrl && (
             <a href={portalUrl} className="login-button">
-              Retour au portail
+              Retour à l&apos;Espace Admission
             </a>
           )}
           <Link href="/login" className="login-link">
