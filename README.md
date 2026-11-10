@@ -146,8 +146,8 @@ pour EM Drive (ses adresses de retour sont exactes, port compris). La page de co
 - « Modifier les horaires » d'un trajet n'est plus possible une fois le trajet parti, même pour un admin ; un admin
   corrige un trajet passé depuis l'administration des trajets.
 - Les réservations Car Booking se saisissent à la main : aucune synchronisation avec Car Booking, et aucun avis
-  aux personnes dont un trajet est touché. La colonne `status` des véhicules est obsolète, laissée en base
-  jusqu'à l'étape 3 du chantier « indisponibilités et corrections ».
+  aux personnes dont un trajet est touché. Un véhicule n'a plus de statut : seules ses périodes
+  d'indisponibilité comptent.
 - Le nettoyage de la base est définitif.
 - Les autres cas limites et leur état : [docs/edgecase.md](docs/edgecase.md).
 
