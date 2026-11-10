@@ -26,8 +26,8 @@ export type Campus = Prisma.CampusModel
 /**
  * Model Vehicle
  * Les véhicules de la flotte.
- * `status` : OBSOLÈTE (D59). La disponibilité vient des périodes de `VehicleUnavailability` ; la colonne reste
- * en base le temps d'une livraison (le code en ligne la lit encore) et sera retirée à l'étape 3.
+ * La disponibilité d'un véhicule vient des périodes de `VehicleUnavailability` (D58, D59) : l'ancienne colonne
+ * `status` est retirée (étape 3, D72).
  * `defaultCampusId` : campus de rattachement initial du véhicule.
  */
 export type Vehicle = Prisma.VehicleModel

@@ -374,7 +374,7 @@ describe("GET /api/vehicles/[id] : périodes du véhicule", () => {
 
 describe("le statut d'un véhicule ne s'écrit plus (D59)", () => {
   it("PATCH /api/admin/vehicles/[id] refuse status, sans rien écrire : la maintenance est une période", async () => {
-    db.vehicle.findUnique.mockResolvedValue({ id: "vehicle-1", name: "Zoé", status: "AVAILABLE" });
+    db.vehicle.findUnique.mockResolvedValue({ id: "vehicle-1", name: "Zoé" });
     const response = await updateVehicleRoute(request("PATCH", { status: "MAINTENANCE" }), vehicleParams);
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -385,8 +385,8 @@ describe("le statut d'un véhicule ne s'écrit plus (D59)", () => {
   });
 
   it("PATCH /api/admin/vehicles/[id] n'envoie jamais de statut à la base, et l'audit reste VEHICLE_UPDATED", async () => {
-    db.vehicle.findUnique.mockResolvedValue({ id: "vehicle-1", name: "Zoé", status: "MAINTENANCE" });
-    db.vehicle.update.mockResolvedValue({ id: "vehicle-1", name: "Zoé 2", status: "MAINTENANCE" });
+    db.vehicle.findUnique.mockResolvedValue({ id: "vehicle-1", name: "Zoé" });
+    db.vehicle.update.mockResolvedValue({ id: "vehicle-1", name: "Zoé 2" });
     const response = await updateVehicleRoute(request("PATCH", { name: "Zoé 2" }), vehicleParams);
     expect(response.status).toBe(200);
     expect(db.vehicle.update.mock.calls[0][0].data).not.toHaveProperty("status");

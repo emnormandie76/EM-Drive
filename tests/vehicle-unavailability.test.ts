@@ -127,11 +127,6 @@ describe("assertVehicleBookable : indisponibilités (D59, D62)", () => {
     await expect(assertSlot(20, 22)).resolves.toBeUndefined();
   });
 
-  it("accepte le créneau d'un véhicule dont la colonne status dit MAINTENANCE : seules les périodes comptent", async () => {
-    db.vehicle.findUniqueOrThrow.mockResolvedValue(makeVehicle({ status: "MAINTENANCE" }));
-    await expect(assertSlot(12, 14)).resolves.toBeUndefined();
-  });
-
   it("refuse tout créneau après le début d'une maintenance sans fin", async () => {
     periods(maintenance({ endsAt: null }));
     await expect(assertSlot(500, 502)).rejects.toBeInstanceOf(VehicleUnavailableError);
@@ -296,13 +291,6 @@ describe("getAvailableVehicles : indisponibilités (D59)", () => {
       estimatedReturnArrivalTime: at(40),
     });
     expect(found.map((v) => v.id)).toEqual(["vehicle-2"]);
-  });
-
-  it("garde un véhicule dont la colonne status dit MAINTENANCE mais qui n'a aucune période", async () => {
-    db.vehicle.findMany.mockResolvedValue([
-      { id: "vehicle-1", name: "Zoé", licensePlate: "AB-123-CD", seats: 5, status: "MAINTENANCE" },
-    ]);
-    expect((await getAvailableVehicles(query(12, 14))).map((v) => v.id)).toEqual(["vehicle-1"]);
   });
 });
 

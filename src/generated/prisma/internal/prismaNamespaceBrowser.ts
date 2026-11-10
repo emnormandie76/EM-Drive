@@ -93,7 +93,6 @@ export const VehicleScalarFieldEnum = {
   name: 'name',
   licensePlate: 'licensePlate',
   seats: 'seats',
-  status: 'status',
   defaultCampusId: 'defaultCampusId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

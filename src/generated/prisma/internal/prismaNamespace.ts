@@ -1058,7 +1058,6 @@ export const VehicleScalarFieldEnum = {
   name: 'name',
   licensePlate: 'licensePlate',
   seats: 'seats',
-  status: 'status',
   defaultCampusId: 'defaultCampusId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1259,20 +1258,6 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-/**
- * Reference to a field of type 'VehicleStatus'
- */
-export type EnumVehicleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VehicleStatus'>
-    
-
-
-/**
- * Reference to a field of type 'VehicleStatus[]'
- */
-export type ListEnumVehicleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VehicleStatus[]'>
     
 
 

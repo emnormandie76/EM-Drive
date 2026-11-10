@@ -112,8 +112,8 @@ export const addPassengerSchema = z
 // ══════════════════════════════════════════════
 
 /**
- * Le statut d'un véhicule n'existe plus (D59) : un écran resté ouvert qui l'enverrait doit recevoir un refus
- * clair, pas un succès sans effet.
+ * Le statut d'un véhicule n'existe plus (D59, D72) : un écran resté ouvert qui l'enverrait doit recevoir un
+ * refus clair, pas un succès sans effet (D73).
  */
 const removedStatus = z
   .never({ error: "Le statut d'un véhicule n'existe plus : déclarez une indisponibilité datée." })

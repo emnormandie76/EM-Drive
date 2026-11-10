@@ -9,14 +9,6 @@
 * 🟢 You can import this file directly.
 */
 
-export const VehicleStatus = {
-  AVAILABLE: 'AVAILABLE',
-  MAINTENANCE: 'MAINTENANCE'
-} as const
-
-export type VehicleStatus = (typeof VehicleStatus)[keyof typeof VehicleStatus]
-
-
 export const TripType = {
   ONE_WAY: 'ONE_WAY',
   ROUND_TRIP: 'ROUND_TRIP',

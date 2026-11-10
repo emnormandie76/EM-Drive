@@ -138,7 +138,7 @@ const UNAVAILABLE_MESSAGES: Record<UnavailabilityReason, string> = {
  * et rouler jusqu'à `endTimeWithBuffer` (D62) : aucune période d'indisponibilité ne couvre le créneau entier
  * `[départ, fin + buffer)`, et il sera à ce campus à cette heure. C'est le point unique qui dit si un véhicule
  * peut partir (D62) : la recherche, la création, le changement d'horaire et la modification admin le suivent.
- * La colonne `vehicles.status` n'est plus lue (D59). `excludeTripId` écarte le trajet qu'on modifie.
+ * Seules les périodes comptent : un véhicule n'a plus de statut (D59, D72). `excludeTripId` écarte le trajet qu'on modifie.
  */
 export async function assertVehicleBookable(
   vehicleId: string,

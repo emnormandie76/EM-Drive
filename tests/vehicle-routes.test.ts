@@ -20,7 +20,7 @@ import { DRIVER } from "./helpers/fixtures";
 const db = prisma as unknown as PrismaMock;
 const vehicleParams = { params: Promise.resolve({ id: "vehicle-1" }) };
 const newVehicle = { name: "Zoé", licensePlate: "AB-123-CD", seats: 5, defaultCampusId: "c1" };
-const existingVehicle = { id: "vehicle-1", ...newVehicle, licensePlate: "EF-456-GH", status: "AVAILABLE" };
+const existingVehicle = { id: "vehicle-1", ...newVehicle, licensePlate: "EF-456-GH" };
 
 /** L'erreur que Prisma lève quand la base refuse un doublon (l'adaptateur Neon convertit le 23505 en P2002). */
 function uniqueViolation() {
@@ -73,7 +73,7 @@ describe("cas limite 10 : plaque déjà prise", () => {
   });
 
   it("une plaque libre crée le véhicule (201) et l'audit", async () => {
-    db.vehicle.create.mockResolvedValue({ id: "vehicle-2", ...newVehicle, status: "AVAILABLE" });
+    db.vehicle.create.mockResolvedValue({ id: "vehicle-2", ...newVehicle });
     const response = await createVehicleRoute(request("POST", newVehicle));
     expect(response.status).toBe(201);
     expect(db.auditLog.create).toHaveBeenCalledOnce();

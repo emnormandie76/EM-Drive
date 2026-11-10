@@ -15,8 +15,8 @@ import type * as Prisma from "../internal/prismaNamespace"
 /**
  * Model Vehicle
  * Les véhicules de la flotte.
- * `status` : OBSOLÈTE (D59). La disponibilité vient des périodes de `VehicleUnavailability` ; la colonne reste
- * en base le temps d'une livraison (le code en ligne la lit encore) et sera retirée à l'étape 3.
+ * La disponibilité d'un véhicule vient des périodes de `VehicleUnavailability` (D58, D59) : l'ancienne colonne
+ * `status` est retirée (étape 3, D72).
  * `defaultCampusId` : campus de rattachement initial du véhicule.
  */
 export type VehicleModel = runtime.Types.Result.DefaultSelection<Prisma.$VehiclePayload>
@@ -42,7 +42,6 @@ export type VehicleMinAggregateOutputType = {
   name: string | null
   licensePlate: string | null
   seats: number | null
-  status: $Enums.VehicleStatus | null
   defaultCampusId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -53,7 +52,6 @@ export type VehicleMaxAggregateOutputType = {
   name: string | null
   licensePlate: string | null
   seats: number | null
-  status: $Enums.VehicleStatus | null
   defaultCampusId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -64,7 +62,6 @@ export type VehicleCountAggregateOutputType = {
   name: number
   licensePlate: number
   seats: number
-  status: number
   defaultCampusId: number
   createdAt: number
   updatedAt: number
@@ -85,7 +82,6 @@ export type VehicleMinAggregateInputType = {
   name?: true
   licensePlate?: true
   seats?: true
-  status?: true
   defaultCampusId?: true
   createdAt?: true
   updatedAt?: true
@@ -96,7 +92,6 @@ export type VehicleMaxAggregateInputType = {
   name?: true
   licensePlate?: true
   seats?: true
-  status?: true
   defaultCampusId?: true
   createdAt?: true
   updatedAt?: true
@@ -107,7 +102,6 @@ export type VehicleCountAggregateInputType = {
   name?: true
   licensePlate?: true
   seats?: true
-  status?: true
   defaultCampusId?: true
   createdAt?: true
   updatedAt?: true
@@ -205,7 +199,6 @@ export type VehicleGroupByOutputType = {
   name: string
   licensePlate: string
   seats: number
-  status: $Enums.VehicleStatus
   defaultCampusId: string
   createdAt: Date
   updatedAt: Date
@@ -239,7 +232,6 @@ export type VehicleWhereInput = {
   name?: Prisma.StringFilter<"Vehicle"> | string
   licensePlate?: Prisma.StringFilter<"Vehicle"> | string
   seats?: Prisma.IntFilter<"Vehicle"> | number
-  status?: Prisma.EnumVehicleStatusFilter<"Vehicle"> | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFilter<"Vehicle"> | string
   createdAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
@@ -253,7 +245,6 @@ export type VehicleOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   licensePlate?: Prisma.SortOrder
   seats?: Prisma.SortOrder
-  status?: Prisma.SortOrder
   defaultCampusId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -270,7 +261,6 @@ export type VehicleWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.VehicleWhereInput | Prisma.VehicleWhereInput[]
   name?: Prisma.StringFilter<"Vehicle"> | string
   seats?: Prisma.IntFilter<"Vehicle"> | number
-  status?: Prisma.EnumVehicleStatusFilter<"Vehicle"> | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFilter<"Vehicle"> | string
   createdAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
@@ -284,7 +274,6 @@ export type VehicleOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   licensePlate?: Prisma.SortOrder
   seats?: Prisma.SortOrder
-  status?: Prisma.SortOrder
   defaultCampusId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -303,7 +292,6 @@ export type VehicleScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Vehicle"> | string
   licensePlate?: Prisma.StringWithAggregatesFilter<"Vehicle"> | string
   seats?: Prisma.IntWithAggregatesFilter<"Vehicle"> | number
-  status?: Prisma.EnumVehicleStatusWithAggregatesFilter<"Vehicle"> | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringWithAggregatesFilter<"Vehicle"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Vehicle"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Vehicle"> | Date | string
@@ -314,7 +302,6 @@ export type VehicleCreateInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   defaultCampus: Prisma.CampusCreateNestedOneWithoutVehiclesDefaultInput
@@ -327,7 +314,6 @@ export type VehicleUncheckedCreateInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   defaultCampusId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -340,7 +326,6 @@ export type VehicleUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   defaultCampus?: Prisma.CampusUpdateOneRequiredWithoutVehiclesDefaultNestedInput
@@ -353,7 +338,6 @@ export type VehicleUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -366,7 +350,6 @@ export type VehicleCreateManyInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   defaultCampusId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -377,7 +360,6 @@ export type VehicleUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -387,7 +369,6 @@ export type VehicleUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -408,7 +389,6 @@ export type VehicleCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   licensePlate?: Prisma.SortOrder
   seats?: Prisma.SortOrder
-  status?: Prisma.SortOrder
   defaultCampusId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -423,7 +403,6 @@ export type VehicleMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   licensePlate?: Prisma.SortOrder
   seats?: Prisma.SortOrder
-  status?: Prisma.SortOrder
   defaultCampusId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -434,7 +413,6 @@ export type VehicleMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   licensePlate?: Prisma.SortOrder
   seats?: Prisma.SortOrder
-  status?: Prisma.SortOrder
   defaultCampusId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -499,10 +477,6 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type EnumVehicleStatusFieldUpdateOperationsInput = {
-  set?: $Enums.VehicleStatus
-}
-
 export type VehicleCreateNestedOneWithoutUnavailabilitiesInput = {
   create?: Prisma.XOR<Prisma.VehicleCreateWithoutUnavailabilitiesInput, Prisma.VehicleUncheckedCreateWithoutUnavailabilitiesInput>
   connectOrCreate?: Prisma.VehicleCreateOrConnectWithoutUnavailabilitiesInput
@@ -536,7 +510,6 @@ export type VehicleCreateWithoutDefaultCampusInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   trips?: Prisma.TripCreateNestedManyWithoutVehicleInput
@@ -548,7 +521,6 @@ export type VehicleUncheckedCreateWithoutDefaultCampusInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   trips?: Prisma.TripUncheckedCreateNestedManyWithoutVehicleInput
@@ -589,7 +561,6 @@ export type VehicleScalarWhereInput = {
   name?: Prisma.StringFilter<"Vehicle"> | string
   licensePlate?: Prisma.StringFilter<"Vehicle"> | string
   seats?: Prisma.IntFilter<"Vehicle"> | number
-  status?: Prisma.EnumVehicleStatusFilter<"Vehicle"> | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFilter<"Vehicle"> | string
   createdAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Vehicle"> | Date | string
@@ -600,7 +571,6 @@ export type VehicleCreateWithoutUnavailabilitiesInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   defaultCampus: Prisma.CampusCreateNestedOneWithoutVehiclesDefaultInput
@@ -612,7 +582,6 @@ export type VehicleUncheckedCreateWithoutUnavailabilitiesInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   defaultCampusId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -640,7 +609,6 @@ export type VehicleUpdateWithoutUnavailabilitiesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   defaultCampus?: Prisma.CampusUpdateOneRequiredWithoutVehiclesDefaultNestedInput
@@ -652,7 +620,6 @@ export type VehicleUncheckedUpdateWithoutUnavailabilitiesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -664,7 +631,6 @@ export type VehicleCreateWithoutTripsInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   defaultCampus: Prisma.CampusCreateNestedOneWithoutVehiclesDefaultInput
@@ -676,7 +642,6 @@ export type VehicleUncheckedCreateWithoutTripsInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   defaultCampusId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -704,7 +669,6 @@ export type VehicleUpdateWithoutTripsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   defaultCampus?: Prisma.CampusUpdateOneRequiredWithoutVehiclesDefaultNestedInput
@@ -716,7 +680,6 @@ export type VehicleUncheckedUpdateWithoutTripsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   defaultCampusId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -728,7 +691,6 @@ export type VehicleCreateManyDefaultCampusInput = {
   name: string
   licensePlate: string
   seats?: number
-  status?: $Enums.VehicleStatus
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -738,7 +700,6 @@ export type VehicleUpdateWithoutDefaultCampusInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   trips?: Prisma.TripUpdateManyWithoutVehicleNestedInput
@@ -750,7 +711,6 @@ export type VehicleUncheckedUpdateWithoutDefaultCampusInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   trips?: Prisma.TripUncheckedUpdateManyWithoutVehicleNestedInput
@@ -762,7 +722,6 @@ export type VehicleUncheckedUpdateManyWithoutDefaultCampusInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   licensePlate?: Prisma.StringFieldUpdateOperationsInput | string
   seats?: Prisma.IntFieldUpdateOperationsInput | number
-  status?: Prisma.EnumVehicleStatusFieldUpdateOperationsInput | $Enums.VehicleStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -812,7 +771,6 @@ export type VehicleSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name?: boolean
   licensePlate?: boolean
   seats?: boolean
-  status?: boolean
   defaultCampusId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -827,7 +785,6 @@ export type VehicleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   licensePlate?: boolean
   seats?: boolean
-  status?: boolean
   defaultCampusId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -839,7 +796,6 @@ export type VehicleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   name?: boolean
   licensePlate?: boolean
   seats?: boolean
-  status?: boolean
   defaultCampusId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -851,13 +807,12 @@ export type VehicleSelectScalar = {
   name?: boolean
   licensePlate?: boolean
   seats?: boolean
-  status?: boolean
   defaultCampusId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type VehicleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "licensePlate" | "seats" | "status" | "defaultCampusId" | "createdAt" | "updatedAt", ExtArgs["result"]["vehicle"]>
+export type VehicleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "licensePlate" | "seats" | "defaultCampusId" | "createdAt" | "updatedAt", ExtArgs["result"]["vehicle"]>
 export type VehicleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   defaultCampus?: boolean | Prisma.CampusDefaultArgs<ExtArgs>
   trips?: boolean | Prisma.Vehicle$tripsArgs<ExtArgs>
@@ -883,7 +838,6 @@ export type $VehiclePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     name: string
     licensePlate: string
     seats: number
-    status: $Enums.VehicleStatus
     defaultCampusId: string
     createdAt: Date
     updatedAt: Date
@@ -1317,7 +1271,6 @@ export interface VehicleFieldRefs {
   readonly name: Prisma.FieldRef<"Vehicle", 'String'>
   readonly licensePlate: Prisma.FieldRef<"Vehicle", 'String'>
   readonly seats: Prisma.FieldRef<"Vehicle", 'Int'>
-  readonly status: Prisma.FieldRef<"Vehicle", 'VehicleStatus'>
   readonly defaultCampusId: Prisma.FieldRef<"Vehicle", 'String'>
   readonly createdAt: Prisma.FieldRef<"Vehicle", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Vehicle", 'DateTime'>

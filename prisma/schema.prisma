@@ -13,11 +13,6 @@ datasource db {
 // ENUMS
 // ══════════════════════════════════════════════
 
-enum VehicleStatus {
-  AVAILABLE
-  MAINTENANCE
-}
-
 enum TripType {
   ONE_WAY          // Aller simple : Campus → Campus
   ROUND_TRIP       // Aller-retour : Campus → Campus → même Campus
@@ -87,18 +82,17 @@ model Campus {
 }
 
 /// Les véhicules de la flotte.
-/// `status` : OBSOLÈTE (D59). La disponibilité vient des périodes de `VehicleUnavailability` ; la colonne reste
-/// en base le temps d'une livraison (le code en ligne la lit encore) et sera retirée à l'étape 3.
+/// La disponibilité d'un véhicule vient des périodes de `VehicleUnavailability` (D58, D59) : l'ancienne colonne
+/// `status` est retirée (étape 3, D72).
 /// `defaultCampusId` : campus de rattachement initial du véhicule.
 model Vehicle {
-  id              String        @id @default(cuid())
-  name            String        // Ex: "Renault Zoé Bleue"
-  licensePlate    String        @unique @map("license_plate")
-  seats           Int           @default(5) // Total places (conducteur inclus)
-  status          VehicleStatus @default(AVAILABLE)
-  defaultCampusId String        @map("default_campus_id")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  name            String   // Ex: "Renault Zoé Bleue"
+  licensePlate    String   @unique @map("license_plate")
+  seats           Int      @default(5) // Total places (conducteur inclus)
+  defaultCampusId String   @map("default_campus_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relations
   defaultCampus    Campus                  @relation("DefaultCampus", fields: [defaultCampusId], references: [id])
